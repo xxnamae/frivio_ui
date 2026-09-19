@@ -1428,12 +1428,12 @@ export function StatCard({
     : 'type-heading-24'
 
   return (
-    <div className={cx('relative rounded-[var(--frv-radius-md)] p-5', className)} style={cardStyle}>
+    <div className={cx('relative rounded-[var(--frv-radius-md)] p-5 @container', className)} style={cardStyle}>
       <div className="flex items-center gap-2 mb-3" style={{ color: resolvedLabelColor }}>
         {Icon && <Icon size={14} />}
         <span className="type-label-13">{label}</span>
       </div>
-      <p className={cx(valueSizeClass, 'tabular-nums', typeof value === 'string' && (!/\d/.test(value) || value.includes('–')) ? 'whitespace-normal text-balance' : 'whitespace-nowrap')} style={valueStyle}>{value}</p>
+      <p data-stat-verdi={valueSizeClass.replace('type-heading-', '')} className={cx(valueSizeClass, 'tabular-nums', typeof value === 'string' && (!/\d/.test(value) || value.includes('–')) ? 'whitespace-normal text-balance' : 'whitespace-nowrap')} style={valueStyle}>{value}</p>
       {sub && <p className="type-label-12 mt-2" style={{ color: 'var(--frv-text-tertiary)', ...subStyle }}>{sub}</p>}
       {endring && (
         <span
