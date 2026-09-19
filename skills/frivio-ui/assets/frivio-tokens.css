@@ -518,6 +518,16 @@
    decorative (it IS HoldToConfirm's confirmation), so it is deliberately
    left OUT of the reduced-motion guard below, matching the source: the
    component itself falls back to a plain ConfirmDialog instead. */
+@container (max-width: 10rem) {
+  [data-stat-verdi="24"] { font: var(--frv-type-heading-20); letter-spacing: var(--frv-type-heading-20-ls); }
+  [data-stat-verdi="20"] { font: var(--frv-type-heading-16); letter-spacing: var(--frv-type-heading-16-ls); }
+  [data-stat-verdi="16"] { font: var(--frv-type-heading-14); letter-spacing: var(--frv-type-heading-14-ls); }
+}
+@container (max-width: 7rem) {
+  [data-stat-verdi="24"] { font: var(--frv-type-heading-16); letter-spacing: var(--frv-type-heading-16-ls); }
+  [data-stat-verdi="20"] { font: var(--frv-type-heading-14); letter-spacing: var(--frv-type-heading-14-ls); }
+  [data-stat-verdi="16"] { font: var(--frv-type-heading-14); letter-spacing: var(--frv-type-heading-14-ls); }
+}
 @keyframes pop-in {
   from { opacity: 0; transform: translateY(-2px); }
   to   { opacity: 1; transform: translateY(0); }
