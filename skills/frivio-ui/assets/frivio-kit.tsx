@@ -410,8 +410,12 @@ interface ButtonOwnProps {
    *  NEUTRAL secondary action that should be visible without competing with
    *  a filled button or a colored action — typically "Copy" next to content.
    *  It previously used an accent tint, which made it hard to tell apart
-   *  from `accent` and from a link. */
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'error' | 'warning' | 'accent' | 'soft'
+   *  from `accent` and from a link.
+   *  `link` (added 2026-09-19): a text link with a real hit target — accent
+   *  color, underlined, no fill/border. For a STANDALONE action link ("5
+   *  paid →"), never inline in running prose (use a plain `.link`-styled
+   *  anchor there instead). */
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'error' | 'warning' | 'accent' | 'soft' | 'link'
   size?: 'xs' | 'sm' | 'md' | 'lg'
   loading?: boolean
   /** Brief confirmation that the action succeeded — "Copied", "Saved". A
@@ -475,6 +479,9 @@ const BTN_VARIANT_CLASS: Record<NonNullable<ButtonProps['variant']>, string> = {
   warning:   'text-[var(--frv-warning-fg)] bg-[var(--frv-warning-solid)] hover:brightness-110',
   accent:    'text-[var(--frv-accent-fg)] bg-[var(--frv-accent-strong)] hover:bg-[var(--frv-accent-strong-hover)]',
   soft:      'text-[var(--frv-text-primary)] bg-[var(--frv-gray-alpha-100)] hover:bg-[var(--frv-gray-alpha-200)]',
+  // Same recipe as the `.link` CSS utility: dimmed underline at rest
+  // (color-mix 45% currentColor), full color on hover.
+  link:      'bg-transparent text-[var(--frv-accent-text)] underline decoration-1 underline-offset-[0.16em] decoration-[color-mix(in_srgb,currentColor_45%,transparent)] hover:decoration-current',
 }
 
 const BTN_HEIGHT: Record<NonNullable<ButtonProps['size']>, string> = { xs: 'h-6', sm: 'h-8', md: 'h-10', lg: 'h-12' }
@@ -486,6 +493,9 @@ const BTN_PAD_X: Record<NonNullable<ButtonProps['size']>, string> = { xs: 'px-2'
 // (min-height, not height, so content stays vertically centered). `lg`
 // (48px) is already touch-safe and left completely alone.
 const BTN_MIN_H: Record<NonNullable<ButtonProps['size']>, string> = { xs: 'min-h-11 lg:min-h-0', sm: 'min-h-11 lg:min-h-0', md: 'min-h-11 lg:min-h-0', lg: '' }
+// A two-letter `xs` label (e.g. "xs") measured 31px wide with only `px-2` —
+// the same mobile-touch-target floor as height, just for width (2026-09-19).
+const BTN_MIN_W: Record<NonNullable<ButtonProps['size']>, string> = { xs: 'min-w-10 lg:min-w-0', sm: '', md: '', lg: '' }
 const BTN_RADIUS: Record<NonNullable<ButtonProps['shape']>, string> = {
   default: 'rounded-[var(--frv-radius-sm)]', rounded: 'rounded-full',
   square: 'rounded-[var(--frv-radius-sm)]', circle: 'rounded-full',
@@ -500,8 +510,9 @@ const BTN_RADIUS: Record<NonNullable<ButtonProps['shape']>, string> = {
    red-700 text measures under AA, `-solid` is red-800 and holds 4.5:1),
    `warning` (filled amber, always dark text), `accent` (filled blue CTA —
    blue is otherwise reserved for links/focus), `soft` (tonal neutral
-   secondary, e.g. "Copy" next to content). `confirmed` layers on top of any
-   variant. Icon rule: Button has no icon logic of its own — add a leading
+   secondary, e.g. "Copy" next to content), `link` (text link with a real hit
+   target, for a standalone action link — never inline in prose). `confirmed`
+   layers on top of any variant. Icon rule: Button has no icon logic of its own — add a leading
    icon at the call site only when it NAMES the action; use `shape`
    ('square'/'circle') for a single icon with no text.
 
@@ -549,13 +560,14 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
       BTN_GAP[size],
       BTN_TEXT[size],
       BTN_MIN_H[size],
+      BTN_MIN_W[size],
       BTN_RADIUS[shape],
       isIconOnly ? 'aspect-square' : BTN_PAD_X[size],
       // Filled variants have no border; in confirmed state they need one, or
       // the button loses its shape once the fill is removed. `secondary`
-      // already has a border (no duplicate); `soft` needs none — it shows
-      // state through background alone.
-      confirmed && variant !== 'secondary' && variant !== 'soft' && 'border',
+      // already has a border (no duplicate); `soft`/`link` need none — `soft`
+      // shows state through background alone, `link` has no fill to outline.
+      confirmed && variant !== 'secondary' && variant !== 'soft' && variant !== 'link' && 'border',
       confirmed && variant !== 'soft' && 'hover:bg-transparent',
       confirmed && variant === 'soft' && 'hover:brightness-100',
       className,
@@ -2111,7 +2123,9 @@ function ToastCard({ row, onClose }: { row: ToastRow; onClose: () => void }) {
 
 export type FieldSize = 'sm' | 'md' | 'lg'
 
-export const FIELD_HEIGHT: Record<FieldSize, string> = { sm: 'h-8', md: 'min-h-11 lg:min-h-0 h-10', lg: 'h-12' }
+// sm: min-h-10 sm:min-h-8 løfter trykkflaten til 40px under 640px (mobil),
+// og går tilbake til fast 32px fra 640px og opp (Frivio, 19. sep 2026).
+export const FIELD_HEIGHT: Record<FieldSize, string> = { sm: 'min-h-10 sm:min-h-8 h-8', md: 'min-h-11 lg:min-h-0 h-10', lg: 'h-12' }
 export const FIELD_TEXT: Record<FieldSize, string> = { sm: 'type-label-13', md: 'type-label-14', lg: 'type-label-16' }
 export const FIELD_PAD: Record<FieldSize, string> = { sm: 'px-2.5', md: 'px-3', lg: 'px-4' }
 export const FIELD_PAD_L: Record<FieldSize, string> = { sm: 'pl-2.5', md: 'pl-3', lg: 'pl-4' }
@@ -7572,6 +7586,12 @@ export function MultiSelect({
           // of specificity.
           'frv-focus-clear',
           FIELD_TEXT.md,
+          // Without an explicit height the field only inherits the text's own
+          // line-height — WebKit and Chromium compute that intrinsic height
+          // differently for a bare `<input>` (Frivio measured 21px in WebKit
+          // vs. ≥40px in Chromium for identical markup, 19 Sep 2026). Same
+          // breakpoint as the row container's own `min-h-11 lg:min-h-10`.
+          'min-h-11 lg:min-h-10',
         )}
         style={{ color: 'var(--frv-text-primary)' }}
       />
