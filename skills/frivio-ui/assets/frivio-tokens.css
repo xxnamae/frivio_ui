@@ -1,0 +1,575 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   FRIVIO DESIGN SYSTEM — token-lag
+   GENERERT av scripts/build-skill.mjs fra app/globals.css. Ikke rediger her;
+   rediger kilden og kjør generatoren på nytt.
+
+   Importér én gang i rot-fila. Alle komponenter i frivio-kit.tsx leser disse
+   variablene gjennom Tailwind arbitrary values (`bg-[var(--frv-surface)]`),
+   så du trenger IKKE å endre tailwind.config — filen faller inn i et hvilket
+   som helst prosjekt.
+
+   Mørkt er standard (Frivio-identiteten). Lyst er en komplett overstyring
+   under `:root[data-theme='light']`; sett `data-theme="light"` på <html>.
+
+   Navnene er prefikset `--frv-` fordi skillen slippes inn i fremmede
+   prosjekter der `--color-bg` o.l. lett kolliderer. Internt i Frivio heter
+   de `--color-*` — 1:1-mapping, kun prefikset skiller.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Fontparet fra Google Fonts, så fila er selvforsynt for et fremmed prosjekt.
+   Frivio-appen selv laster de samme fontene via next/font (raskere, ingen
+   ekstern forespørsel) og setter --font-family-sans/--font-family-mono; her
+   kan vi ikke anta det, så fallback-kjeden under starter med de
+   Google-lastede navnene. */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  /* next/font setter disse i Frivio; utenfor Frivio faller de til Google-navnet. */
+  --frv-font-family-sans: 'Geist';
+  --frv-font-family-mono: 'Geist Mono';
+}
+
+:root {
+  --frv-gray-100: #1a1a1a;
+  --frv-gray-200: #1f1f1f;
+  --frv-gray-300: #292929;
+  --frv-gray-400: #2e2e2e;
+  --frv-gray-500: #454545;
+  --frv-gray-600: #878787;
+  --frv-gray-700: #8f8f8f;
+  --frv-gray-800: #7d7d7d;
+  --frv-gray-900: #a0a0a0;
+  --frv-gray-1000: #ededed;
+  --frv-gray-alpha-100: #ffffff12;
+  --frv-gray-alpha-200: #ffffff17;
+  --frv-gray-alpha-300: #ffffff21;
+  --frv-gray-alpha-400: #ffffff24;
+  --frv-gray-alpha-500: #ffffff3d;
+  --frv-gray-alpha-600: #ffffff82;
+  --frv-gray-alpha-700: #ffffff8a;
+  --frv-gray-alpha-800: #ffffff78;
+  --frv-gray-alpha-900: #ffffff9c;
+  --frv-gray-alpha-1000: #ffffffeb;
+  --frv-blue-100: #06193a;
+  --frv-blue-200: #022248;
+  --frv-blue-300: #002f62;
+  --frv-blue-400: #003771;
+  --frv-blue-500: #004287;
+  --frv-blue-600: #0090ff;
+  --frv-blue-700: #0071f6;
+  --frv-blue-800: #005fd8;
+  --frv-blue-900: #50a8ff;
+  --frv-blue-1000: #ebf6ff;
+  --frv-red-100: #330a11;
+  --frv-red-200: #440d13;
+  --frv-red-300: #5d0e17;
+  --frv-red-400: #6f101b;
+  --frv-red-500: #88151f;
+  --frv-red-600: #f32e40;
+  --frv-red-700: #f13242;
+  --frv-red-800: #e2162a;
+  --frv-red-900: #ff5e63;
+  --frv-red-1000: #ffeaed;
+  --frv-amber-100: #291800;
+  --frv-amber-200: #331b00;
+  --frv-amber-300: #4f2900;
+  --frv-amber-400: #573200;
+  --frv-amber-500: #6c4100;
+  --frv-amber-600: #e99c00;
+  --frv-amber-700: #ffb200;
+  --frv-amber-800: #ff9900;
+  --frv-amber-900: #ff9900;
+  --frv-amber-1000: #fff3d9;
+  --frv-green-100: #00250a;
+  --frv-green-200: #003110;
+  --frv-green-300: #003814;
+  --frv-green-400: #004616;
+  --frv-green-500: #00661d;
+  --frv-green-600: #009431;
+  --frv-green-700: #00ab3e;
+  --frv-green-800: #009335;
+  --frv-green-900: #00ca52;
+  --frv-green-1000: #daffe5;
+  --frv-teal-100: #00211b;
+  --frv-teal-200: #002922;
+  --frv-teal-300: #003b33;
+  --frv-teal-400: #003f35;
+  --frv-teal-500: #005f53;
+  --frv-teal-600: #009885;
+  --frv-teal-700: #00a794;
+  --frv-teal-800: #008d7d;
+  --frv-teal-900: #00c9b5;
+  --frv-teal-1000: #cefff5;
+  --frv-purple-100: #290c33;
+  --frv-purple-200: #341142;
+  --frv-purple-300: #47185e;
+  --frv-purple-400: #541a76;
+  --frv-purple-500: #642290;
+  --frv-purple-600: #9440d5;
+  --frv-purple-700: #9440d5;
+  --frv-purple-800: #7d2bba;
+  --frv-purple-900: #c472fb;
+  --frv-purple-1000: #faedff;
+  --frv-pink-100: #310d1e;
+  --frv-pink-200: #420c25;
+  --frv-pink-300: #571032;
+  --frv-pink-400: #5d0c34;
+  --frv-pink-500: #76063f;
+  --frv-pink-600: #b90056;
+  --frv-pink-700: #f12b82;
+  --frv-pink-800: #e6006e;
+  --frv-pink-900: #ff518d;
+  --frv-pink-1000: #ffeaf4;
+  --frv-bg: #000000;
+  --frv-surface: #0a0a0a;
+  --frv-surface-2: var(--frv-gray-100);
+  --frv-surface-3: var(--frv-gray-200);
+  --frv-overlay: rgb(0 0 0 / 0.4);
+  --frv-border: var(--frv-gray-alpha-400);
+  --frv-border-2: var(--frv-gray-alpha-500);
+  --frv-border-3: var(--frv-gray-alpha-600);
+  --frv-text-primary: var(--frv-gray-1000);
+  --frv-text-secondary: var(--frv-gray-900);
+  --frv-text-tertiary: var(--frv-gray-700);
+  --frv-text-quaternary: var(--frv-text-tertiary);
+  --frv-accent: #6d9bff;
+  --frv-accent-hover: color-mix(in srgb, #6d9bff 80%, black);
+  --frv-accent-strong: #3870e8;
+  --frv-accent-strong-hover: #1a5ae0;
+  --frv-accent-light: color-mix(in srgb, var(--frv-accent) 18%, var(--frv-bg));
+  --frv-accent-fg: #ffffff;
+  --frv-accent-text: color-mix(in srgb, var(--frv-accent) 72%, var(--frv-text-primary));
+  --frv-accent-2: #4b7eea;
+  --frv-accent-glow: color-mix(in srgb, var(--frv-accent) 35%, transparent);
+  --frv-accent-border: color-mix(in srgb, var(--frv-accent) 35%, transparent);
+  --frv-primary-bg: var(--frv-text-primary);
+  --frv-primary-fg: var(--frv-bg);
+  --frv-primary-hover: color-mix(in srgb, var(--frv-primary-bg) 85%, var(--frv-bg));
+  --frv-btn-bg: var(--frv-primary-bg);
+  --frv-btn-fg: var(--frv-primary-fg);
+  --frv-btn-bg-hover: var(--frv-primary-hover);
+  --frv-success: var(--frv-teal-700);
+  --frv-success-hover: var(--frv-teal-800);
+  --frv-success-light: var(--frv-teal-100);
+  --frv-success-border: var(--frv-teal-400);
+  --frv-success-text: var(--frv-teal-900);
+  --frv-success-solid: var(--frv-teal-900);
+  --frv-success-fg: #000000;
+  --frv-warning: var(--frv-amber-700);
+  --frv-warning-hover: var(--frv-amber-800);
+  --frv-warning-light: var(--frv-amber-100);
+  --frv-warning-border: var(--frv-amber-400);
+  --frv-warning-text: var(--frv-amber-900);
+  --frv-warning-solid: var(--frv-amber-700);
+  --frv-warning-fg: #000000;
+  --frv-error: var(--frv-red-700);
+  --frv-error-hover: var(--frv-red-800);
+  --frv-error-light: var(--frv-red-100);
+  --frv-error-border: var(--frv-red-400);
+  --frv-error-text: var(--frv-red-900);
+  --frv-error-solid: var(--frv-red-800);
+  --frv-error-fg: #ffffff;
+  --frv-neutral-light: var(--frv-gray-alpha-100);
+  --frv-akutt: var(--frv-error);
+  --frv-akutt-light: var(--frv-error-light);
+  --frv-akutt-border: var(--frv-error-border);
+  --frv-akutt-text: var(--frv-error-text);
+  --frv-hoy: var(--frv-warning);
+  --frv-hoy-light: var(--frv-warning-light);
+  --frv-hoy-border: var(--frv-warning-border);
+  --frv-hoy-text: var(--frv-warning-text);
+  --frv-middels: var(--frv-gray-700);
+  --frv-middels-light: var(--frv-gray-100);
+  --frv-middels-border: var(--frv-gray-400);
+  --frv-middels-text: var(--frv-gray-900);
+  --frv-lav: var(--frv-success);
+  --frv-lav-light: var(--frv-success-light);
+  --frv-lav-border: var(--frv-success-border);
+  --frv-lav-text: var(--frv-success-text);
+
+  --frv-font: var(--frv-font-family-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --frv-font-sans: var(--frv-font);
+  --frv-font-heading: var(--frv-font);
+  --frv-font-mono: var(--frv-font-family-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --frv-font-display: var(--frv-font-heading);
+  --frv-type-heading-72: 600 72px/72px var(--frv-font-sans);
+  --frv-type-heading-72-ls: -4.32px;
+  --frv-type-heading-64: 600 64px/64px var(--frv-font-sans);
+  --frv-type-heading-64-ls: -3.84px;
+  --frv-type-heading-56: 600 56px/56px var(--frv-font-sans);
+  --frv-type-heading-56-ls: -3.36px;
+  --frv-type-heading-48: 600 48px/56px var(--frv-font-sans);
+  --frv-type-heading-48-ls: -2.88px;
+  --frv-type-heading-40: 600 40px/48px var(--frv-font-sans);
+  --frv-type-heading-40-ls: -2.4px;
+  --frv-type-heading-32: 600 32px/40px var(--frv-font-sans);
+  --frv-type-heading-32-ls: -1.28px;
+  --frv-type-heading-24: 600 24px/32px var(--frv-font-sans);
+  --frv-type-heading-24-ls: -0.96px;
+  --frv-type-heading-20: 600 20px/26px var(--frv-font-sans);
+  --frv-type-heading-20-ls: -0.4px;
+  --frv-type-heading-16: 600 16px/24px var(--frv-font-sans);
+  --frv-type-heading-16-ls: -0.32px;
+  --frv-type-heading-14: 600 14px/20px var(--frv-font-sans);
+  --frv-type-heading-14-ls: -0.28px;
+  --frv-type-button-16: 500 16px/20px var(--frv-font-sans);
+  --frv-type-button-16-ls: normal;
+  --frv-type-button-14: 500 14px/20px var(--frv-font-sans);
+  --frv-type-button-14-ls: normal;
+  --frv-type-button-12: 500 12px/16px var(--frv-font-sans);
+  --frv-type-button-12-ls: normal;
+  --frv-type-label-20: 400 20px/32px var(--frv-font-sans);
+  --frv-type-label-20-ls: normal;
+  --frv-type-label-18: 400 18px/20px var(--frv-font-sans);
+  --frv-type-label-18-ls: normal;
+  --frv-type-label-16: 400 16px/20px var(--frv-font-sans);
+  --frv-type-label-16-ls: normal;
+  --frv-type-label-14: 400 14px/20px var(--frv-font-sans);
+  --frv-type-label-14-ls: normal;
+  --frv-type-label-13: 400 13px/16px var(--frv-font-sans);
+  --frv-type-label-13-ls: normal;
+  --frv-type-label-12: 400 12px/16px var(--frv-font-sans);
+  --frv-type-label-12-ls: normal;
+  --frv-type-label-16-strong: 500 16px/20px var(--frv-font-sans);
+  --frv-type-label-14-strong: 500 14px/20px var(--frv-font-sans);
+  --frv-type-label-13-strong: 500 13px/16px var(--frv-font-sans);
+  --frv-type-label-12-strong: 500 12px/16px var(--frv-font-sans);
+  --frv-type-copy-24: 400 24px/36px var(--frv-font-sans);
+  --frv-type-copy-24-ls: normal;
+  --frv-type-copy-20: 400 20px/36px var(--frv-font-sans);
+  --frv-type-copy-20-ls: normal;
+  --frv-type-copy-18: 400 18px/28px var(--frv-font-sans);
+  --frv-type-copy-18-ls: normal;
+  --frv-type-copy-16: 400 16px/24px var(--frv-font-sans);
+  --frv-type-copy-16-ls: normal;
+  --frv-type-copy-14: 400 14px/20px var(--frv-font-sans);
+  --frv-type-copy-14-ls: normal;
+  --frv-type-copy-13: 400 13px/18px var(--frv-font-sans);
+  --frv-type-copy-13-ls: normal;
+  --frv-space-1: 0.25rem;
+  --frv-space-1-5: 0.375rem;
+  --frv-space-2: 0.5rem;
+  --frv-space-2-5: 0.625rem;
+  --frv-space-3: 0.75rem;
+  --frv-space-3-5: 0.875rem;
+  --frv-space-4: 1rem;
+  --frv-space-5: 1.25rem;
+  --frv-space-6: 1.5rem;
+  --frv-space-8: 2rem;
+  --frv-space-10: 2.5rem;
+  --frv-space-12: 3rem;
+  --frv-space-16: 4rem;
+  --frv-space-20: 5rem;
+  --frv-space-24: 6rem;
+  --frv-radius-sm: 0.375rem;
+  --frv-radius-md: 0.75rem;
+  --frv-radius-lg: 1rem;
+  --frv-radius-full: 9999px;
+  --frv-shadow-xs: 0 1px 2px rgba(0,0,0,0.16);
+  --frv-shadow-sm: 0 1px 2px rgba(0,0,0,0.16);
+  --frv-shadow-md: 0 1px 1px rgba(0,0,0,0.02), 0 4px 8px -4px rgba(0,0,0,0.04), 0 16px 24px -8px rgba(0,0,0,0.06);
+  --frv-shadow-lg: 0 1px 1px rgba(0,0,0,0.02), 0 8px 16px -4px rgba(0,0,0,0.04), 0 24px 32px -8px rgba(0,0,0,0.06);
+  --frv-shadow-xl: 0 1px 1px rgba(0,0,0,0.02), 0 8px 16px -4px rgba(0,0,0,0.04), 0 24px 32px -8px rgba(0,0,0,0.06);
+  --frv-shadow-border: 0 0 0 1px var(--frv-gray-alpha-400);
+  --frv-shadow-menu: var(--frv-shadow-border), 0 1px 1px #00000005, 0 4px 8px -4px #0000000a, 0 16px 24px -8px #0000000f;
+  --frv-shadow-modal: var(--frv-shadow-border), 0 1px 1px #00000005, 0 8px 16px -4px #0000000a, 0 24px 32px -8px #0000000f;
+  --frv-shadow-tooltip: var(--frv-shadow-border), 0 1px 1px #00000005, 0 4px 8px #0000000a;
+  --frv-focus-ring: 0 0 0 2px var(--frv-bg), 0 0 0 4px var(--frv-accent);
+  --frv-focus-border: 0 0 0 1px var(--frv-gray-alpha-600);
+  --frv-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  --frv-duration-state: 150ms;
+  --frv-duration-popover: 200ms;
+  --frv-duration-modal: 300ms;
+  --frv-gradient-accent: linear-gradient(135deg, var(--frv-gray-1000), var(--frv-gray-800));
+  --frv-gradient-card: linear-gradient(155deg, color-mix(in srgb, var(--frv-gray-1000) 3%, var(--frv-surface)) 0%, var(--frv-surface) 58%);
+  --frv-gradient-hero: linear-gradient(155deg, color-mix(in srgb, var(--frv-gray-1000) 10%, var(--frv-surface)) 0%, color-mix(in srgb, var(--frv-gray-1000) 3%, var(--frv-surface)) 100%);
+  --frv-gradient-glow: radial-gradient(120% 70% at 50% -20%, color-mix(in srgb, var(--frv-gray-1000) 10%, transparent), transparent 62%);
+}
+
+/* ── Lyst tema — samme navn, andre verdier ────────────────────────────────── */
+:root[data-theme='light'] {
+  --frv-success-fg: #ffffff;
+  --frv-gray-100: #f2f2f2;
+  --frv-gray-200: #ebebeb;
+  --frv-gray-300: #e6e6e6;
+  --frv-gray-400: #eaeaea;
+  --frv-gray-500: #c9c9c9;
+  --frv-gray-600: #a8a8a8;
+  --frv-gray-700: #8f8f8f;
+  --frv-gray-800: #7d7d7d;
+  --frv-gray-900: #4d4d4d;
+  --frv-gray-1000: #171717;
+  --frv-gray-alpha-100: #0000000d;
+  --frv-gray-alpha-200: #00000015;
+  --frv-gray-alpha-300: #0000001a;
+  --frv-gray-alpha-400: #00000014;
+  --frv-gray-alpha-500: #00000036;
+  --frv-gray-alpha-600: #0000003d;
+  --frv-gray-alpha-700: #00000070;
+  --frv-gray-alpha-800: #00000082;
+  --frv-gray-alpha-900: #000000b3;
+  --frv-gray-alpha-1000: #000000e8;
+  --frv-blue-100: #f0f7ff;
+  --frv-blue-200: #eaf4ff;
+  --frv-blue-300: #e0efff;
+  --frv-blue-400: #cce7ff;
+  --frv-blue-500: #97ccff;
+  --frv-blue-600: #51aeff;
+  --frv-blue-700: #0070f7;
+  --frv-blue-800: #005edc;
+  --frv-blue-900: #0064e2;
+  --frv-blue-1000: #002453;
+  --frv-red-100: #ffeef0;
+  --frv-red-200: #ffe9ea;
+  --frv-red-300: #ffe4e5;
+  --frv-red-400: #ffd8d7;
+  --frv-red-500: #ffb5b6;
+  --frv-red-600: #ff6a6e;
+  --frv-red-700: #fc0035;
+  --frv-red-800: #e70022;
+  --frv-red-900: #d60020;
+  --frv-red-1000: #46000c;
+  --frv-amber-100: #fff6e1;
+  --frv-amber-200: #fff4d4;
+  --frv-amber-300: #fff1c8;
+  --frv-amber-400: #ffdd84;
+  --frv-amber-500: #ffc85e;
+  --frv-amber-600: #ffaa00;
+  --frv-amber-700: #ffb200;
+  --frv-amber-800: #ff9900;
+  --frv-amber-900: #a64f00;
+  --frv-amber-1000: #541c00;
+  --frv-green-100: #ecfdec;
+  --frv-green-200: #e5fce7;
+  --frv-green-300: #d3fad1;
+  --frv-green-400: #b9f5bc;
+  --frv-green-500: #82eb8d;
+  --frv-green-600: #4ce15e;
+  --frv-green-700: #28a948;
+  --frv-green-800: #279141;
+  --frv-green-900: #107d32;
+  --frv-green-1000: #00370d;
+  --frv-teal-100: #dffffb;
+  --frv-teal-200: #ddfef6;
+  --frv-teal-300: #ccf9f1;
+  --frv-teal-400: #b1f7ec;
+  --frv-teal-500: #52f0db;
+  --frv-teal-600: #00e2c4;
+  --frv-teal-700: #00a694;
+  --frv-teal-800: #008d7d;
+  --frv-teal-900: #007a6e;
+  --frv-teal-1000: #003d34;
+  --frv-purple-100: #f9f0ff;
+  --frv-purple-200: #f9f1ff;
+  --frv-purple-300: #f5e8ff;
+  --frv-purple-400: #f1d9ff;
+  --frv-purple-500: #dda9ff;
+  --frv-purple-600: #c77dff;
+  --frv-purple-700: #9f00f4;
+  --frv-purple-800: #8400cd;
+  --frv-purple-900: #7c00c9;
+  --frv-purple-1000: #2e004d;
+  --frv-pink-100: #ffeaf5;
+  --frv-pink-200: #ffeaf2;
+  --frv-pink-300: #ffe0eb;
+  --frv-pink-400: #ffd5e1;
+  --frv-pink-500: #fdb3cc;
+  --frv-pink-600: #f97ea7;
+  --frv-pink-700: #f22782;
+  --frv-pink-800: #e4106e;
+  --frv-pink-900: #c41562;
+  --frv-pink-1000: #460523;
+  --frv-bg: #ffffff;
+  --frv-surface: #fafafa;
+  --frv-text-tertiary: #666666;
+  --frv-accent: #4b7eea;
+  --frv-accent-hover: #3a6bd6;
+  --frv-accent-strong: #3870e8;
+  --frv-accent-strong-hover: #1a5ae0;
+  --frv-accent-light: var(--frv-blue-300);
+  --frv-accent-fg: #ffffff;
+  --frv-accent-text: color-mix(in srgb, #4b7eea 72%, var(--frv-text-primary));
+  --frv-accent-2: #6d9bff;
+  --frv-accent-glow: color-mix(in srgb, #4b7eea 35%, transparent);
+  --frv-accent-border: color-mix(in srgb, var(--frv-accent) 35%, transparent);
+  --frv-primary-bg: var(--frv-text-primary);
+  --frv-primary-fg: var(--frv-bg);
+  --frv-primary-hover: color-mix(in srgb, var(--frv-primary-bg) 85%, var(--frv-bg));
+  --frv-btn-bg: var(--frv-primary-bg);
+  --frv-btn-fg: var(--frv-primary-fg);
+  --frv-btn-bg-hover: var(--frv-primary-hover);
+  --frv-shadow-xs: 0 2px 2px rgba(0,0,0,0.04);
+  --frv-shadow-sm: 0 2px 2px rgba(0,0,0,0.04);
+  --frv-shadow-md: 0 1px 2px rgba(0,0,0,0.08), 0 6px 12px -4px rgba(0,0,0,0.10), 0 20px 32px -12px rgba(0,0,0,0.14);
+  --frv-shadow-lg: 0 1px 2px rgba(0,0,0,0.06), 0 6px 12px -4px rgba(0,0,0,0.08), 0 20px 32px -12px rgba(0,0,0,0.10);
+  --frv-shadow-xl: 0 1px 2px rgba(0,0,0,0.06), 0 6px 12px -4px rgba(0,0,0,0.08), 0 20px 32px -12px rgba(0,0,0,0.10);
+  --frv-focus-border: 0 0 0 1px var(--frv-gray-alpha-600);
+}
+
+/* ── Utskrift/dokument — BEVISST tema-uavhengig ───────────────────────────
+   Faktura, purring, eierregister o.l. skal alltid rendre som hvitt papir,
+   uansett hvilket tema brukeren har valgt. Flytter du disse under en
+   tema-selector, får en bruker med mørkt tema en faktura med hvit tekst på
+   hvitt papir. La dem stå her. */
+:root {
+  --frv-print-paper: #ffffff;
+  --frv-print-canvas: #f3f4f6;
+  --frv-print-surface: #f9fafb;
+  --frv-print-border: #e5e7eb;
+  --frv-print-border-subtle: #f0f1f3;
+  --frv-print-text-strong: #111827;
+  --frv-print-text: #374151;
+  --frv-print-text-secondary: #6b7280;
+  --frv-print-text-muted: #9ca3af;
+  --frv-print-text-faint: #b0b7c3;
+  --frv-print-accent: #4b7eea;
+  --frv-print-accent-strong: #2f62d0;
+  --frv-print-status-danger-bg: #fef2f2;
+  --frv-print-status-danger-text: #b91c1c;
+  --frv-print-status-danger-border: #fecaca;
+  --frv-print-status-warning-bg: #fffbeb;
+  --frv-print-status-warning-text: #b45309;
+  --frv-print-status-info-bg: #eff6ff;
+  --frv-print-status-info-text: #1d4ed8;
+  --frv-print-status-success-bg: #f0fdf4;
+  --frv-print-status-success-text: #15803d;
+  --frv-print-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 14px 36px -18px rgba(16,24,40,0.20);
+}
+
+/* ── Typografi-klasser ────────────────────────────────────────────────────
+   Sett ALDRI font-size/line-height/font-weight/letter-spacing for hånd. Bruk
+   én av disse klassene — de bundler alle fire, så en tekststørrelse kan aldri
+   drifte fra resten av skalaen. Kitet bruker dem direkte.
+
+   heading-* titulerer · label-* er enkeltlinjet skannbar tekst · copy-* er
+   flerlinjet brødtekst (høyere linjehøyde) · button-* er kontroll-etiketter. */
+/* Samme lag som i kilden: utilities (font-medium m.fl.) skal kunne overstyre én
+   egenskap uten at klassen mister resten. */
+@layer components {
+  .type-heading-72 { font: var(--frv-type-heading-72); letter-spacing: var(--frv-type-heading-72-ls); }
+  .type-heading-64 { font: var(--frv-type-heading-64); letter-spacing: var(--frv-type-heading-64-ls); }
+  .type-heading-56 { font: var(--frv-type-heading-56); letter-spacing: var(--frv-type-heading-56-ls); }
+  .type-heading-48 { font: var(--frv-type-heading-48); letter-spacing: var(--frv-type-heading-48-ls); }
+  .type-heading-40 { font: var(--frv-type-heading-40); letter-spacing: var(--frv-type-heading-40-ls); }
+  .type-heading-32 { font: var(--frv-type-heading-32); letter-spacing: var(--frv-type-heading-32-ls); }
+  .type-heading-24 { font: var(--frv-type-heading-24); letter-spacing: var(--frv-type-heading-24-ls); }
+  .type-heading-20 { font: var(--frv-type-heading-20); letter-spacing: var(--frv-type-heading-20-ls); }
+  .type-heading-16 { font: var(--frv-type-heading-16); letter-spacing: var(--frv-type-heading-16-ls); }
+  .type-heading-14 { font: var(--frv-type-heading-14); letter-spacing: var(--frv-type-heading-14-ls); }
+  .type-button-16  { font: var(--frv-type-button-16);  letter-spacing: var(--frv-type-button-16-ls); }
+  .type-button-14  { font: var(--frv-type-button-14);  letter-spacing: var(--frv-type-button-14-ls); }
+  .type-button-12  { font: var(--frv-type-button-12);  letter-spacing: var(--frv-type-button-12-ls); }
+  .type-label-20   { font: var(--frv-type-label-20);   letter-spacing: var(--frv-type-label-20-ls); }
+  .type-label-18   { font: var(--frv-type-label-18);   letter-spacing: var(--frv-type-label-18-ls); }
+  .type-label-16   { font: var(--frv-type-label-16);   letter-spacing: var(--frv-type-label-16-ls); }
+  .type-label-14   { font: var(--frv-type-label-14);   letter-spacing: var(--frv-type-label-14-ls); }
+  .type-label-13   { font: var(--frv-type-label-13);   letter-spacing: var(--frv-type-label-13-ls); }
+  .type-label-12   { font: var(--frv-type-label-12);   letter-spacing: var(--frv-type-label-12-ls); }
+  .type-label-16-strong { font: var(--frv-type-label-16-strong); letter-spacing: var(--frv-type-label-16-ls); }
+  .type-label-14-strong { font: var(--frv-type-label-14-strong); letter-spacing: var(--frv-type-label-14-ls); }
+  .type-label-13-strong { font: var(--frv-type-label-13-strong); letter-spacing: var(--frv-type-label-13-ls); }
+  .type-label-12-strong { font: var(--frv-type-label-12-strong); letter-spacing: var(--frv-type-label-12-ls); }
+  .type-overline   { font: 500 12px/16px var(--frv-font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+  .type-copy-24    { font: var(--frv-type-copy-24);    letter-spacing: var(--frv-type-copy-24-ls); }
+  .type-copy-20    { font: var(--frv-type-copy-20);    letter-spacing: var(--frv-type-copy-20-ls); }
+  .type-copy-18    { font: var(--frv-type-copy-18);    letter-spacing: var(--frv-type-copy-18-ls); }
+  .type-copy-16    { font: var(--frv-type-copy-16);    letter-spacing: var(--frv-type-copy-16-ls); }
+  .type-copy-14    { font: var(--frv-type-copy-14);    letter-spacing: var(--frv-type-copy-14-ls); }
+  .type-copy-13    { font: var(--frv-type-copy-13);    letter-spacing: var(--frv-type-copy-13-ls); }
+  .type-label-14-mono { font: 400 14px/20px var(--frv-font-mono); }
+  .type-label-13-mono { font: 400 13px/20px var(--frv-font-mono); }
+  .type-label-12-mono { font: 400 12px/16px var(--frv-font-mono); }
+  .type-copy-14-mono  { font: 400 14px/20px var(--frv-font-mono); }
+  .type-copy-13-mono  { font: 400 13px/18px var(--frv-font-mono); }
+  .type-page-title { font: var(--frv-type-heading-24); letter-spacing: var(--frv-type-heading-24-ls); }
+  .type-display-1 { font: var(--frv-type-heading-40); font-weight: 500; letter-spacing: var(--frv-type-heading-40-ls); }
+  .type-display-2 { font: var(--frv-type-heading-32); font-weight: 500; letter-spacing: var(--frv-type-heading-32-ls); }
+}
+
+/* ── Basis ────────────────────────────────────────────────────────────────
+   Sett .frv på et rot-element (eller <body>) for å slå på systemets flate,
+   tekstfarge og font. */
+.frv {
+  background: var(--frv-bg);
+  color: var(--frv-text-primary);
+  font-family: var(--frv-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fokusring — to-lags mønster: 2px luft i flatefargen, så 2px aksent.
+   Fjern aldri denne uten en synlig erstatning. */
+.frv :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--frv-bg), 0 0 0 4px var(--frv-accent);
+}
+
+/* Løft ved hover — kun på flater som ER klikkbare i sin helhet (kort som er
+   lenker). Respekterer prefers-reduced-motion: fargen blir, bevegelsen ryker. */
+.frv-lift { transition: transform .15s var(--frv-ease-spring), box-shadow .15s var(--frv-ease-spring), border-color .15s; }
+.frv-lift:hover { transform: translateY(-1px); box-shadow: var(--frv-shadow-md); border-color: var(--frv-border-2); }
+@media (prefers-reduced-motion: reduce) {
+  .frv-lift { transition: box-shadow .15s, border-color .15s; }
+  .frv-lift:hover { transform: none; }
+}
+
+/* ── Bevegelsesklasser ────────────────────────────────────────────────────
+   Extracted verbatim from app/globals.css — see the generator's own comment
+   at MOTION_CSS for which components need which class. `.fill-x` is NOT
+   decorative (it IS HoldToConfirm's confirmation), so it is deliberately
+   left OUT of the reduced-motion guard below, matching the source: the
+   component itself falls back to a plain ConfirmDialog instead. */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes check-pop {
+  from { transform: scale(0.8); }
+  to   { transform: scale(1); }
+}
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dismiss-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+@keyframes fill-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes thinking-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40%           { opacity: 1;    transform: translateY(-2px); }
+}
+@keyframes pulse-ring {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%       { opacity: 0.15; transform: scale(1.10); }
+}
+.pop-in { animation: pop-in var(--frv-duration-popover) var(--frv-ease-spring); }
+.check-pop { animation: check-pop var(--frv-duration-state) var(--frv-ease-spring); }
+.stagger-in { animation: stagger-in var(--frv-duration-popover) var(--frv-ease-spring) both; animation-delay: calc(var(--stagger-i, 0) * 40ms); }
+.dismiss-out { animation: dismiss-out var(--frv-duration-state) ease-in both; }
+.fill-x { transform-origin: left; animation: fill-x var(--hold-ms, 1200ms) linear both; }
+.thinking-dot { animation: thinking-dot 1.2s ease-in-out infinite; animation-delay: calc(var(--stagger-i, 0) * 160ms); }
+.frv-focus-glow:focus-visible { outline: none; box-shadow: var(--frv-focus-border) !important; }
+.frv-focus-clear:focus-visible { outline: none; box-shadow: none !important; }
+.collapsible-rows {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--frv-duration-popover) var(--frv-ease-spring);
+}
+.collapsible-rows[data-open='true'] { grid-template-rows: 1fr; }
+.collapsible-rows > .collapsible-inner {
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity var(--frv-duration-popover) var(--frv-ease-spring), visibility var(--frv-duration-popover);
+}
+.collapsible-rows[data-open='true'] > .collapsible-inner { visibility: visible; opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pop-in, .check-pop, .stagger-in, .dismiss-out, .thinking-dot { animation: none !important; }
+  .collapsible-rows,
+  .collapsible-rows > .collapsible-inner { transition: none !important; }
+}
