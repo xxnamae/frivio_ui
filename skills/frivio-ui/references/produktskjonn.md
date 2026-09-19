@@ -4414,3 +4414,23 @@ primitivet forblir server-trygt og kan ta funksjons-props fra Server Components.
 
 **Rettet i:** `components/ui/Table.tsx`, `components/ui/RullInnISyne.tsx` (ny), `scripts/rscvakt.mjs` (ny).
 
+---
+
+## regel/trykkflate-uten-layoutendring
+
+**Kilde:** Mobilgjennomgangen 19. sep 2026 (founder: «Det som står igjen: fiks det») — 291 chips på
+docs-sidene, fjern-kryss på 11 px, sorteringsknapper på 16 px, inline termlenker på 20 px, tøm-knapper
+på 13 px.
+
+**Regel:** Alt interaktivt har trykkflate på minst 40 × 40 px på mobil (44 der det er naturlig), målt
+som elementets rektangel. Tre måter, i denne rekkefølgen: (1) standalone handlingslenker er
+`Button variant="link"` (arver knappehøydene); (2) elementer inne i løpende tekst eller tette rader
+(Begrep, Markdown-lenker, fjern-kryss, tøm-knapper, avkrysning, Switch) får trykkflaten via padding
+pluss like stor negativ margin (`py-3 -my-3 px-1 -mx-1`), så layouten og linjeflyten er uendret;
+(3) felt med `size="sm"` er 40 på mobil og 32 fra 640 px (`min-h-10 sm:min-h-8`). Aldri gjør selve
+ikonet større for å nå målet. `npm run vakt:mobil -- --modus docs` teller alt under 40 px.
+
+**Rettet i:** `Button`, `Begrep`, `Markdown`, `SearchInput`, `BrregSearch`, `Checkbox`, `Switch`,
+`MultiSelect`, `ReasoningTrace`, `Input`/`Select`, `ComponentDocPage`, `Table`/`DataTable`,
+`OverflowMenu`, `BygningsdelKort`, `StatCard`.
+
