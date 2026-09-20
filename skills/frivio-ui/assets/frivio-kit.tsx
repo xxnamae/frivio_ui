@@ -127,6 +127,9 @@
    • `Tabs` drops the `.tabs-fade` scroll-edge gradient hint (a CSS
      `:has()` rule in the app stylesheet) — the sliding underline, keyboard
      nav and scroll-into-view are intact.
+   • `ListRow`'s narrow-container line 2 (secondary/meta/value) keeps
+     `overflow-x-auto` as a safety net but drops the `.rad-fade`/`RadFade`
+     scroll-edge gradient hint, same reasoning as `Tabs` above.
    • `Toast`'s public API is intentionally still Norwegian
      (`useToast().vis({ tekst, tone, handling, varighet, preserve,
      vedLukking })`) — see that section for why.
@@ -2984,15 +2987,18 @@ export function ListRow(props: ListRowProps) {
         {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{meta}</span>}
         {value != null && <span className="type-label-13 tabular-nums shrink-0 text-right text-(color:--frv-text-primary)">{value}</span>}
       </div>
+      {/* Tittelen får hele linje 1 (line-clamp-2, aldri truncate) — value/meta
+          flytter til linje 2, høyrestilt. `overflow-x-auto` er beholdt som
+          sikkerhetsnett; kildens `.rad-fade`/`RadFade`-kant-hint (CSS `:has()`
+          + en liten klientøy som setter data-scroll-start/-end) er droppet
+          for portabilitet, samme begrunnelse som `.tabs-fade` over. */}
       <div className="flex @md:hidden flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-[var(--frv-space-2)] min-w-0">
-          {titleEl('type-heading-14 min-w-0 flex-1 truncate')}
-          {value != null && <span className="type-label-13 tabular-nums shrink-0 text-(color:--frv-text-primary)">{value}</span>}
-        </div>
-        {(secondaryContent != null || meta != null) && (
-          <div className="flex flex-wrap items-center gap-x-[var(--frv-space-2)] gap-y-1 min-w-0">
-            {secondaryContent != null && <span className="type-label-13 flex-1 basis-0 min-w-[6rem] truncate text-(color:--frv-text-secondary)">{secondaryContent}</span>}
+        <div className="min-w-0">{titleEl('type-heading-14 line-clamp-2')}</div>
+        {(secondaryContent != null || meta != null || value != null) && (
+          <div className="flex items-center gap-x-[var(--frv-space-2)] overflow-x-auto whitespace-nowrap min-w-0">
+            {secondaryContent != null && <span className="type-label-13 shrink-0 text-(color:--frv-text-secondary)">{secondaryContent}</span>}
             {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{meta}</span>}
+            {value != null && <span className="type-label-13 tabular-nums shrink-0 ml-auto text-right text-(color:--frv-text-primary)">{value}</span>}
           </div>
         )}
       </div>
