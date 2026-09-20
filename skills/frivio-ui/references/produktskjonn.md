@@ -4373,6 +4373,14 @@ er 44 på mobil. Gjennomgangen 19. sep fant én ekte feil (OverflowMenu i klikkb
 klikk) og fire klasser små trykkflater, alle rettet i primitivene; rapport i
 `arkiv/rapporter/MOBILSVEIP-KOMPONENTER-2026-09-19.md`.
 
+**Tillegg 21. sep (founder: «kjør på» på det som ikke var målt):** sveipet dekker nå også ALLE lag i appen
+(`--modus lag`: åpner modaler, paneler, menyer, velgere via allowlist og lukker med Escape — aldri Send/Slett/
+Merk/Lagre), mørkt tema (`--tema dark`, satt i localStorage før første tegning) og 768 px (`--bredde 768`).
+Før promotering kjøres `npm run vakt:mobil:full` (app lys/mørk 375, app 768, lag lys/mørk 375, lag WebKit).
+Første lag-måling fant at meny- og listerader i OverflowMenu, Dropdown og PeriodeVelger var 28–36 px høye;
+alle er nå `min-h-10`. Sider som ikke er målt: ekte iPhone/Safari-chrome (tastatur, adressefelt, safe-area),
+liggende format, VoiceOver.
+
 ---
 
 ## regel/bunnraden-speiler-sidekartet
@@ -4432,7 +4440,8 @@ ikonet større for å nå målet. `npm run vakt:mobil -- --modus docs` teller al
 
 **Rettet i:** `Button`, `Begrep`, `Markdown`, `SearchInput`, `BrregSearch`, `Checkbox`, `Switch`,
 `MultiSelect`, `ReasoningTrace`, `Input`/`Select`, `ComponentDocPage`, `Table`/`DataTable`,
-`OverflowMenu`, `BygningsdelKort`, `StatCard`.
+`OverflowMenu`, `BygningsdelKort`, `StatCard`; 21. sep også menyradene i `OverflowMenu`, `Dropdown` og
+`PeriodeVelger` (28–36 → 40 px, målt først da lagene ble åpnet av sveipet).
 
 ---
 
