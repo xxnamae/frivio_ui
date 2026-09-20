@@ -4443,7 +4443,7 @@ export function PeriodeVelger({
                     onClick={() => { onChange({ aar: chip.aar }); setOpen(false) }}
                     aria-pressed={aktiv}
                     className={cx(
-                      'h-7 px-3 rounded-[var(--frv-radius-full)] type-label-13 tabular-nums transition-colors whitespace-nowrap',
+                      'min-h-10 px-3 rounded-[var(--frv-radius-full)] type-label-13 tabular-nums transition-colors whitespace-nowrap',
                       aktiv
                         ? 'bg-[var(--frv-text-primary)] text-[var(--frv-bg)]'
                         : 'text-[var(--frv-text-secondary)] hover:bg-[var(--frv-gray-alpha-100)]',
