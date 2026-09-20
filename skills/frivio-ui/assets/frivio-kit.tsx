@@ -4391,7 +4391,7 @@ export function PeriodeVelger({
                   onClick={() => { onChange({ aar: visningAar }); setOpen(false) }}
                   aria-pressed={heleAaretAktiv}
                   className={cx(
-                    'h-9 px-2 rounded-[var(--frv-radius-sm)] type-label-13 text-left transition-colors hover:bg-[var(--frv-gray-alpha-100)]',
+                    'min-h-10 px-2 rounded-[var(--frv-radius-sm)] type-label-13 text-left transition-colors hover:bg-[var(--frv-gray-alpha-100)]',
                     heleAaretAktiv ? 'text-(color:--frv-text-primary) bg-(color:--frv-gray-alpha-100)' : 'text-(color:--frv-text-secondary) bg-transparent',
                   )}
                 >
