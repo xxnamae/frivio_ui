@@ -3985,7 +3985,7 @@ const PILLTABS_GAP = 6 // gap-1.5
  *  FILTER within one view — a view switch is `Tabs`, a period is
  *  `YearSelector`; the three must never look alike. */
 export function PillTabs({
-  tabs, activeKey, onSelect, label, scroll = true, overflow = true, size = 'sm',
+  tabs, activeKey, onSelect, label, scroll = true, overflow = true, size = 'sm', fullBredde = false,
 }: {
   tabs: PillTab[]
   activeKey: string
@@ -3999,6 +3999,11 @@ export function PillTabs({
   overflow?: boolean
   /** `sm` (28px pills, 32px track) in content. `md` (36px pills, 40px track) next to a `SearchInput`/`Button` md in a `Toolbar`, so the row gets ONE height. */
   size?: 'sm' | 'md'
+  /** Ported 2026-09-20 — the track and every pill fill the parent's width equally (`flex-1`, centered,
+   *  truncates) instead of the track's own content width. Forces overflow collection off (all pills
+   *  always shown). For a section switcher INSIDE A CARD — never in a `Toolbar`, where `PillTabs`
+   *  should keep its own natural width next to search/buttons. */
+  fullBredde?: boolean
 }) {
   void scroll
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -4007,9 +4012,11 @@ export function PillTabs({
   // (server, JS off), the result is the old wrapping behavior, never a row
   // with hidden tabs.
   const [visibleCount, setVisibleCount] = useState(tabs.length)
+  // fullBredde overrides overflow collection regardless of the caller's value.
+  const overflowAktiv = overflow && !fullBredde
 
   useLayoutEffect(() => {
-    if (!overflow) return
+    if (!overflowAktiv) return
     const wrap = wrapRef.current
     const measure = measureRef.current
     if (!wrap || !measure) return
@@ -4050,15 +4057,19 @@ export function PillTabs({
     const ro = new ResizeObserver(recompute)
     if (wrap.parentElement) ro.observe(wrap.parentElement)
     return () => ro.disconnect()
-  }, [tabs, overflow, label])
+  }, [tabs, overflowAktiv, label])
 
   const pillClass = (active: boolean) =>
     cx(
-      'min-h-10 lg:min-h-0 px-3 inline-flex items-center rounded-[var(--frv-radius-full)] transition-colors motion-reduce:transition-none whitespace-nowrap',
+      'min-h-10 lg:min-h-0 inline-flex items-center rounded-[var(--frv-radius-full)] transition-colors motion-reduce:transition-none whitespace-nowrap',
+      fullBredde ? 'flex-1 justify-center text-center min-w-0 px-0.5 sm:px-3' : 'px-3',
       size === 'md' ? 'h-9' : 'h-7',
       active ? 'bg-[var(--frv-text-primary)] text-[var(--frv-bg)]' : 'text-[var(--frv-text-secondary)] hover:bg-[var(--frv-gray-alpha-100)]',
     )
-  const trackClass = 'inline-flex items-center gap-1.5 p-px rounded-[var(--frv-radius-full)] bg-[var(--frv-surface)] border border-[var(--frv-border)] min-w-0'
+  const trackClass = cx(
+    'items-center gap-1.5 p-px rounded-[var(--frv-radius-full)] bg-[var(--frv-surface)] border border-[var(--frv-border)] min-w-0',
+    fullBredde ? 'flex w-full' : 'inline-flex',
+  )
 
   /* Active pill NAMES (400 reads, 500 names) → -strong, which shifts glyph
      width a few px. An invisible -strong copy in the same grid cell always
@@ -4069,9 +4080,9 @@ export function PillTabs({
   const strongClass = size === 'md' ? 'type-label-14-strong' : 'type-label-13-strong'
   const baseClass = size === 'md' ? 'type-label-14' : 'type-label-13'
   const pillLabel = (label: string, active: boolean) => (
-    <span className="grid">
-      <span aria-hidden className={cx('invisible col-start-1 row-start-1', strongClass)}>{label}</span>
-      <span className={cx('col-start-1 row-start-1', active ? strongClass : baseClass)}>{label}</span>
+    <span className={cx('grid', fullBredde && 'min-w-0 w-full')}>
+      <span aria-hidden className={cx('invisible col-start-1 row-start-1', strongClass, fullBredde && 'truncate')}>{label}</span>
+      <span className={cx('col-start-1 row-start-1', active ? strongClass : baseClass, fullBredde && 'truncate')}>{label}</span>
     </span>
   )
 
@@ -4084,7 +4095,7 @@ export function PillTabs({
     )
   }
 
-  const visibleCountResolved = overflow ? visibleCount : tabs.length
+  const visibleCountResolved = overflowAktiv ? visibleCount : tabs.length
   let shown = tabs.slice(0, visibleCountResolved)
   let hidden = tabs.slice(visibleCountResolved)
 
@@ -4099,7 +4110,7 @@ export function PillTabs({
   }
 
   return (
-    <div ref={wrapRef} className="relative flex items-center gap-1.5 min-w-0">
+    <div ref={wrapRef} className={cx('relative flex items-center gap-1.5 min-w-0', fullBredde && 'w-full')}>
       {/* Measuring row: same markup, no space in the layout. Widths can't be
           computed from character count (the font isn't guaranteed loaded at
           first render), so the real pill is measured. Clipped to zero width
