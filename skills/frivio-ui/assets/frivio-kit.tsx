@@ -532,8 +532,8 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
     const showReason = !!disabled && !!disabledReason
     const reasonId = showReason ? `btn-reason-${autoId}` : undefined
     const reasonNode = showReason ? (
-      <p id={reasonId} className="type-label-12 inline-flex items-start gap-1.5 mt-1.5" style={{ color: 'var(--frv-text-tertiary)' }}>
-        <InfoIcon size={12} style={{ color: 'var(--frv-text-tertiary)', marginTop: 2, flexShrink: 0 }} />
+      <p id={reasonId} className="type-label-12 inline-flex items-start gap-1.5 mt-1.5 text-(color:--frv-text-tertiary)">
+        <InfoIcon size={12} className="mt-0.5 shrink-0 text-(color:--frv-text-tertiary)" />
         {disabledReason}
       </p>
     ) : null
@@ -636,6 +636,20 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
    *  line — the button IS the icon. Shown as `title` (tooltip) plus a
    *  visually-hidden (`sr-only`) text wired with `aria-describedby`. */
   disabledReason?: string
+  /** `default`: neutral text-secondary at rest, gray-alpha-100 + text-primary
+   *  on hover/focus. `error`: same rest state, error-light/-text ONLY on
+   *  hover/focus — for a destructive row action that shouldn't shout red at
+   *  rest. `tertiary`/`quaternary`: SAME hover/focus as default, but the rest
+   *  color is already dimmed one/two steps — for a low-weight secondary
+   *  action in a row/list that shouldn't compete with the content. */
+  tone?: 'default' | 'error' | 'tertiary' | 'quaternary'
+}
+
+const ICON_BTN_TONE: Record<NonNullable<IconButtonProps['tone']>, string> = {
+  default:    'text-[var(--frv-text-secondary)] hover:bg-[var(--frv-gray-alpha-100)] hover:text-[var(--frv-text-primary)] focus-visible:bg-[var(--frv-gray-alpha-100)] focus-visible:text-[var(--frv-text-primary)]',
+  error:      'text-[var(--frv-text-secondary)] hover:bg-[var(--frv-error-light)] hover:text-[var(--frv-error-text)] focus-visible:bg-[var(--frv-error-light)] focus-visible:text-[var(--frv-error-text)]',
+  tertiary:   'text-[var(--frv-text-tertiary)] hover:bg-[var(--frv-gray-alpha-100)] hover:text-[var(--frv-text-primary)] focus-visible:bg-[var(--frv-gray-alpha-100)] focus-visible:text-[var(--frv-text-primary)]',
+  quaternary: 'text-[var(--frv-text-quaternary)] hover:bg-[var(--frv-gray-alpha-100)] hover:text-[var(--frv-text-primary)] focus-visible:bg-[var(--frv-gray-alpha-100)] focus-visible:text-[var(--frv-text-primary)]',
 }
 
 /* IconButton
@@ -643,7 +657,7 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
    HIG), no matter how small the icon inside is (12–20px). `aria-label` is
    mandatory (type-enforced) because the button never has visible text. */
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, style, children, disabled, disabledReason, title, ...props }, ref) => {
+  ({ className, style, children, disabled, disabledReason, title, tone = 'default', ...props }, ref) => {
     const autoId = useId()
     const showReason = !!disabled && !!disabledReason
     const reasonId = showReason ? `icon-btn-reason-${autoId}` : undefined
@@ -654,7 +668,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         title={showReason ? disabledReason : title}
         aria-describedby={reasonId}
         className={cx(
-          'inline-flex items-center justify-center shrink-0 rounded-[var(--frv-radius-sm)] transition-colors hover:bg-[var(--frv-surface-2)]',
+          'inline-flex items-center justify-center shrink-0 rounded-[var(--frv-radius-sm)] transition-colors',
+          ICON_BTN_TONE[tone],
           className
         )}
         style={{ width: 44, height: 44, ...style }}
@@ -685,8 +700,12 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 export function Card({ className, children, tone = 'default', style, ...props }: CardProps) {
   return (
     <div
-      className={cx('rounded-[var(--frv-radius-md)] p-6', className)}
-      style={{ background: tone === 'hero' ? 'var(--frv-gradient-hero)' : 'var(--frv-surface)', boxShadow: 'var(--frv-shadow-border)', ...style }}
+      className={cx(
+        'rounded-[var(--frv-radius-md)] p-6 shadow-(--frv-shadow-border)',
+        tone === 'hero' ? 'bg-[image:var(--frv-gradient-hero)]' : 'bg-(color:--frv-surface)',
+        className,
+      )}
+      style={style}
       {...props}
     >
       {children}
@@ -769,8 +788,8 @@ export function Badge({ variant = 'default', contrast = 'low', size = 'md', icon
   const style = badgeStyle(variant, contrast)
   return (
     <span
-      className={cx('inline-flex items-center max-w-full whitespace-nowrap shrink-0 rounded-[var(--frv-radius-full)]', BADGE_SIZE_CLASS[size], className)}
-      style={{ background: style.background, color: style.color }}
+      className={cx('inline-flex items-center max-w-full whitespace-nowrap shrink-0 rounded-[var(--frv-radius-full)] bg-(color:--badge-bg) text-(color:--badge-fg)', BADGE_SIZE_CLASS[size], className)}
+      style={{ '--badge-bg': style.background, '--badge-fg': style.color } as CSSProperties}
       {...props}
     >
       {Icon && <Icon size={BADGE_ICON_SIZE[size]} className="shrink-0" />}
@@ -794,6 +813,7 @@ export interface AvatarProps {
 }
 
 const AVATAR_SIZE_TYPE: Record<AvatarSize, string> = { 16: 'type-label-12', 24: 'type-label-12', 32: 'type-label-13', 48: 'type-label-13', 64: 'type-label-13' }
+const AVATAR_SIZE_DIM: Record<AvatarSize, string> = { 16: 'w-4 h-4', 24: 'w-6 h-6', 32: 'w-8 h-8', 48: 'w-12 h-12', 64: 'w-16 h-16' }
 
 function avatarInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -832,8 +852,7 @@ export function Avatar({ src, name, size = 32, title, className }: AvatarProps) 
       role="img"
       aria-label={title ?? name}
       title={title ?? name}
-      className={cx('inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden select-none', AVATAR_SIZE_TYPE[size], className)}
-      style={{ width: size, height: size, background: 'var(--frv-gray-200)', color: 'var(--frv-text-secondary)' }}
+      className={cx('inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden select-none bg-(color:--frv-gray-200) text-(color:--frv-text-secondary)', AVATAR_SIZE_TYPE[size], AVATAR_SIZE_DIM[size], className)}
     >
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element -- plain avatar thumbnail, no next/image optimization needed for a tiny icon-sized image.
@@ -864,12 +883,8 @@ export function AvatarGroup({ children, limit, size = 32, className }: AvatarGro
   const rest = limit ? Math.max(all.length - limit, 0) : 0
   const overlapPx = Math.round(size * 0.3)
   const overlap = -overlapPx
-  const ring = { boxShadow: '0 0 0 2px var(--frv-surface)', borderRadius: 'var(--frv-radius-full)' }
   const fanned = hovered || focusWithin
-  const fanStyle = (index: number): CSSProperties => ({
-    transform: fanned ? `translateX(${index * (overlapPx + AVATAR_FAN_GAP)}px)` : undefined,
-  })
-  const fanClass = 'motion-safe:transition-transform motion-safe:duration-[var(--frv-duration-state)] motion-safe:ease-[var(--frv-ease-spring)]'
+  const fanClass = 'motion-safe:transition-transform motion-safe:duration-[var(--frv-duration-state)] motion-safe:ease-[var(--frv-ease-spring)] shadow-[0_0_0_2px_var(--frv-surface)] rounded-(--frv-radius-full) ml-(--avatar-ml) z-(--avatar-z) translate-x-(--avatar-tx)'
   return (
     <div
       className={cx('flex items-center', className)}
@@ -879,10 +894,25 @@ export function AvatarGroup({ children, limit, size = 32, className }: AvatarGro
       onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocusWithin(false) }}
     >
       {visible.map((child, i) => (
-        <span key={child.key ?? i} className={fanClass} style={{ marginLeft: i === 0 ? 0 : overlap, zIndex: i + 1, ...ring, ...fanStyle(i) }}>{child}</span>
+        <span
+          key={child.key ?? i}
+          className={fanClass}
+          style={{
+            '--avatar-ml': `${i === 0 ? 0 : overlap}px`,
+            '--avatar-z': i + 1,
+            '--avatar-tx': fanned ? `${i * (overlapPx + AVATAR_FAN_GAP)}px` : '0px',
+          } as CSSProperties}
+        >{child}</span>
       ))}
       {rest > 0 && (
-        <span className={fanClass} style={{ marginLeft: visible.length === 0 ? 0 : overlap, zIndex: visible.length + 1, ...ring, ...fanStyle(visible.length) }}>
+        <span
+          className={fanClass}
+          style={{
+            '--avatar-ml': `${visible.length === 0 ? 0 : overlap}px`,
+            '--avatar-z': visible.length + 1,
+            '--avatar-tx': fanned ? `${visible.length * (overlapPx + AVATAR_FAN_GAP)}px` : '0px',
+          } as CSSProperties}
+        >
           <Avatar name={`+${rest}`} size={size} title={`${rest} more`} />
         </span>
       )}
@@ -893,8 +923,8 @@ export function AvatarGroup({ children, limit, size = 32, className }: AvatarGro
 export type StatusDotTone = 'success' | 'warning' | 'error' | 'gray' | 'accent'
 
 const STATUSDOT_TONE_COLOR: Record<StatusDotTone, string> = {
-  success: 'var(--frv-success-text)', warning: 'var(--frv-warning-text)', error: 'var(--frv-error-text)',
-  gray: 'var(--frv-text-secondary)', accent: 'var(--frv-accent-text)',
+  success: 'bg-(color:--frv-success-text)', warning: 'bg-(color:--frv-warning-text)', error: 'bg-(color:--frv-error-text)',
+  gray: 'bg-(color:--frv-text-secondary)', accent: 'bg-(color:--frv-accent-text)',
 }
 
 export type StatusDotSize = 'sm' | 'md'
@@ -922,21 +952,20 @@ export interface StatusDotProps {
    (one sharp pulse then reset) — reads as "something is alive" rather than
    a one-shot alert ping. */
 export function StatusDot({ tone = 'gray', pulse, label, ariaLabel, size = 'sm', className }: StatusDotProps) {
-  const color = STATUSDOT_TONE_COLOR[tone]
+  const colorClass = STATUSDOT_TONE_COLOR[tone]
   const sizeClass = STATUSDOT_SIZE_CLASS[size]
   return (
     <span className={cx('inline-flex items-center gap-[var(--frv-space-1-5)]', className)}>
       <span className={cx('relative inline-flex shrink-0', sizeClass)}>
-        {pulse && <span aria-hidden="true" className={cx('absolute inset-0 rounded-full motion-safe:[animation:pulse-ring_1.6s_ease-in-out_infinite]')} style={{ background: color }} />}
+        {pulse && <span aria-hidden="true" className={cx('absolute inset-0 rounded-full motion-safe:[animation:pulse-ring_1.6s_ease-in-out_infinite]', colorClass)} />}
         <span
-          className={cx('relative inline-flex rounded-full', sizeClass)}
-          style={{ background: color }}
+          className={cx('relative inline-flex rounded-full', sizeClass, colorClass)}
           aria-hidden={label ? true : undefined}
           role={label ? undefined : ariaLabel ? 'img' : undefined}
           aria-label={label ? undefined : ariaLabel}
         />
       </span>
-      {label && <span className="type-label-13" style={{ color: 'var(--frv-text-secondary)' }}>{label}</span>}
+      {label && <span className="type-label-13 text-(color:--frv-text-secondary)">{label}</span>}
     </span>
   )
 }
@@ -975,8 +1004,7 @@ export interface KbdProps { children: ReactNode; className?: string }
 export function Kbd({ children, className }: KbdProps) {
   return (
     <kbd
-      className={cx('type-label-12-mono inline-flex items-center justify-center px-1 min-w-[20px] h-5 rounded-[4px]', className)}
-      style={{ background: 'var(--frv-gray-alpha-100)', border: '1px solid var(--frv-border)', color: 'var(--frv-text-secondary)' }}
+      className={cx('type-label-12-mono inline-flex items-center justify-center px-1 min-w-[20px] h-5 rounded-[4px] border', className, 'bg-(color:--frv-gray-alpha-100) text-(color:--frv-text-secondary) border-(color:--frv-border)')}
     >
       {children}
     </kbd>
@@ -1136,6 +1164,21 @@ export const CALLOUT_TONE_STYLE: Record<CalloutTone, { className: string; style:
   }),
 ) as Record<CalloutTone, { className: string; style: CSSProperties }>
 
+/* Class-string twin of CALLOUT_TONE_RECIPE, used by Callout's own JSX below.
+   A class built from a runtime string (`` `bg-[${recipe.light}]` ``) would be
+   invisible to Tailwind's static scanner — only a literal class name in the
+   source gets compiled. CALLOUT_TONE_STYLE above keeps the raw values: it's
+   the public escape hatch for callers that can't use `<Callout>` itself
+   (e.g. a `<Link>` row) and apply the recipe via a real `style` attribute. */
+const CALLOUT_TONE_CLASS: Record<CalloutTone, { fillBg: string; border: string; text: string }> = {
+  default:   { fillBg: 'bg-(color:--frv-gray-alpha-100)', border: 'border-(color:--frv-gray-alpha-400)', text: 'text-(color:--frv-text-secondary)' },
+  secondary: { fillBg: 'bg-(color:--frv-gray-100)', border: 'border-(color:--frv-gray-400)', text: 'text-(color:--frv-gray-900)' },
+  accent:    { fillBg: 'bg-(color:--frv-accent-light)', border: 'border-(color:--frv-accent-border)', text: 'text-(color:--frv-accent-text)' },
+  success:   { fillBg: 'bg-(color:--frv-success-light)', border: 'border-(color:--frv-success-border)', text: 'text-(color:--frv-success-text)' },
+  warning:   { fillBg: 'bg-(color:--frv-warning-light)', border: 'border-(color:--frv-warning-border)', text: 'text-(color:--frv-warning-text)' },
+  error:     { fillBg: 'bg-(color:--frv-error-light)', border: 'border-(color:--frv-error-border)', text: 'text-(color:--frv-error-text)' },
+}
+
 /* Callout
    The shared visual separation for "this belongs here, but it isn't the
    step/row itself" (`default`/`secondary`) or a tip/info/success/warning/
@@ -1162,10 +1205,10 @@ export function Callout({
   /** E.g. "alert" for an error/warning Callout that must be announced to screen readers. */
   role?: string
 }) {
-  const recipe = CALLOUT_TONE_RECIPE[tone]
+  const toneClass = CALLOUT_TONE_CLASS[tone]
   const resolvedSize: 'small' | 'medium' = size ?? (tone === 'default' || tone === 'secondary' ? 'medium' : 'small')
   const sizeClass = resolvedSize === 'small' ? 'rounded-[var(--frv-radius-sm)] px-3 py-2.5' : 'rounded-[var(--frv-radius-md)] p-4'
-  const containerStyle: CSSProperties = { background: fill ? recipe.light : 'var(--frv-surface)', border: `1px solid ${recipe.border}`, ...style }
+  const containerClass = cx(sizeClass, 'type-copy-14 border', toneClass.border, fill ? toneClass.fillBg : 'bg-(color:--frv-surface)')
   const hasExtras = !!Icon || !!label || !!action
 
   // type-copy-14 on the OUTERMOST div in both branches (the same element
@@ -1180,18 +1223,18 @@ export function Callout({
   // copy short (one or two sentences) instead.
   if (!hasExtras) {
     return (
-      <div role={role} className={cx(sizeClass, 'type-copy-14', className)} style={containerStyle}>
+      <div role={role} className={cx(containerClass, className)} style={style}>
         {children}
       </div>
     )
   }
 
   return (
-    <div role={role} className={cx(sizeClass, 'type-copy-14', className)} style={containerStyle}>
+    <div role={role} className={cx(containerClass, className)} style={style}>
       <div className="flex items-start gap-2.5">
-        {Icon && <Icon size={16} className="shrink-0 mt-0.5" style={{ color: recipe.text }} />}
+        {Icon && <Icon size={16} className={cx('shrink-0 mt-0.5', toneClass.text)} />}
         <div className="min-w-0 flex-1">
-          {label && <p className="type-label-14-strong mb-1" style={{ color: recipe.text }}>{label}</p>}
+          {label && <p className={cx('type-label-14-strong mb-1', toneClass.text)}>{label}</p>}
           {children}
           {action && <div className="mt-2.5">{action}</div>}
         </div>
@@ -1214,12 +1257,12 @@ export function InlineNote({
   className?: string
   children: ReactNode
 }) {
-  const strokeColor: Record<NonNullable<typeof tone>, string> = {
-    default: 'var(--frv-gray-700)', success: 'var(--frv-success)', warning: 'var(--frv-warning)', error: 'var(--frv-error)', accent: 'var(--frv-accent)',
+  const strokeClass: Record<NonNullable<typeof tone>, string> = {
+    default: 'border-l-(color:--frv-gray-700)', success: 'border-l-(color:--frv-success)', warning: 'border-l-(color:--frv-warning)', error: 'border-l-(color:--frv-error)', accent: 'border-l-(color:--frv-accent)',
   }
   return (
-    <div className={cx('flex items-start gap-3 py-1 pl-3', className)} style={{ borderLeft: `2px solid ${strokeColor[tone]}` }}>
-      <Icon size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--frv-text-secondary)' }} />
+    <div className={cx('flex items-start gap-3 py-1 pl-3 border-l-2', strokeClass[tone], className)}>
+      <Icon size={16} className="shrink-0 mt-0.5 text-(color:--frv-text-secondary)" />
       {/* type-copy-14: without a set size, plain text inherited the page's
           16px. max-w-[65ch] caps the readable width of the running text. A
           caller that sets its own type-* class on its child still wins (an
@@ -1246,9 +1289,12 @@ export function FormError({
   variant?: 'inline' | 'boxed'
 }) {
   const Tag = as
-  const boxed = variant === 'boxed' ? CALLOUT_TONE_STYLE.error : null
+  // Same recipe as CALLOUT_TONE_STYLE.error, written as literal classes
+  // instead of spreading the imported style object — see the comment at
+  // CALLOUT_TONE_CLASS above for why.
+  const boxedClass = variant === 'boxed' ? 'rounded-[var(--frv-radius-sm)] px-3 py-2.5 border border-(color:--frv-error-border) bg-(color:--frv-error-light)' : null
   return (
-    <Tag role="alert" id={id} className={cx(`type-${size}`, 'text-[var(--frv-error-text)]', boxed?.className, className)} style={{ ...boxed?.style, ...style }}>
+    <Tag role="alert" id={id} className={cx(`type-${size}`, 'text-[var(--frv-error-text)]', boxedClass, className)} style={style}>
       {children}
     </Tag>
   )
@@ -1262,26 +1308,31 @@ export type EmptyStateSkygge = 'rader' | 'kort' | 'tabell'
  *  here", e.g. an empty search result). `aria-hidden`: pure ghosts, no
  *  meaning for a screen reader. Omitted (default): visually unchanged. */
 function EmptyStateGhostShapes({ skygge }: { skygge: EmptyStateSkygge }) {
-  const surface = (tone: 'a' | 'b') => (tone === 'a' ? 'var(--frv-gray-alpha-100)' : 'var(--frv-gray-alpha-200)')
   if (skygge === 'rader') {
     return (
       <div className="flex flex-col gap-2 w-full">
-        {[92, 76, 60].map((width, i) => <div key={i} className="h-3.5 rounded-[var(--frv-radius-sm)]" style={{ width: `${width}%`, background: surface(i % 2 === 0 ? 'a' : 'b') }} />)}
+        {[92, 76, 60].map((width, i) => (
+          <div
+            key={i}
+            className={cx('h-3.5 rounded-[var(--frv-radius-sm)] w-(--ghost-w)', i % 2 === 0 ? 'bg-(color:--frv-gray-alpha-100)' : 'bg-(color:--frv-gray-alpha-200)')}
+            style={{ '--ghost-w': `${width}%` } as CSSProperties}
+          />
+        ))}
       </div>
     )
   }
   if (skygge === 'kort') {
     return (
       <div className="grid grid-cols-3 gap-2 w-full">
-        {[0, 1, 2].map(i => <div key={i} className="h-16 rounded-[var(--frv-radius-sm)]" style={{ background: surface(i === 1 ? 'b' : 'a') }} />)}
+        {[0, 1, 2].map(i => <div key={i} className={cx('h-16 rounded-[var(--frv-radius-sm)]', i === 1 ? 'bg-(color:--frv-gray-alpha-200)' : 'bg-(color:--frv-gray-alpha-100)')} />)}
       </div>
     )
   }
   return (
     <div className="flex flex-col gap-1.5 w-full">
-      <div className="flex gap-1.5">{[0, 1, 2].map(i => <div key={i} className="h-3 flex-1 rounded-[var(--frv-radius-sm)]" style={{ background: surface('b') }} />)}</div>
+      <div className="flex gap-1.5">{[0, 1, 2].map(i => <div key={i} className="h-3 flex-1 rounded-[var(--frv-radius-sm)] bg-(color:--frv-gray-alpha-200)" />)}</div>
       {[0, 1, 2].map(row => (
-        <div key={row} className="flex gap-1.5">{[0, 1, 2].map(i => <div key={i} className="h-3 flex-1 rounded-[var(--frv-radius-sm)]" style={{ background: surface('a') }} />)}</div>
+        <div key={row} className="flex gap-1.5">{[0, 1, 2].map(i => <div key={i} className="h-3 flex-1 rounded-[var(--frv-radius-sm)] bg-(color:--frv-gray-alpha-100)" />)}</div>
       ))}
     </div>
   )
@@ -1304,25 +1355,21 @@ export function EmptyState({
   className?: string
 }) {
   return (
-    <div className={cx('relative overflow-hidden flex flex-col items-center justify-center py-16 px-6 text-center rounded-[var(--frv-radius-md)]', className)} style={{ background: 'var(--frv-surface)', border: '1px dashed var(--frv-border)' }}>
+    <div className={cx('relative overflow-hidden flex flex-col items-center justify-center py-16 px-6 text-center rounded-[var(--frv-radius-md)] bg-(color:--frv-surface) border border-dashed border-(color:--frv-border)', className)}>
       {skygge && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-10 inset-y-6 flex items-center"
-          style={{
-            maskImage: 'radial-gradient(ellipse 60% 55% at 50% 50%, transparent 35%, black 80%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 60% 55% at 50% 50%, transparent 35%, black 80%)',
-          }}
+          className="pointer-events-none absolute inset-x-10 inset-y-6 flex items-center [mask-image:radial-gradient(ellipse_60%_55%_at_50%_50%,transparent_35%,black_80%)] [-webkit-mask-image:radial-gradient(ellipse_60%_55%_at_50%_50%,transparent_35%,black_80%)]"
         >
           <EmptyStateGhostShapes skygge={skygge} />
         </div>
       )}
       <div className="relative flex flex-col items-center">
-        <div className="w-10 h-10 rounded-full flex items-center justify-center mb-4" style={{ background: 'var(--frv-gray-alpha-100)' }}>
-          <Icon size={18} style={{ color: 'var(--frv-text-secondary)' }} />
+        <div className="w-10 h-10 rounded-full flex items-center justify-center mb-4 bg-(color:--frv-gray-alpha-100)">
+          <Icon size={18} className="text-(color:--frv-text-secondary)" />
         </div>
         <p className="type-heading-16 mb-1">{title}</p>
-        {children && <p className="type-copy-14 max-w-sm" style={{ color: 'var(--frv-text-secondary)' }}>{children}</p>}
+        {children && <p className="type-copy-14 max-w-sm text-(color:--frv-text-secondary)">{children}</p>}
         {action && <div className="flex items-center gap-4 mt-5">{action}</div>}
       </div>
     </div>
@@ -1357,12 +1404,15 @@ function StatCardSparkline({ data, color }: { data: number[]; color: string }) {
   const fill = `${points[0].x},${h} ${line} ${points[points.length - 1].x},${h}`
   const lastYPct = (points[points.length - 1].y / h) * 100
   return (
-    <div className="relative mt-2" style={{ height: h }} aria-hidden="true">
+    <div className="relative mt-2 h-7" aria-hidden="true">
       <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" className="block">
         <polygon points={fill} fill={color} opacity={0.12} />
         <polyline points={line} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
-      <span className="absolute rounded-full" style={{ right: 0, top: `${lastYPct}%`, width: 5, height: 5, marginTop: -2.5, background: color }} />
+      <span
+        className="absolute rounded-full right-0 w-[5px] h-[5px] -mt-[2.5px] top-(--sparkline-top) bg-(color:--sparkline-color)"
+        style={{ '--sparkline-top': `${lastYPct}%`, '--sparkline-color': color } as CSSProperties}
+      />
     </div>
   )
 }
@@ -1402,12 +1452,16 @@ export function StatCard({
   children?: ReactNode
 }) {
   const isError = tone === 'error' || tone === 'danger'
-  const cardStyle: CSSProperties =
-    tone === 'hero' ? { background: 'var(--frv-gradient-hero)', boxShadow: 'var(--frv-shadow-border)' }
-    : isError ? { background: 'var(--frv-error-light)', boxShadow: '0 0 0 1px var(--frv-error-border)' }
-    : { background: 'var(--frv-surface)', boxShadow: 'var(--frv-shadow-border)' }
+  const cardClass =
+    tone === 'hero' ? 'bg-[image:var(--frv-gradient-hero)] shadow-(--frv-shadow-border)'
+    : isError ? 'bg-(color:--frv-error-light) shadow-[0_0_0_1px_var(--frv-error-border)]'
+    : 'bg-(color:--frv-surface) shadow-(--frv-shadow-border)'
   const resolvedLabelColor = labelColor ?? 'var(--frv-text-secondary)'
   const trendColor = endring?.god === true ? 'var(--frv-success-text)' : endring?.god === false ? 'var(--frv-error-text)' : 'var(--frv-text-tertiary)'
+  const trendClass =
+    endring?.god === true ? 'text-(color:--frv-success-text) bg-(color:--frv-success-light)'
+    : endring?.god === false ? 'text-(color:--frv-error-text) bg-(color:--frv-error-light)'
+    : 'text-(color:--frv-text-tertiary) bg-(color:--frv-gray-alpha-100)'
 
   /* Value size step-down: a long formatted value (e.g. a range like
      "651 000–893 000 kr") could wrap across two lines in a narrow card.
@@ -1428,17 +1482,19 @@ export function StatCard({
     : 'type-heading-24'
 
   return (
-    <div className={cx('relative rounded-[var(--frv-radius-md)] p-5 @container', className)} style={cardStyle}>
-      <div className="flex items-center gap-2 mb-3" style={{ color: resolvedLabelColor }}>
+    <div className={cx('relative rounded-[var(--frv-radius-md)] p-5 @container', cardClass, className)}>
+      <div
+        className="flex items-center gap-2 mb-3 text-(color:--statcard-label-color)"
+        style={{ '--statcard-label-color': resolvedLabelColor } as CSSProperties}
+      >
         {Icon && <Icon size={14} />}
         <span className="type-label-13">{label}</span>
       </div>
       <p data-stat-verdi={valueSizeClass.replace('type-heading-', '')} className={cx(valueSizeClass, 'tabular-nums', typeof value === 'string' && (!/\d/.test(value) || value.includes('–')) ? 'whitespace-normal text-balance' : 'whitespace-nowrap')} style={valueStyle}>{value}</p>
-      {sub && <p className="type-label-12 mt-2" style={{ color: 'var(--frv-text-tertiary)', ...subStyle }}>{sub}</p>}
+      {sub && <p className="type-label-12 mt-2 text-(color:--frv-text-tertiary)" style={subStyle}>{sub}</p>}
       {endring && (
         <span
-          className="inline-flex items-center gap-1 type-label-12 mt-2 px-1.5 py-0.5 rounded-[var(--frv-radius-full)] tabular-nums"
-          style={{ color: trendColor, background: endring.god === true ? 'var(--frv-success-light)' : endring.god === false ? 'var(--frv-error-light)' : 'var(--frv-gray-alpha-100)' }}
+          className={cx('inline-flex items-center gap-1 type-label-12 mt-2 px-1.5 py-0.5 rounded-[var(--frv-radius-full)] tabular-nums', trendClass)}
         >
           <span aria-hidden="true">{STATCARD_ENDRING_SYMBOL[endring.retning]}</span>
           {endring.verdi}
@@ -1484,7 +1540,16 @@ export interface SkeletonProps {
  *  has nothing for a screen reader to read. `<Skeleton.Text lines={3} />`
  *  for paragraph text, last line shorter (69%) like real prose. */
 function SkeletonBase({ width, height = 16, rounded, className }: SkeletonProps) {
-  return <span aria-hidden="true" className={cx('block motion-safe:animate-pulse', rounded ? 'rounded-full' : 'rounded-[var(--frv-radius-sm)]', className)} style={{ width, height, background: 'var(--frv-gray-alpha-200)' }} />
+  return (
+    <span
+      aria-hidden="true"
+      className={cx('block motion-safe:animate-pulse w-(--skeleton-w) h-(--skeleton-h) bg-(color:--frv-gray-alpha-200)', rounded ? 'rounded-full' : 'rounded-[var(--frv-radius-sm)]', className)}
+      style={{
+        '--skeleton-w': typeof width === 'number' ? `${width}px` : width,
+        '--skeleton-h': typeof height === 'number' ? `${height}px` : height,
+      } as CSSProperties}
+    />
+  )
 }
 
 export interface SkeletonTextProps {
@@ -1758,8 +1823,19 @@ export function FloatingLayer({ open, anchorRef, children, side, align, offset, 
       id={id}
       role={role}
       aria-label={ariaLabel}
-      className={cx('fixed', FLOATING_Z, className)}
-      style={{ top: pos?.top ?? 0, left: pos?.left ?? 0, minWidth: pos?.minWidth, visibility: pos ? 'visible' : 'hidden', ...style }}
+      className={cx(
+        'fixed top-(--floating-top) left-(--floating-left)',
+        FLOATING_Z,
+        pos?.minWidth !== undefined && 'min-w-(--floating-min-w)',
+        pos ? 'visible' : 'invisible',
+        className,
+      )}
+      style={{
+        ...style,
+        '--floating-top': `${pos?.top ?? 0}px`,
+        '--floating-left': `${pos?.left ?? 0}px`,
+        '--floating-min-w': pos?.minWidth !== undefined ? `${pos.minWidth}px` : undefined,
+      } as CSSProperties}
     >
       {children}
     </div>,
@@ -1860,9 +1936,9 @@ export interface TooltipProps {
   className?: string
 }
 
-const TOOLTIP_ARROW_STYLE: Record<NonNullable<TooltipProps['side']>, CSSProperties> = {
-  top: { bottom: -3, left: '50%', marginLeft: -3 }, bottom: { top: -3, left: '50%', marginLeft: -3 },
-  left: { right: -3, top: '50%', marginTop: -3 }, right: { left: -3, top: '50%', marginTop: -3 },
+const TOOLTIP_ARROW_STYLE: Record<NonNullable<TooltipProps['side']>, string> = {
+  top: 'bottom-[-3px] left-1/2 ml-[-3px]', bottom: 'top-[-3px] left-1/2 ml-[-3px]',
+  left: 'right-[-3px] top-1/2 mt-[-3px]', right: 'left-[-3px] top-1/2 mt-[-3px]',
 }
 
 /** True only on coarse pointers (touch) — there's no hover there, and
@@ -1942,15 +2018,10 @@ export function Tooltip({ content, maxWidth = '36ch', side = 'top', delay = 200,
   const panelContent = (
     <>
       {content}
-      <span aria-hidden className="absolute" style={{ width: 6, height: 6, background: 'var(--frv-text-primary)', transform: 'rotate(45deg)', ...TOOLTIP_ARROW_STYLE[side] }} />
+      <span aria-hidden className={cx('absolute bg-(color:--frv-text-primary) w-1.5 h-1.5 rotate-45', TOOLTIP_ARROW_STYLE[side])} />
     </>
   )
-  const panelStyle: CSSProperties = {
-    width: 'max-content', maxWidth, whiteSpace: 'normal',
-    background: 'var(--frv-text-primary)', color: 'var(--frv-bg)',
-    borderRadius: 'var(--frv-radius-sm)', boxShadow: 'var(--frv-shadow-tooltip)',
-    padding: 'var(--frv-space-1) var(--frv-space-2)',
-  }
+  const panelClass = 'w-max whitespace-normal bg-(color:--frv-text-primary) text-(color:--frv-bg) rounded-(--frv-radius-sm) shadow-(--frv-shadow-tooltip) py-(--frv-space-1) px-(--frv-space-2) max-w-(--tooltip-max-w)'
 
   return (
     <span ref={wrapRef} className={cx('relative inline-flex', className)}>
@@ -1967,8 +2038,16 @@ export function Tooltip({ content, maxWidth = '36ch', side = 'top', delay = 200,
           ref={el => { panelRef.current = el }}
           role="tooltip"
           id={id}
-          className="fixed z-50 type-label-13 pointer-events-none"
-          style={{ ...panelStyle, top: pos?.top ?? 0, left: pos?.left ?? 0, visibility: pos ? 'visible' : 'hidden' }}
+          className={cx(
+            'fixed z-50 type-label-13 pointer-events-none top-(--tooltip-top) left-(--tooltip-left)',
+            panelClass,
+            pos ? 'visible' : 'invisible',
+          )}
+          style={{
+            '--tooltip-max-w': typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth,
+            '--tooltip-top': `${pos?.top ?? 0}px`,
+            '--tooltip-left': `${pos?.left ?? 0}px`,
+          } as CSSProperties}
         >
           {panelContent}
         </span>,
@@ -2020,11 +2099,11 @@ export interface ToastInnhold {
   vedLukking?: (angret: boolean) => void | Promise<void>
 }
 
-const TOAST_TONE_COLOR: Record<NonNullable<ToastInnhold['tone']>, { bg: string; fg: string }> = {
-  message: { bg: 'var(--frv-text-primary)', fg: 'var(--frv-bg)' },
-  success: { bg: 'var(--frv-success-solid)', fg: 'var(--frv-success-fg)' },
-  warning: { bg: 'var(--frv-warning-solid)', fg: 'var(--frv-warning-fg)' },
-  error: { bg: 'var(--frv-error-solid)', fg: 'var(--frv-error-fg)' },
+const TOAST_TONE_COLOR: Record<NonNullable<ToastInnhold['tone']>, { kort: string; fg: string }> = {
+  message: { kort: 'bg-(color:--frv-text-primary) text-(color:--frv-bg)', fg: 'text-(color:--frv-bg)' },
+  success: { kort: 'bg-(color:--frv-success-solid) text-(color:--frv-success-fg)', fg: 'text-(color:--frv-success-fg)' },
+  warning: { kort: 'bg-(color:--frv-warning-solid) text-(color:--frv-warning-fg)', fg: 'text-(color:--frv-warning-fg)' },
+  error: { kort: 'bg-(color:--frv-error-solid) text-(color:--frv-error-fg)', fg: 'text-(color:--frv-error-fg)' },
 }
 
 interface ToastRow extends ToastInnhold { id: number }
@@ -2054,7 +2133,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ vis }}>
       {children}
-      <div role="status" aria-live="polite" className="frv-toast-viewport fixed left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-[28rem]" style={{ bottom: 24 }}>
+      <div role="status" aria-live="polite" className="frv-toast-viewport fixed left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-[28rem] bottom-6">
         {rows.map(r => <ToastCard key={r.id} row={r} onClose={() => close(r.id)} />)}
       </div>
       <style>{'@keyframes frv-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }'}</style>
@@ -2065,7 +2144,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 function ToastCard({ row, onClose }: { row: ToastRow; onClose: () => void }) {
   const [paused, setPaused] = useState(false)
   const varighet = row.preserve ? 0 : (row.varighet ?? TOAST_DEFAULT_VARIGHET)
-  const { bg, fg } = TOAST_TONE_COLOR[row.tone ?? 'message']
+  const { kort, fg } = TOAST_TONE_COLOR[row.tone ?? 'message']
 
   // `vedLukking` must fire EXACTLY once — auto-close, close button and
   // pagehide are three independent paths to "disappears"; a ref (not state)
@@ -2096,20 +2175,19 @@ function ToastCard({ row, onClose }: { row: ToastRow; onClose: () => void }) {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 rounded-[var(--frv-radius-md)] motion-safe:animate-[frv-toast-in_.18s_ease-out]"
-      style={{ background: bg, color: fg, boxShadow: 'var(--frv-shadow-menu)' }}
+      className={cx('flex items-center gap-3 px-4 py-3 rounded-[var(--frv-radius-md)] motion-safe:animate-[frv-toast-in_.18s_ease-out] shadow-(--frv-shadow-menu)', kort)}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      <p className="type-label-14 flex-1 min-w-0" style={{ margin: 0 }}>{row.tekst}</p>
+      <p className="type-label-14 flex-1 min-w-0 m-0">{row.tekst}</p>
       {row.handling && (
-        <button type="button" onClick={handling} className="shrink-0 type-label-14-strong hover:underline underline-offset-2" style={{ color: fg }}>
+        <button type="button" onClick={handling} className={cx('shrink-0 type-label-14-strong hover:underline underline-offset-2', fg)}>
           {row.handling.tekst}
         </button>
       )}
-      <IconButton aria-label="Close message" onClick={closeManually} className="shrink-0" style={{ color: fg }}>
+      <IconButton aria-label="Close message" onClick={closeManually} className={cx('shrink-0', fg)}>
         <CloseIcon size={14} />
       </IconButton>
     </div>
@@ -2220,7 +2298,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="flex flex-col gap-1.5 min-w-0">
           <div className="relative">
             {prefix !== undefined && (
-              <span aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none type-label-14" style={{ color: 'var(--frv-text-secondary)' }}>
+              <span aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none type-label-14 text-(color:--frv-text-secondary)">
                 {prefix}
               </span>
             )}
@@ -2249,9 +2327,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                   'peer-placeholder-shown:[font:var(--frv-type-label-14)] peer-placeholder-shown:[letter-spacing:var(--frv-type-label-14-ls)]',
                   'peer-focus:top-2 peer-focus:-translate-y-4',
                   'peer-focus:[font:var(--frv-type-label-12-strong)] peer-focus:[letter-spacing:var(--frv-type-label-12-ls)]',
-                  prefix !== undefined && 'left-9',
+                  prefix !== undefined && 'left-9', 'text-(color:--frv-text-secondary)',
+                  disabled ? 'bg-(color:--frv-gray-alpha-100)' : 'bg-(color:--frv-surface)',
                 )}
-                style={{ color: 'var(--frv-text-secondary)', background: disabled ? 'var(--frv-gray-alpha-100)' : 'var(--frv-surface)' }}
               >
                 {label}
               </label>
@@ -2273,8 +2351,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <div className={cx('w-full flex items-stretch', FIELD_HEIGHT[size], !prefixStyling && 'gap-3', fieldChrome({ error: !!error, disabled, focusVariant: 'within' }))}>
         {prefix !== undefined && (
           <span
-            className={cx('flex items-center shrink-0', FIELD_TEXT[size], prefixStyling ? cx('border-r', FIELD_SLOT_PAD[size]) : 'pl-4')}
-            style={{ color: prefixStyling ? 'var(--frv-text-secondary)' : 'var(--frv-text-tertiary)', borderColor: prefixStyling ? (error ? 'var(--frv-error)' : 'var(--frv-border)') : undefined }}
+            className={cx(
+              'flex items-center shrink-0', FIELD_TEXT[size], prefixStyling ? cx('border-r', FIELD_SLOT_PAD[size]) : 'pl-4',
+              prefixStyling ? 'text-(color:--frv-text-secondary)' : 'text-(color:--frv-text-tertiary)',
+              prefixStyling && (error ? 'border-(color:--frv-error)' : 'border-(color:--frv-border)'),
+            )}
           >
             {prefix}
           </span>
@@ -2300,8 +2381,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         />
         {suffix !== undefined && (
           <span
-            className={cx('flex items-center shrink-0', FIELD_TEXT[size], prefixStyling ? cx('border-l', FIELD_SLOT_PAD[size]) : 'pr-4')}
-            style={{ color: prefixStyling ? 'var(--frv-text-secondary)' : 'var(--frv-text-tertiary)', borderColor: prefixStyling ? (error ? 'var(--frv-error)' : 'var(--frv-border)') : undefined }}
+            className={cx(
+              'flex items-center shrink-0', FIELD_TEXT[size], prefixStyling ? cx('border-l', FIELD_SLOT_PAD[size]) : 'pr-4',
+              prefixStyling ? 'text-(color:--frv-text-secondary)' : 'text-(color:--frv-text-tertiary)',
+              prefixStyling && (error ? 'border-(color:--frv-error)' : 'border-(color:--frv-border)'),
+            )}
           >
             {suffix}
           </span>
@@ -2470,15 +2554,21 @@ export function Checkbox({ checked, onChange, disabled, label, description, aria
       onClick={() => onChange(!checked)}
       className={cx('inline-flex gap-2.5 min-h-11 lg:min-h-0 text-left', description ? 'items-start' : 'items-center', disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer', className)}
     >
-      <span aria-hidden className="shrink-0 flex items-center justify-center rounded-[4px] transition-colors duration-150 motion-reduce:transition-none"
-        style={{ width: box, height: box, border: `1px solid ${filled ? 'var(--frv-text-primary)' : 'var(--frv-border-3)'}`, background: filled ? 'var(--frv-text-primary)' : 'transparent' }}>
-        {indeterminate ? <MinusIcon size={iconSize} style={{ color: 'var(--frv-bg)' }} /> : (checked && <CheckIcon size={iconSize} style={{ color: 'var(--frv-bg)' }} />)}
+      <span
+        aria-hidden
+        className={cx(
+          'shrink-0 flex items-center justify-center rounded-[4px] transition-colors duration-150 motion-reduce:transition-none border',
+          box === 16 ? 'w-4 h-4' : 'w-5 h-5',
+          filled ? 'border-(color:--frv-text-primary) bg-(color:--frv-text-primary)' : 'border-(color:--frv-border-3) bg-transparent',
+        )}
+      >
+        {indeterminate ? <MinusIcon size={iconSize} className="text-(color:--frv-bg)" /> : (checked && <CheckIcon size={iconSize} className="text-(color:--frv-bg)" />)}
       </span>
       {(label || description) && (
         <span className="min-w-0">
           {/* With a description: label-14-strong (500) — the label should stand apart from the explanation below. Without: 400 is enough. */}
-          {label && <span className={cx(description ? 'type-label-14-strong' : 'type-label-14', 'block')} style={{ color: 'var(--frv-text-primary)' }}>{label}</span>}
-          {description && <span id={descId} className="type-copy-13 block mt-0.5" style={{ color: 'var(--frv-text-secondary)' }}>{description}</span>}
+          {label && <span className={cx(description ? 'type-label-14-strong' : 'type-label-14', 'block text-(color:--frv-text-primary)')}>{label}</span>}
+          {description && <span id={descId} className="type-copy-13 block mt-0.5 text-(color:--frv-text-secondary)">{description}</span>}
         </span>
       )}
     </button>
@@ -2538,15 +2628,17 @@ export const Radio = forwardRef<HTMLButtonElement, RadioProps>(function Radio(
   const circle = (
     <span
       aria-hidden
-      className="shrink-0 flex items-center justify-center rounded-full transition-colors duration-150 motion-reduce:transition-none"
-      style={{
-        width: variant === 'kort' ? 18 : box,
-        height: variant === 'kort' ? 18 : box,
-        border: `1px solid ${checked ? 'var(--frv-text-primary)' : 'var(--frv-border-3)'}`,
-        background: checked ? 'var(--frv-text-primary)' : 'transparent',
-      }}
+      className={cx(
+        'shrink-0 flex items-center justify-center rounded-full transition-colors duration-150 motion-reduce:transition-none border',
+        variant === 'kort' ? 'w-[18px] h-[18px]' : box === 16 ? 'w-4 h-4' : 'w-5 h-5',
+        checked ? 'border-(color:--frv-text-primary) bg-(color:--frv-text-primary)' : 'border-(color:--frv-border-3) bg-transparent',
+      )}
     >
-      {checked && <span className="rounded-full" style={{ width: variant === 'kort' ? 7 : dot, height: variant === 'kort' ? 7 : dot, background: 'var(--frv-bg)' }} />}
+      {checked && (
+        <span
+          className={cx('rounded-full bg-(color:--frv-bg)', variant === 'kort' ? 'w-[7px] h-[7px]' : dot === 6 ? 'w-1.5 h-1.5' : 'w-2 h-2')}
+        />
+      )}
     </span>
   )
 
@@ -2565,19 +2657,19 @@ export const Radio = forwardRef<HTMLButtonElement, RadioProps>(function Radio(
         className={cx(
           'flex items-start gap-3 w-full text-left rounded-[var(--frv-radius-md)] border p-3.5 transition-colors duration-150 motion-reduce:transition-none',
           disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer',
+          checked ? 'border-(color:--frv-accent) bg-(color:--frv-accent-light)' : 'border-(color:--frv-gray-alpha-400) bg-transparent',
           className,
         )}
-        style={{ borderColor: checked ? 'var(--frv-accent)' : 'var(--frv-gray-alpha-400)', background: checked ? 'var(--frv-accent-light)' : 'transparent' }}
         {...rest}
       >
         {circle}
-        {Icon && <Icon size={18} className="shrink-0 mt-0.5" style={{ color: checked ? 'var(--frv-accent-text)' : 'var(--frv-text-tertiary)' }} />}
+        {Icon && <Icon size={18} className={cx('shrink-0 mt-0.5', checked ? 'text-(color:--frv-accent-text)' : 'text-(color:--frv-text-tertiary)')} />}
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 flex-wrap">
-            {label && <span className="type-label-14-strong" style={{ color: 'var(--frv-text-primary)' }}>{label}</span>}
+            {label && <span className="type-label-14-strong text-(color:--frv-text-primary)">{label}</span>}
             {badge != null && (typeof badge === 'string' ? <Badge variant="accent" size="sm">{badge}</Badge> : badge)}
           </span>
-          {description && <span id={descId} className="type-copy-13 block mt-0.5" style={{ color: 'var(--frv-text-secondary)' }}>{description}</span>}
+          {description && <span id={descId} className="type-copy-13 block mt-0.5 text-(color:--frv-text-secondary)">{description}</span>}
         </span>
       </button>
     )
@@ -2601,8 +2693,8 @@ export const Radio = forwardRef<HTMLButtonElement, RadioProps>(function Radio(
       {(label || description) && (
         <span className="min-w-0">
           {/* With a description: label-14-strong (500) — the label should stand apart from the explanation below. Without: 400 is enough. */}
-          {label && <span className={cx(description ? 'type-label-14-strong' : 'type-label-14', 'block')} style={{ color: 'var(--frv-text-primary)' }}>{label}</span>}
-          {description && <span id={descId} className="type-copy-13 block mt-0.5" style={{ color: 'var(--frv-text-secondary)' }}>{description}</span>}
+          {label && <span className={cx(description ? 'type-label-14-strong' : 'type-label-14', 'block text-(color:--frv-text-primary)')}>{label}</span>}
+          {description && <span id={descId} className="type-copy-13 block mt-0.5 text-(color:--frv-text-secondary)">{description}</span>}
         </span>
       )}
     </button>
@@ -2702,9 +2794,9 @@ export function Switch({ checked, onChange, disabled, label, description, classN
 
   return (
     <div className={cx('flex items-start justify-between gap-4', className)}>
-      <div className="min-w-0" style={{ opacity: disabled ? 0.4 : 1 }}>
+      <div className={cx('min-w-0', disabled && 'opacity-40')}>
         <label htmlFor={id} className={cx('type-heading-14 block', !disabled && 'cursor-pointer')}>{label}</label>
-        {description && <p id={descId} className="type-copy-13 mt-0.5" style={{ color: 'var(--frv-text-secondary)' }}>{description}</p>}
+        {description && <p id={descId} className="type-copy-13 mt-0.5 text-(color:--frv-text-secondary)">{description}</p>}
       </div>
       <button
         id={id}
@@ -2716,8 +2808,8 @@ export function Switch({ checked, onChange, disabled, label, description, classN
         onClick={() => onChange(!checked)}
         className={cx('shrink-0 inline-flex items-center min-h-11 lg:min-h-0 lg:h-5', 'disabled:cursor-not-allowed disabled:opacity-40', !disabled && 'cursor-pointer')}
       >
-        <span aria-hidden className="block w-9 h-5 rounded-[var(--frv-radius-full)] p-0.5 transition-colors duration-150 motion-reduce:transition-none" style={{ background: checked ? 'var(--frv-text-primary)' : 'var(--frv-gray-alpha-300)' }}>
-          <span className="block w-4 h-4 rounded-[var(--frv-radius-full)] transition-transform duration-150 motion-reduce:transition-none" style={{ background: 'var(--frv-surface)', boxShadow: 'var(--frv-shadow-xs)', transform: checked ? 'translateX(16px)' : 'translateX(0)' }} />
+        <span aria-hidden className={cx('block w-9 h-5 rounded-[var(--frv-radius-full)] p-0.5 transition-colors duration-150 motion-reduce:transition-none', checked ? 'bg-(color:--frv-text-primary)' : 'bg-(color:--frv-gray-alpha-300)')}>
+          <span className={cx('block w-4 h-4 rounded-[var(--frv-radius-full)] transition-transform duration-150 motion-reduce:transition-none bg-(color:--frv-surface) shadow-(--frv-shadow-xs)', checked ? 'translate-x-4' : 'translate-x-0')} />
         </span>
       </button>
     </div>
@@ -2813,7 +2905,13 @@ const LISTROW_STATUS_TO_ICON_TILE: Record<ListRowStatusTone, IconTileTone> = {
 }
 
 function ListRowStatusDot({ size = 12 }: { size?: number }) {
-  return <span aria-hidden="true" className="block rounded-full" style={{ width: size * 0.5, height: size * 0.5, background: 'currentColor' }} />
+  return (
+    <span
+      aria-hidden="true"
+      className="block rounded-full bg-current w-(--dot-d) h-(--dot-d)"
+      style={{ '--dot-d': `${size * 0.5}px` } as CSSProperties}
+    />
+  )
 }
 
 /** Status icon in a tone tile — `IconTile` at `size="sm"` (20px). Used
@@ -2862,7 +2960,7 @@ export function ListRow(props: ListRowProps) {
   const secondaryContent = listRowJoinSecondary(secondary)
   // `status` fills `leading` ONLY when the call site hasn't set one itself.
   const leadingNode = leading ?? (status ? <ListRowStatusIcon status={status} /> : null)
-  const titleColor = done ? 'var(--frv-text-tertiary)' : 'var(--frv-text-primary)'
+  const titleColorClass = done ? 'text-(color:--frv-text-tertiary)' : 'text-(color:--frv-text-primary)'
 
   // Nested-interactive guard: when the row is clickable AND has buttons in
   // `trailing`, the whole row can't be `role="button"` (a button inside a
@@ -2871,9 +2969,9 @@ export function ListRow(props: ListRowProps) {
   const nested = !!onClick && trailing != null
   const titleEl = (classes: string) => nested ? (
     <button type="button" onClick={e => { e.stopPropagation(); onClick?.() }} aria-expanded={details != null ? (expanded ?? false) : undefined}
-      className={cx(classes, done && 'line-through', 'text-left bg-transparent border-0 p-0 cursor-pointer')} style={{ color: titleColor }}>{title}</button>
+      className={cx(classes, done && 'line-through', 'text-left bg-transparent border-0 p-0 cursor-pointer', titleColorClass)}>{title}</button>
   ) : (
-    <span className={cx(classes, done && 'line-through')} style={{ color: titleColor }}>{title}</span>
+    <span className={cx(classes, done && 'line-through', titleColorClass)}>{title}</span>
   )
 
   const titleBlock = (
@@ -2881,24 +2979,24 @@ export function ListRow(props: ListRowProps) {
       <div className="hidden @md:flex items-center gap-[var(--frv-space-2)] min-w-0">
         <div className="flex items-baseline min-w-0 flex-1">
           {titleEl('type-heading-14 truncate shrink-0 max-w-[60%]')}
-          {secondaryContent != null && <span className="type-label-13 truncate min-w-[6rem] flex-1 ml-[var(--frv-space-2)]" style={{ color: 'var(--frv-text-secondary)' }}>{secondaryContent}</span>}
+          {secondaryContent != null && <span className="type-label-13 truncate min-w-[6rem] flex-1 ml-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{secondaryContent}</span>}
         </div>
-        {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)]" style={{ color: 'var(--frv-text-secondary)' }}>{meta}</span>}
-        {value != null && <span className="type-label-13 tabular-nums shrink-0 text-right" style={{ color: 'var(--frv-text-primary)' }}>{value}</span>}
+        {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{meta}</span>}
+        {value != null && <span className="type-label-13 tabular-nums shrink-0 text-right text-(color:--frv-text-primary)">{value}</span>}
       </div>
       <div className="flex @md:hidden flex-col gap-1 min-w-0">
         <div className="flex items-center gap-[var(--frv-space-2)] min-w-0">
           {titleEl('type-heading-14 min-w-0 flex-1 truncate')}
-          {value != null && <span className="type-label-13 tabular-nums shrink-0" style={{ color: 'var(--frv-text-primary)' }}>{value}</span>}
+          {value != null && <span className="type-label-13 tabular-nums shrink-0 text-(color:--frv-text-primary)">{value}</span>}
         </div>
         {(secondaryContent != null || meta != null) && (
           <div className="flex flex-wrap items-center gap-x-[var(--frv-space-2)] gap-y-1 min-w-0">
-            {secondaryContent != null && <span className="type-label-13 flex-1 basis-0 min-w-[6rem] truncate" style={{ color: 'var(--frv-text-secondary)' }}>{secondaryContent}</span>}
-            {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)]" style={{ color: 'var(--frv-text-secondary)' }}>{meta}</span>}
+            {secondaryContent != null && <span className="type-label-13 flex-1 basis-0 min-w-[6rem] truncate text-(color:--frv-text-secondary)">{secondaryContent}</span>}
+            {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{meta}</span>}
           </div>
         )}
       </div>
-      {subtitle != null && <div className="type-copy-13 line-clamp-2 mt-0.5" style={{ color: 'var(--frv-text-secondary)' }}>{subtitle}</div>}
+      {subtitle != null && <div className="type-copy-13 line-clamp-2 mt-0.5 text-(color:--frv-text-secondary)">{subtitle}</div>}
     </div>
   )
 
@@ -3046,15 +3144,30 @@ export function Table<T>({
   }
 
   return (
-    <div className={cx(!isPrint && 'rounded-[var(--frv-radius-md)] overflow-hidden', className)} style={{ border: isPrint ? 'none' : '1px solid var(--frv-border)' }}>
+    <div className={cx(!isPrint && 'rounded-[var(--frv-radius-md)] overflow-hidden border border-(color:--frv-border)', className)}>
       {minBredde && (
-        <p className="sm:hidden type-label-12 flex items-center gap-1 px-3 py-1.5" style={{ color: isPrint ? 'var(--frv-print-text-muted)' : 'var(--frv-text-tertiary)', borderBottom: `1px solid ${isPrint ? 'var(--frv-print-border)' : 'var(--frv-border)'}` }}>
+        <p
+          className={cx(
+            'sm:hidden type-label-12 flex items-center gap-1 px-3 py-1.5 border-b',
+            isPrint ? 'text-(color:--frv-print-text-muted) border-(color:--frv-print-border)' : 'text-(color:--frv-text-tertiary) border-(color:--frv-border)',
+          )}
+        >
           <ArrowRightIcon size={11} /> Swipe the table to see everything
         </p>
       )}
       <div className="overflow-x-auto relative" tabIndex={0} aria-label="Table, scroll sideways as needed">
-        <div role={semanticTable ? 'table' : undefined} style={{ minWidth: minBredde }}>
-          <div role={semanticTable ? 'row' : undefined} className="grid" style={{ gridTemplateColumns, background: isPrint ? 'transparent' : 'var(--frv-surface-2)', borderBottom: `1px solid ${isPrint ? 'var(--frv-print-text-strong)' : 'var(--frv-border-2)'}` }}>
+        <div
+          role={semanticTable ? 'table' : undefined}
+          className={minBredde ? 'min-w-(--table-min-bredde)' : undefined}
+          style={{ '--table-grid-cols': gridTemplateColumns, '--table-min-bredde': minBredde } as CSSProperties}
+        >
+          <div
+            role={semanticTable ? 'row' : undefined}
+            className={cx(
+              'grid grid-cols-(--table-grid-cols) border-b',
+              isPrint ? 'bg-transparent border-(color:--frv-print-text-strong)' : 'bg-(color:--frv-surface-2) border-(color:--frv-border-2)',
+            )}
+          >
             {kolonner.map(k => {
               const active = !!k.sorterbar && sortKey === k.key
               const ariaSort = semanticTable && k.sorterbar ? (active ? (sortRetning === 'stigende' ? 'ascending' as const : 'descending' as const) : 'none' as const) : undefined
@@ -3069,14 +3182,16 @@ export function Table<T>({
                         'w-full min-h-11 flex items-center gap-1 px-3 py-2 type-label-13-strong transition-colors',
                         !isPrint && 'hover:text-[var(--frv-text-primary)] hover:bg-[var(--frv-gray-alpha-100)]',
                         k.align === 'hoyre' ? 'justify-end text-right tabular-nums flex-row-reverse' : 'justify-start text-left',
+                        isPrint
+                          ? (active ? 'text-(color:--frv-print-text-strong)' : 'text-(color:--frv-print-text-muted)')
+                          : (active ? 'text-(color:--frv-text-primary)' : 'text-(color:--frv-text-secondary)'),
                       )}
-                      style={{ color: isPrint ? (active ? 'var(--frv-print-text-strong)' : 'var(--frv-print-text-muted)') : (active ? 'var(--frv-text-primary)' : 'var(--frv-text-secondary)') }}
                     >
                       {k.label}
-                      <ChevronIcon size={12} aria-hidden="true" className="shrink-0" style={{ opacity: active ? 1 : 0.35 }} />
+                      <ChevronIcon size={12} aria-hidden="true" className={cx('shrink-0', active ? 'opacity-100' : 'opacity-[0.35]')} />
                     </button>
                   ) : (
-                    <span className="type-label-13-strong" style={{ color: isPrint ? 'var(--frv-print-text-muted)' : 'var(--frv-text-secondary)' }}>{k.label}</span>
+                    <span className={cx('type-label-13-strong', isPrint ? 'text-(color:--frv-print-text-muted)' : 'text-(color:--frv-text-secondary)')}>{k.label}</span>
                   )}
                 </Cell>
               )
@@ -3084,8 +3199,8 @@ export function Table<T>({
           </div>
           <div role={semanticTable ? 'rowgroup' : undefined} className={cx('divide-y', isPrint ? 'divide-[var(--frv-print-border-subtle)]' : 'divide-[var(--frv-border)]')}>
             {rader.length === 0 ? (
-              <div role={semanticTable ? 'row' : undefined} className="grid" style={{ gridTemplateColumns }}>
-                <div role={semanticTable ? 'cell' : undefined} className="py-8 text-center type-copy-13" style={{ gridColumn: '1 / -1', color: isPrint ? 'var(--frv-print-text-secondary)' : 'var(--frv-text-tertiary)' }}>
+              <div role={semanticTable ? 'row' : undefined} className="grid grid-cols-(--table-grid-cols)">
+                <div role={semanticTable ? 'cell' : undefined} className={cx('py-8 text-center type-copy-13 col-span-full', isPrint ? 'text-(color:--frv-print-text-secondary)' : 'text-(color:--frv-text-tertiary)')}>
                   {tomTekst}
                 </div>
               </div>
@@ -3099,12 +3214,17 @@ export function Table<T>({
                   tabIndex={clickable ? 0 : undefined}
                   onKeyDown={clickable ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); radOnClick!(rad) } } : undefined}
                   className={cx(
-                    'grid items-center',
+                    'grid grid-cols-(--table-grid-cols) items-center',
                     striped && i % 2 === 1 && (isPrint ? 'bg-[var(--frv-print-surface)]' : 'bg-[var(--frv-gray-alpha-100)]'),
                     interactive && (isPrint ? 'hover:bg-[var(--frv-print-surface)] transition-colors' : 'hover:bg-[var(--frv-gray-alpha-100)] transition-colors'),
                     clickable && 'cursor-pointer',
                   )}
-                  style={{ gridTemplateColumns, ...(merketRadKey != null && radKey(rad) === merketRadKey ? { background: 'var(--frv-accent-light)', boxShadow: 'inset 3px 0 0 var(--frv-accent-border)' } : {}) }}
+                  // Kept as a real style override (not a competing class) on purpose:
+                  // this file's `cx` is a plain joiner, not tailwind-merge, so it
+                  // can't dedupe two `bg-*`/`shadow-*` classes the way the app's
+                  // `cn()` does — inline `style` is the only reliable way to make
+                  // "marked row" win over "striped row" when both are true.
+                  style={merketRadKey != null && radKey(rad) === merketRadKey ? { background: 'var(--frv-accent-light)', boxShadow: 'inset 3px 0 0 var(--frv-accent-border)' } : undefined}
                 >
                   {kolonner.map(k => <Cell key={k.key} align={k.align} role={semanticTable && !clickable ? 'cell' : undefined}>{celle(rad, k.key) ?? '—'}</Cell>)}
                 </div>
@@ -3112,7 +3232,13 @@ export function Table<T>({
             })}
           </div>
           {fot && (
-            <div role={semanticTable ? 'row' : undefined} className="grid items-center" style={{ gridTemplateColumns, background: isPrint ? 'var(--frv-print-surface)' : 'var(--frv-surface-2)', borderTop: `1px solid ${isPrint ? 'var(--frv-print-border)' : 'var(--frv-border)'}` }}>
+            <div
+              role={semanticTable ? 'row' : undefined}
+              className={cx(
+                'grid grid-cols-(--table-grid-cols) items-center border-t',
+                isPrint ? 'bg-(color:--frv-print-surface) border-(color:--frv-print-border)' : 'bg-(color:--frv-surface-2) border-(color:--frv-border)',
+              )}
+            >
               {kolonner.map(k => <Cell key={k.key} align={k.align} role={semanticTable ? 'cell' : undefined}>{fot(k.key)}</Cell>)}
             </div>
           )}
@@ -3166,11 +3292,22 @@ export function Dokument({ actions, children, maxBredde = '210mm', aksent, minHe
   className?: string
 }) {
   return (
-    <div className="frv-dokument-lerret" style={{ background: 'var(--frv-print-canvas)', minHeight, padding: '32px 16px' }}>
+    <div
+      className="frv-dokument-lerret bg-(color:--frv-print-canvas) min-h-(--dokument-min-h) px-4 py-8"
+      style={{ '--dokument-min-h': minHeight } as CSSProperties}
+    >
       {actions}
       <div
-        className={cx('frv-dokument-ark type-copy-14 doc-sheet', className)}
-        style={{ maxWidth: maxBredde, margin: '0 auto', background: 'var(--frv-print-paper)', borderRadius: 14, boxShadow: 'var(--frv-print-shadow)', padding: '56px 64px', color: 'var(--frv-print-text)', borderTop: aksent ? `3px solid ${aksent}` : undefined, breakAfter: sideskiftEtter ? 'page' : undefined }}
+        className={cx(
+          'frv-dokument-ark type-copy-14 doc-sheet max-w-(--dokument-max-w) mx-auto rounded-[14px] shadow-(--frv-print-shadow) px-16 py-14 bg-(color:--frv-print-paper) text-(color:--frv-print-text)',
+          aksent && 'border-t-[3px] border-t-(color:--dokument-aksent)',
+          sideskiftEtter && 'break-after-page',
+          className,
+        )}
+        style={{
+          '--dokument-max-w': maxBredde,
+          '--dokument-aksent': aksent,
+        } as CSSProperties}
       >
         {children}
       </div>
@@ -3187,12 +3324,12 @@ export function DokumentHode({ orgNavn, tittel, undertittel, meta }: {
   meta?: ReactNode
 }) {
   return (
-    <div style={{ marginBottom: 32 }}>
-      <p className="type-label-12-strong uppercase tracking-[0.1em]" style={{ color: 'var(--frv-print-text-muted)', margin: 0 }}>{orgNavn}</p>
-      <h1 className="type-heading-24" style={{ color: 'var(--frv-print-text-strong)', margin: '12px 0 0' }}>{tittel}</h1>
-      {undertittel && <p className="type-copy-14" style={{ color: 'var(--frv-print-text-secondary)', margin: '6px 0 0' }}>{undertittel}</p>}
-      {meta && <p className="type-label-12" style={{ color: 'var(--frv-print-text-muted)', margin: '10px 0 0' }}>{meta}</p>}
-      <div style={{ borderBottom: '1px solid var(--frv-print-border)', marginTop: 24 }} />
+    <div className="mb-8">
+      <p className="type-label-12-strong uppercase tracking-[0.1em] text-(color:--frv-print-text-muted) m-0">{orgNavn}</p>
+      <h1 className="type-heading-24 text-(color:--frv-print-text-strong) mt-3 mx-0 mb-0">{tittel}</h1>
+      {undertittel && <p className="type-copy-14 text-(color:--frv-print-text-secondary) mt-1.5 mx-0 mb-0">{undertittel}</p>}
+      {meta && <p className="type-label-12 text-(color:--frv-print-text-muted) mt-2.5 mx-0 mb-0">{meta}</p>}
+      <div className="border-b border-(color:--frv-print-border) mt-6" />
     </div>
   )
 }
@@ -3210,11 +3347,11 @@ export function DokumentMottaker({ navn, adresselinjer, att, className }: {
   className?: string
 }) {
   return (
-    <div className={cx(className)} style={{ marginBottom: 32 }}>
-      {att && <p className="type-label-12" style={{ color: 'var(--frv-print-text-muted)', margin: '0 0 2px' }}>Att: {att}</p>}
-      <p className="type-copy-14" style={{ color: 'var(--frv-print-text-strong)', margin: 0 }}><strong>{navn}</strong></p>
+    <div className={cx('mb-8', className)}>
+      {att && <p className="type-label-12 text-(color:--frv-print-text-muted) mt-0 mx-0 mb-0.5">Att: {att}</p>}
+      <p className="type-copy-14 text-(color:--frv-print-text-strong) m-0"><strong>{navn}</strong></p>
       {adresselinjer?.map((linje, i) => (
-        <p key={i} className="type-copy-14" style={{ color: 'var(--frv-print-text-secondary)', margin: 0 }}>{linje}</p>
+        <p key={i} className="type-copy-14 text-(color:--frv-print-text-secondary) m-0">{linje}</p>
       ))}
     </div>
   )
@@ -3228,8 +3365,8 @@ export function DokumentMottaker({ navn, adresselinjer, att, className }: {
  *  on `Dokument` above, just "before" and at section level. */
 export function DokumentSeksjon({ tittel, children, sideskiftFoer, className }: { tittel?: string; children: ReactNode; sideskiftFoer?: boolean; className?: string }) {
   return (
-    <div className={cx(className)} style={{ marginBottom: 24, breakInside: 'avoid', breakBefore: sideskiftFoer ? 'page' : undefined }}>
-      {tittel && <h2 className="type-heading-16" style={{ color: 'var(--frv-print-text-strong)', margin: '0 0 12px', paddingBottom: 8, borderBottom: '1px solid var(--frv-print-border)' }}>{tittel}</h2>}
+    <div className={cx('mb-6 break-inside-avoid', sideskiftFoer && 'break-before-page', className)}>
+      {tittel && <h2 className="type-heading-16 text-(color:--frv-print-text-strong) mt-0 mx-0 mb-3 pb-2 border-b border-(color:--frv-print-border)">{tittel}</h2>}
       {children}
     </div>
   )
@@ -3243,11 +3380,14 @@ export function DokumentNokkelverdi({ items, minColBredde = '10rem', className }
   className?: string
 }) {
   return (
-    <div className={cx('grid gap-x-6 gap-y-3', className)} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${minColBredde}, 1fr))` }}>
+    <div
+      className={cx('grid grid-cols-(--dokument-nv-cols) gap-x-6 gap-y-3', className)}
+      style={{ '--dokument-nv-cols': `repeat(auto-fit, minmax(${minColBredde}, 1fr))` } as CSSProperties}
+    >
       {items.map((it, i) => (
         <div key={i} className="min-w-0">
-          <p className="type-label-12-strong mb-0.5" style={{ color: 'var(--frv-print-text-secondary)' }}>{it.label}</p>
-          <p className="type-copy-14" style={{ color: 'var(--frv-print-text)' }}>{it.verdi}</p>
+          <p className="type-label-12-strong mb-0.5 text-(color:--frv-print-text-secondary)">{it.label}</p>
+          <p className="type-copy-14 text-(color:--frv-print-text)">{it.verdi}</p>
         </div>
       ))}
     </div>
@@ -3281,21 +3421,21 @@ export function DokumentMerknad({ tittel, children, tone = 'default', className 
   const advarsel = tone === 'advarsel'
   return (
     <div
-      className={cx('type-copy-14', className)}
-      style={{
-        background: advarsel ? 'var(--frv-print-status-danger-bg)' : 'var(--frv-print-surface)',
-        border: `1px solid ${advarsel ? 'var(--frv-print-status-danger-border)' : 'var(--frv-print-border)'}`,
-        borderLeft: tone === 'viktig' ? '3px solid var(--frv-print-accent)' : undefined,
-        borderRadius: 10,
-        padding: '18px 22px',
-        color: advarsel ? 'var(--frv-print-status-danger-text)' : 'var(--frv-print-text)',
-        breakInside: 'avoid',
-      }}
+      className={cx(
+        'type-copy-14 rounded-[10px] py-[18px] px-[22px] border break-inside-avoid',
+        advarsel
+          ? 'bg-(color:--frv-print-status-danger-bg) border-(color:--frv-print-status-danger-border) text-(color:--frv-print-status-danger-text)'
+          : 'bg-(color:--frv-print-surface) border-(color:--frv-print-border) text-(color:--frv-print-text)',
+        tone === 'viktig' && 'border-l-[3px] border-l-(color:--frv-print-accent)',
+        className,
+      )}
     >
       {tittel && (
         <p
-          className="type-label-12-strong uppercase tracking-[0.06em]"
-          style={{ color: advarsel ? 'var(--frv-print-status-danger-text)' : 'var(--frv-print-text-secondary)', margin: '0 0 8px' }}
+          className={cx(
+            'type-label-12-strong uppercase tracking-[0.06em] mt-0 mx-0 mb-2',
+            advarsel ? 'text-(color:--frv-print-status-danger-text)' : 'text-(color:--frv-print-text-secondary)',
+          )}
         >
           {tittel}
         </p>
@@ -3309,25 +3449,21 @@ export function DokumentMerknad({ tittel, children, tone = 'default', className 
  *  to running text — 2px 9px, radius full, 10px/600. `noytral` is added on
  *  top of the four priorities, for a label that isn't a priority (status,
  *  category). `--frv-print-status-*`/`--frv-print-*` tokens ONLY, never
- *  `--frv-color-*` — same rule as the rest of the Dokument family. Inline
- *  `fontSize`/`fontWeight` here (unlike the rest of this file's `.type-*`
- *  reuse) because 10px/600 isn't one of the type-scale roles — this family
- *  ships self-contained, so it doesn't lean on a project-local CSS class. */
-const DOKUMENT_ETIKETT_TONE: Record<'akutt' | 'hoy' | 'middels' | 'lav' | 'noytral', { bg: string; text: string }> = {
-  akutt:   { bg: 'var(--frv-print-status-danger-bg)',  text: 'var(--frv-print-status-danger-text)' },
-  hoy:     { bg: 'var(--frv-print-status-warning-bg)', text: 'var(--frv-print-status-warning-text)' },
-  middels: { bg: 'var(--frv-print-status-info-bg)',    text: 'var(--frv-print-status-info-text)' },
-  lav:     { bg: 'var(--frv-print-status-success-bg)', text: 'var(--frv-print-status-success-text)' },
-  noytral: { bg: 'var(--frv-print-surface)',           text: 'var(--frv-print-text)' },
+ *  `--frv-*` theme tokens — same rule as the rest of the Dokument family. */
+const DOKUMENT_ETIKETT_TONE: Record<'akutt' | 'hoy' | 'middels' | 'lav' | 'noytral', string> = {
+  akutt:   'bg-(color:--frv-print-status-danger-bg) text-(color:--frv-print-status-danger-text)',
+  hoy:     'bg-(color:--frv-print-status-warning-bg) text-(color:--frv-print-status-warning-text)',
+  middels: 'bg-(color:--frv-print-status-info-bg) text-(color:--frv-print-status-info-text)',
+  lav:     'bg-(color:--frv-print-status-success-bg) text-(color:--frv-print-status-success-text)',
+  noytral: 'bg-(color:--frv-print-surface) text-(color:--frv-print-text)',
 }
 export function DokumentEtikett({ tone = 'noytral', children, className }: {
   tone?: 'akutt' | 'hoy' | 'middels' | 'lav' | 'noytral'
   children: ReactNode
   className?: string
 }) {
-  const t = DOKUMENT_ETIKETT_TONE[tone]
   return (
-    <span className={cx('inline-block', className)} style={{ padding: '2px 9px', borderRadius: 'var(--frv-radius-full)', fontSize: 10, fontWeight: 600, background: t.bg, color: t.text }}>
+    <span className={cx('inline-block py-0.5 px-[9px] rounded-(--frv-radius-full) text-[10px] font-semibold', DOKUMENT_ETIKETT_TONE[tone], className)}>
       {children}
     </span>
   )
@@ -3339,11 +3475,14 @@ export function DokumentEtikett({ tone = 'noytral', children, className }: {
  *  reproduce role-based signing (e.g. `['Chair', 'Deputy chair', 'Board member']`). */
 export function DokumentSignatur({ felter = ['Sted og dato', 'Underskrift'], className }: { felter?: string[]; className?: string }) {
   return (
-    <div className={cx('grid', className)} style={{ gridTemplateColumns: `repeat(${felter.length}, minmax(0, 1fr))`, gap: 32, marginTop: 48 }}>
+    <div
+      className={cx('grid grid-cols-(--dokument-sig-cols) gap-8 mt-12', className)}
+      style={{ '--dokument-sig-cols': `repeat(${felter.length}, minmax(0, 1fr))` } as CSSProperties}
+    >
       {felter.map((felt, i) => (
-        <div key={i} style={{ borderTop: '1px solid var(--frv-print-text-muted)', paddingTop: 8 }}>
-          <div style={{ height: 36 }} aria-hidden="true" />
-          <p className="type-label-12" style={{ color: 'var(--frv-print-text-secondary)', margin: 0 }}>{felt}</p>
+        <div key={i} className="border-t border-t-(color:--frv-print-text-muted) pt-2">
+          <div className="h-9" aria-hidden="true" />
+          <p className="type-label-12 text-(color:--frv-print-text-secondary) m-0">{felt}</p>
         </div>
       ))}
     </div>
@@ -3357,9 +3496,9 @@ export function DokumentFot({ orgNavn, generertDato, className }: {
   className?: string
 }) {
   return (
-    <div className={cx('flex items-center justify-between flex-wrap gap-2', className)} style={{ marginTop: 40, paddingTop: 16, borderTop: '1px solid var(--frv-print-border)' }}>
-      <span className="type-label-12" style={{ color: 'var(--frv-print-text-faint)' }}>{orgNavn}</span>
-      <span className="type-label-12" style={{ color: 'var(--frv-print-text-faint)' }}>Generated by Frivio {generertDato}</span>
+    <div className={cx('flex items-center justify-between flex-wrap gap-2 mt-10 pt-4 border-t border-(color:--frv-print-border)', className)}>
+      <span className="type-label-12 text-(color:--frv-print-text-faint)">{orgNavn}</span>
+      <span className="type-label-12 text-(color:--frv-print-text-faint)">Generated by Frivio {generertDato}</span>
     </div>
   )
 }
@@ -3382,8 +3521,8 @@ export function Field({ label, mono = false, valueStyle, className, children }: 
     <div className={cx('flex flex-col gap-[var(--frv-space-1)] min-w-0', className)}>
       {/* 13px, not 12: same role ("label/field name") and size as Input/Select/Table's
           label, so "Email" looks the same in read and edit mode (typography hierarchy, 2026-09-13). */}
-      <span className="type-label-13-strong flex items-center gap-1" style={{ color: 'var(--frv-text-secondary)' }}>{label}</span>
-      <div className={mono ? 'type-label-14-mono' : 'type-label-14'} style={{ color: 'var(--frv-text-primary)', ...valueStyle }}>{children}</div>
+      <span className="type-label-13-strong flex items-center gap-1 text-(color:--frv-text-secondary)">{label}</span>
+      <div className={cx(mono ? 'type-label-14-mono' : 'type-label-14', 'text-(color:--frv-text-primary)')} style={valueStyle}>{children}</div>
     </div>
   )
 }
@@ -3402,13 +3541,16 @@ export function DescriptionList({ items, minColBredde = '10rem', className }: {
   className?: string
 }) {
   return (
-    <div className={cx('grid gap-x-6 gap-y-3', className)} style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${minColBredde}, 1fr))` }}>
+    <div
+      className={cx('grid grid-cols-(--desclist-cols) gap-x-6 gap-y-3', className)}
+      style={{ '--desclist-cols': `repeat(auto-fit, minmax(${minColBredde}, 1fr))` } as CSSProperties}
+    >
       {items.map((it, i) => (
         <div key={i} className="min-w-0">
           {/* label-13-strong in text-secondary, not tertiary — 500 weight in tertiary measures too weak.
               13px, same as Input's label: same role, same size (typography hierarchy, 2026-09-13). */}
-          <p className="type-label-13-strong mb-0.5" style={{ color: 'var(--frv-text-secondary)' }}>{it.label}</p>
-          <p className="type-copy-14" style={{ color: 'var(--frv-text-primary)' }}>{it.verdi}</p>
+          <p className="type-label-13-strong mb-0.5 text-(color:--frv-text-secondary)">{it.label}</p>
+          <p className="type-copy-14 text-(color:--frv-text-primary)">{it.verdi}</p>
         </div>
       ))}
     </div>
@@ -3497,8 +3639,11 @@ export function LoadBar({ value, max, tone = 'default', label, verdi, className 
   const hasHeading = label !== undefined || verdi !== undefined
 
   const track = (
-    <div className={cx('h-1.5 w-full rounded-[var(--frv-radius-full)] overflow-hidden', !hasHeading && className)} style={{ background: 'var(--frv-gray-alpha-200)' }} aria-hidden>
-      <div className="h-full rounded-[var(--frv-radius-full)]" style={{ width: `${share * 100}%`, background: LOADBAR_TONE_COLOR[tone], transition: 'width 0.3s' }} />
+    <div className={cx('h-1.5 w-full rounded-[var(--frv-radius-full)] overflow-hidden bg-(color:--frv-gray-alpha-200)', !hasHeading && className)} aria-hidden>
+      <div
+        className="h-full rounded-[var(--frv-radius-full)] transition-[width] duration-300 w-(--loadbar-w) bg-(color:--loadbar-color)"
+        style={{ '--loadbar-w': `${share * 100}%`, '--loadbar-color': LOADBAR_TONE_COLOR[tone] } as CSSProperties}
+      />
     </div>
   )
 
@@ -3507,8 +3652,8 @@ export function LoadBar({ value, max, tone = 'default', label, verdi, className 
   return (
     <div className={className}>
       <div className="flex items-baseline justify-between gap-3 mb-2 min-w-0">
-        {label !== undefined && <span className="type-label-14 truncate min-w-0" style={{ color: 'var(--frv-text-primary)' }}>{label}</span>}
-        {verdi !== undefined && <span className="type-heading-14 tabular-nums shrink-0 ml-auto" style={{ color: 'var(--frv-text-primary)' }}>{verdi}</span>}
+        {label !== undefined && <span className="type-label-14 truncate min-w-0 text-(color:--frv-text-primary)">{label}</span>}
+        {verdi !== undefined && <span className="type-heading-14 tabular-nums shrink-0 ml-auto text-(color:--frv-text-primary)">{verdi}</span>}
       </div>
       {track}
     </div>
@@ -3534,9 +3679,14 @@ export function Progress({ verdi, hoyde = 6, tone = 'accent', className, ariaLab
 }) {
   const share = Math.min(100, Math.max(0, verdi))
   return (
-    <div className={cx('rounded-full overflow-hidden', className)} style={{ height: hoyde, background: 'var(--frv-gray-alpha-200)' }}
+    <div
+      className={cx('rounded-full overflow-hidden bg-(color:--frv-gray-alpha-200) h-(--progress-h)', className)}
+      style={{ '--progress-h': `${hoyde}px` } as CSSProperties}
       role="progressbar" aria-label={ariaLabel} aria-valuenow={Math.round(share)} aria-valuemin={0} aria-valuemax={100}>
-      <div className="h-full rounded-full" style={{ width: `${share}%`, background: LOADBAR_TONE_COLOR[tone], transition: 'width 0.3s' }} />
+      <div
+        className="h-full rounded-full transition-[width] duration-300 w-(--progress-w) bg-(color:--progress-color)"
+        style={{ '--progress-w': `${share}%`, '--progress-color': LOADBAR_TONE_COLOR[tone] } as CSSProperties}
+      />
     </div>
   )
 }
@@ -3602,7 +3752,7 @@ export function StepCard({ icon: Icon, steg, title, description, tone = 'neutral
   const t = ICON_TILE_TONE[tone]
   const neutralOverride = { background: 'var(--frv-gray-alpha-200)', color: 'var(--frv-text-primary)' }
   return (
-    <div className={cx('flex flex-col gap-3 rounded-[var(--frv-radius-md)] p-5', className)} style={{ boxShadow: 'var(--frv-shadow-border)' }}>
+    <div className={cx('flex flex-col gap-3 rounded-[var(--frv-radius-md)] p-5 shadow-(--frv-shadow-border)', className)}>
       {Icon ? (
         <IconTile icon={Icon} tone={tone} size="md" style={isNeutral ? neutralOverride : undefined} />
       ) : steg != null ? (
@@ -3614,7 +3764,7 @@ export function StepCard({ icon: Icon, steg, title, description, tone = 'neutral
             the card's full width in a wide row — lines over ~90 characters are
             harder to read than the ~65-character readability standard for
             running text. */}
-        <p className="type-copy-13 mt-1 max-w-[65ch]" style={{ color: 'var(--frv-text-tertiary)' }}>{description}</p>
+        <p className="type-copy-13 mt-1 max-w-[65ch] text-(color:--frv-text-tertiary)">{description}</p>
       </div>
     </div>
   )
@@ -3762,7 +3912,7 @@ export function Tabs({ tabs, activeKey, onSelect, variant = 'default', ariaLabel
           <span className={cx('col-start-1 row-start-1', active ? 'type-label-14-strong' : 'type-label-14')}>{tab.label}</span>
         </span>
         {typeof tab.badge === 'number' && tab.badge > 0 && (
-          <span className="type-label-12 min-w-4 px-1 inline-flex items-center justify-center rounded-[var(--frv-radius-full)]" style={{ background: 'var(--frv-gray-alpha-200)' }}>{tab.badge}</span>
+          <span className="type-label-12 min-w-4 px-1 inline-flex items-center justify-center rounded-[var(--frv-radius-full)] bg-(color:--frv-gray-alpha-200)">{tab.badge}</span>
         )}
       </span>
     )
@@ -3785,17 +3935,17 @@ export function Tabs({ tabs, activeKey, onSelect, variant = 'default', ariaLabel
     )
   }
 
-  const underline = variant === 'default' ? <span ref={underlineRef} aria-hidden className="absolute bottom-0 h-0.5 bg-[var(--frv-text-primary)]" style={{ opacity: 0 }} /> : null
+  const underline = variant === 'default' ? <span ref={underlineRef} aria-hidden className="absolute bottom-0 h-0.5 bg-[var(--frv-text-primary)] opacity-0" /> : null
 
   return (
-    <div className={cx(className)} style={{ borderBottom: '1px solid var(--frv-border)' }}>
+    <div className={cx('border-b border-(color:--frv-border)', className)}>
       {buttonMode ? (
-        <div ref={setScrollRef as unknown as (el: HTMLDivElement | null) => void} role="tablist" aria-label={ariaLabel} className="relative flex overflow-x-auto" style={{ marginBottom: '-1px' }} onKeyDown={onKeyDown}>
+        <div ref={setScrollRef as unknown as (el: HTMLDivElement | null) => void} role="tablist" aria-label={ariaLabel} className="relative flex overflow-x-auto -mb-px" onKeyDown={onKeyDown}>
           {tabs.map(renderTab)}
           {underline}
         </div>
       ) : (
-        <nav ref={setScrollRef as unknown as (el: HTMLElement | null) => void} aria-label={ariaLabel} className="relative flex overflow-x-auto" style={{ marginBottom: '-1px' }}>
+        <nav ref={setScrollRef as unknown as (el: HTMLElement | null) => void} aria-label={ariaLabel} className="relative flex overflow-x-auto -mb-px">
           {tabs.map(renderTab)}
           {underline}
         </nav>
@@ -3948,7 +4098,7 @@ export function PillTabs({
           computed from character count (the font isn't guaranteed loaded at
           first render), so the real pill is measured. Clipped to zero width
           so it can't stretch the nearest scroll container sideways. */}
-      <div ref={measureRef} aria-hidden className="absolute left-0 top-0 flex items-center invisible pointer-events-none w-0 overflow-hidden [&>*]:shrink-0" style={{ whiteSpace: 'nowrap' }}>
+      <div ref={measureRef} aria-hidden className="absolute left-0 top-0 flex items-center invisible pointer-events-none w-0 overflow-hidden whitespace-nowrap [&>*]:shrink-0">
         {label && <span className="type-label-12 mr-1">{label}</span>}
         {tabs.map(t => <span key={t.key} className={pillClass(false)}>{pillLabel(t.label, false)}</span>)}
         <OverflowMenu items={[{ label: 'measure', onClick: () => {} }]} />
@@ -4009,7 +4159,7 @@ export function YearSelector({ year, onChange, max, className }: {
       <button type="button" onClick={() => onChange(year - 1)} aria-label="Previous year" className={arrowClass}>
         <ChevronLeftIcon size={14} />
       </button>
-      <span className="type-label-14 tabular-nums text-center px-1" style={{ color: 'var(--frv-text-primary)' }}>
+      <span className="type-label-14 tabular-nums text-center px-1 text-(color:--frv-text-primary)">
         {year}
       </span>
       <button
@@ -4017,8 +4167,7 @@ export function YearSelector({ year, onChange, max, className }: {
         onClick={() => onChange(atMax ? year : year + 1)}
         disabled={atMax}
         aria-label="Next year"
-        className={arrowClass}
-        style={{ opacity: atMax ? 0.4 : 1 }}
+        className={cx(arrowClass, atMax && 'opacity-40')}
       >
         <ChevronRightIcon size={14} />
       </button>
@@ -4175,22 +4324,24 @@ export function PeriodeVelger({
         className="inline-flex items-center justify-between gap-1.5 min-w-0 min-h-11 lg:min-h-0 h-10 px-3 rounded-[var(--frv-radius-sm)] type-button-14 transition-colors text-[var(--frv-text-primary)] bg-[var(--frv-surface)] border border-[var(--frv-gray-alpha-400)] hover:border-[var(--frv-gray-alpha-500)] hover:bg-[var(--frv-gray-alpha-100)]"
       >
         <span className="inline-flex items-center gap-1.5 min-w-0">
-          <CalendarRangeIcon size={16} className="shrink-0" style={{ color: 'var(--frv-text-secondary)' }} />
+          <CalendarRangeIcon size={16} className="shrink-0 text-(color:--frv-text-secondary)" />
           <span className="truncate">{periodeEtikett(verdi)}</span>
         </span>
-        <ChevronDownIcon size={12} className="shrink-0" style={{ color: 'var(--frv-text-secondary)' }} />
+        <ChevronDownIcon size={12} className="shrink-0 text-(color:--frv-text-secondary)" />
       </button>
       {open && montert && createPortal(
         <div
           ref={el => { panelRef.current = el }}
           role="dialog"
           aria-label="Choose period"
-          className="fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden"
+          className={cx(
+            'fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden min-w-[240px] bg-(color:--frv-surface) shadow-(--frv-shadow-menu) top-(--periodevelger-top) left-(--periodevelger-left)',
+            pos ? 'visible' : 'invisible',
+          )}
           style={{
-            top: pos?.top ?? 0, left: pos?.left ?? 0, minWidth: 240,
-            background: 'var(--frv-surface)', boxShadow: 'var(--frv-shadow-menu)',
-            visibility: pos ? 'visible' : 'hidden',
-          }}
+            '--periodevelger-top': `${pos?.top ?? 0}px`,
+            '--periodevelger-left': `${pos?.left ?? 0}px`,
+          } as CSSProperties}
         >
           <div className="p-2 flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2 px-1 pt-1">
@@ -4199,19 +4350,17 @@ export function PeriodeVelger({
                 onClick={() => onChange({ aar: visningAar - 1 })}
                 disabled={atMin}
                 aria-label="Previous year"
-                className={arrowClass}
-                style={atMin ? { opacity: 0.4 } : undefined}
+                className={cx(arrowClass, atMin && 'opacity-40')}
               >
                 <ChevronLeftIcon size={14} />
               </button>
-              <span className="type-label-13-strong tabular-nums" style={{ color: 'var(--frv-text-primary)' }}>{visningAar}</span>
+              <span className="type-label-13-strong tabular-nums text-(color:--frv-text-primary)">{visningAar}</span>
               <button
                 type="button"
                 onClick={() => onChange({ aar: visningAar + 1 })}
                 disabled={atMax}
                 aria-label="Next year"
-                className={arrowClass}
-                style={atMax ? { opacity: 0.4 } : undefined}
+                className={cx(arrowClass, atMax && 'opacity-40')}
               >
                 <ChevronRightIcon size={14} />
               </button>
@@ -4224,11 +4373,10 @@ export function PeriodeVelger({
                   data-periode-valgt={heleAaretAktiv || undefined}
                   onClick={() => { onChange({ aar: visningAar }); setOpen(false) }}
                   aria-pressed={heleAaretAktiv}
-                  className="h-9 px-2 rounded-[var(--frv-radius-sm)] type-label-13 text-left transition-colors hover:bg-[var(--frv-gray-alpha-100)]"
-                  style={{
-                    color: heleAaretAktiv ? 'var(--frv-text-primary)' : 'var(--frv-text-secondary)',
-                    background: heleAaretAktiv ? 'var(--frv-gray-alpha-100)' : 'transparent',
-                  }}
+                  className={cx(
+                    'h-9 px-2 rounded-[var(--frv-radius-sm)] type-label-13 text-left transition-colors hover:bg-[var(--frv-gray-alpha-100)]',
+                    heleAaretAktiv ? 'text-(color:--frv-text-primary) bg-(color:--frv-gray-alpha-100)' : 'text-(color:--frv-text-secondary) bg-transparent',
+                  )}
                 >
                   Whole year
                 </button>
@@ -4247,11 +4395,10 @@ export function PeriodeVelger({
                         aria-pressed={aktiv}
                         onClick={() => velgManed(m)}
                         onKeyDown={e => onManedKeyDown(e, i)}
-                        className="h-9 rounded-[var(--frv-radius-sm)] type-label-13 tabular-nums transition-colors hover:bg-[var(--frv-gray-alpha-100)] disabled:opacity-40 disabled:pointer-events-none"
-                        style={{
-                          color: aktiv ? 'var(--frv-text-primary)' : 'var(--frv-text-secondary)',
-                          background: aktiv ? 'var(--frv-gray-alpha-100)' : 'transparent',
-                        }}
+                        className={cx(
+                          'h-9 rounded-[var(--frv-radius-sm)] type-label-13 tabular-nums transition-colors hover:bg-[var(--frv-gray-alpha-100)] disabled:opacity-40 disabled:pointer-events-none',
+                          aktiv ? 'text-(color:--frv-text-primary) bg-(color:--frv-gray-alpha-100)' : 'text-(color:--frv-text-secondary) bg-transparent',
+                        )}
                       >
                         {navn}
                       </button>
@@ -4261,7 +4408,7 @@ export function PeriodeVelger({
               </div>
             )}
 
-            <div className="h-px" style={{ background: 'var(--frv-border)' }} />
+            <div className="h-px bg-(color:--frv-border)" />
 
             {/* Year chip row: "This year", then each OLDER year with data
                (newest first), "Since the start" last. One click sets the
@@ -4372,7 +4519,7 @@ export function ModalBody({ children, className, style }: { children: ReactNode;
  *  `sticky` keeps it visible while `ModalBody`'s content scrolls. */
 export function ModalActions({ children, className, sticky, style }: { children: ReactNode; className?: string; sticky?: boolean; style?: CSSProperties }) {
   return (
-    <div className={cx('flex items-center justify-end gap-2 px-6 py-4', sticky && 'sticky bottom-0 z-10', className)} style={{ borderTop: '1px solid var(--frv-border)', background: 'var(--frv-surface)', ...style }}>
+    <div className={cx('flex items-center justify-end gap-2 px-6 py-4 border-t border-(color:--frv-border) bg-(color:--frv-surface)', sticky && 'sticky bottom-0 z-10', className)} style={style}>
       {children}
     </div>
   )
@@ -4448,8 +4595,7 @@ export function Modal({ open, onClose, title, subtitle, ariaLabel, children, cla
           descendant) and sits visually above at z-10, so a click there never
           reaches this handler. */}
       <div
-        className="absolute inset-0 backdrop-blur-[2px]"
-        style={{ background: 'var(--frv-overlay)' }}
+        className="absolute inset-0 backdrop-blur-[2px] bg-(color:--frv-overlay)"
         onMouseDown={() => { pressStartedOnBackdrop.current = true }}
         onClick={() => { if (pressStartedOnBackdrop.current) onClose() }}
       />
@@ -4467,26 +4613,26 @@ export function Modal({ open, onClose, title, subtitle, ariaLabel, children, cla
           // URL bar), so a tall modal could stretch behind it.
           'overflow-y-auto',
           size === 'wide' ? 'sm:max-w-[640px]' : 'sm:max-w-[480px]',
+          'shadow-(--frv-shadow-modal) max-h-[calc(100dvh-var(--frv-space-8))]',
           className,
         )}
-        style={{ boxShadow: 'var(--frv-shadow-modal)', maxHeight: 'calc(100dvh - var(--frv-space-8))' }}
       >
         {title && (
-          <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: '1px solid var(--frv-border)' }}>
+          <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-(color:--frv-border)">
             <div className="min-w-0">
-              <h2 className="type-heading-20" style={{ color: 'var(--frv-text-primary)' }}>{title}</h2>
-              {subtitle && <p className="type-copy-14 mt-1" style={{ color: 'var(--frv-text-secondary)' }}>{subtitle}</p>}
+              <h2 className="type-heading-20 text-(color:--frv-text-primary)">{title}</h2>
+              {subtitle && <p className="type-copy-14 mt-1 text-(color:--frv-text-secondary)">{subtitle}</p>}
             </div>
-            <button onClick={onClose} aria-label="Close" className="w-11 h-11 -mr-3.5 -mt-3.5 shrink-0 flex items-center justify-center rounded-[var(--frv-radius-sm)] transition-colors hover:bg-[var(--frv-surface-2)]" style={{ color: 'var(--frv-text-tertiary)' }}>
+            <button onClick={onClose} aria-label="Close" className="w-11 h-11 -mr-3.5 -mt-3.5 shrink-0 flex items-center justify-center rounded-[var(--frv-radius-sm)] transition-colors hover:bg-[var(--frv-surface-2)] text-(color:--frv-text-tertiary)">
               <CloseIcon size={14} />
             </button>
           </div>
         )}
         {usesNewSlots ? children : (
-          <div className={cx('px-5', title ? 'pt-5' : 'pt-8')} style={{ paddingBottom: 'max(var(--frv-space-5), calc(var(--frv-space-5) + env(safe-area-inset-bottom)))' }}>{children}</div>
+          <div className={cx('px-5 pb-[max(var(--frv-space-5),_calc(var(--frv-space-5)_+_env(safe-area-inset-bottom)))]', title ? 'pt-5' : 'pt-8')}>{children}</div>
         )}
         {!title && (
-          <button onClick={onClose} aria-label="Close" className="absolute top-2 right-2.5 w-11 h-11 flex items-center justify-center rounded-[var(--frv-radius-sm)] transition-colors hover:bg-[var(--frv-surface-2)]" style={{ color: 'var(--frv-text-tertiary)' }}>
+          <button onClick={onClose} aria-label="Close" className="absolute top-2 right-2.5 w-11 h-11 flex items-center justify-center rounded-[var(--frv-radius-sm)] transition-colors hover:bg-[var(--frv-surface-2)] text-(color:--frv-text-tertiary)">
             <CloseIcon size={14} />
           </button>
         )}
@@ -4645,7 +4791,7 @@ export function SidePanel({ open, onClose, title, eyebrow, description, children
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-end">
-      <div className="absolute inset-0 backdrop-blur-[2px]" style={{ background: 'var(--frv-overlay)' }} aria-hidden="true" />
+      <div className="absolute inset-0 backdrop-blur-[2px] bg-(color:--frv-overlay)" aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
@@ -4659,22 +4805,22 @@ export function SidePanel({ open, onClose, title, eyebrow, description, children
           // corners always sit flush against the viewport edge).
           'rounded-t-[var(--frv-radius-md)] md:rounded-tr-none',
           SIDE_PANEL_WIDTH[bredde],
+          'h-dvh shadow-(--frv-shadow-modal)',
         )}
-        style={{ height: '100dvh', boxShadow: 'var(--frv-shadow-modal)' }}
       >
-        <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: '1px solid var(--frv-border)' }}>
+        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-(color:--frv-border)">
           <div className="min-w-0">
-            {eyebrow && <p className="type-overline mb-1" style={{ color: 'var(--frv-text-tertiary)' }}>{eyebrow}</p>}
-            <h2 id={titleId} className="type-heading-16" style={{ color: 'var(--frv-text-primary)' }}>{title}</h2>
-            {description && <p className="type-copy-13 mt-1 max-w-[65ch]" style={{ color: 'var(--frv-text-secondary)' }}>{description}</p>}
+            {eyebrow && <p className="type-overline mb-1 text-(color:--frv-text-tertiary)">{eyebrow}</p>}
+            <h2 id={titleId} className="type-heading-16 text-(color:--frv-text-primary)">{title}</h2>
+            {description && <p className="type-copy-13 mt-1 max-w-[65ch] text-(color:--frv-text-secondary)">{description}</p>}
           </div>
-          <button onClick={onClose} aria-label={lukkeetikett} className="shrink-0 -mr-2 -mt-2 w-11 h-11 flex items-center justify-center rounded-[var(--frv-radius-sm)] transition-colors hover:bg-[var(--frv-surface-2)]" style={{ color: 'var(--frv-text-tertiary)' }}>
+          <button onClick={onClose} aria-label={lukkeetikett} className="shrink-0 -mr-2 -mt-2 w-11 h-11 flex items-center justify-center rounded-[var(--frv-radius-sm)] transition-colors hover:bg-[var(--frv-surface-2)] text-(color:--frv-text-tertiary)">
             <CloseIcon size={14} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 px-6 py-4" style={{ borderTop: '1px solid var(--frv-border)', background: 'var(--frv-surface)' }}>
+          <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-(color:--frv-border) bg-(color:--frv-surface)">
             {footer}
           </div>
         )}
@@ -4790,7 +4936,7 @@ export function OverflowMenu({ items, sections, ariaLabel = 'More actions', trig
         aria-label={ariaLabel}
         aria-haspopup="menu"
         aria-expanded={open}
-        style={{ color: 'var(--frv-text-tertiary)' }}
+        className="text-(color:--frv-text-tertiary)"
       >
         {triggerContent ?? <MoreIcon size={16} />}
       </IconButton>
@@ -4801,18 +4947,19 @@ export function OverflowMenu({ items, sections, ariaLabel = 'More actions', trig
           aria-label={ariaLabel}
           tabIndex={-1}
           onKeyDown={menuKeyDown}
-          className="fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden"
+          className={cx(
+            'fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden min-w-[220px] max-w-[min(320px,calc(100vw-2rem))] bg-(color:--frv-surface) shadow-(--frv-shadow-menu) p-(--frv-space-1) top-(--overflowmenu-top) left-(--overflowmenu-left)',
+            pos ? 'visible' : 'invisible',
+          )}
           style={{
-            top: pos?.top ?? 0, left: pos?.left ?? 0,
-            minWidth: 220, maxWidth: 'min(320px, calc(100vw - 2rem))',
-            background: 'var(--frv-surface)', boxShadow: 'var(--frv-shadow-menu)', padding: 'var(--frv-space-1)',
-            visibility: pos ? 'visible' : 'hidden',
-          }}
+            '--overflowmenu-top': `${pos?.top ?? 0}px`,
+            '--overflowmenu-left': `${pos?.left ?? 0}px`,
+          } as CSSProperties}
         >
           {groups.map((section, si) => (
             <div key={si}>
-              {si > 0 && <div role="separator" style={{ height: 1, margin: 'var(--frv-space-1) 0', background: 'var(--frv-border)' }} />}
-              {section.title && <p className="type-label-12 px-3 pt-1.5 pb-1" style={{ color: 'var(--frv-text-secondary)' }}>{section.title}</p>}
+              {si > 0 && <div role="separator" className="h-px my-(--frv-space-1) bg-(color:--frv-border)" />}
+              {section.title && <p className="type-label-12 px-3 pt-1.5 pb-1 text-(color:--frv-text-secondary)">{section.title}</p>}
               {section.items.map(item => {
                 const disabled = !!item.disabled
                 const selectIndex = disabled ? -1 : allSelectable.indexOf(item)
@@ -4826,14 +4973,13 @@ export function OverflowMenu({ items, sections, ariaLabel = 'More actions', trig
                     aria-disabled={disabled || undefined}
                     onClick={e => { e.stopPropagation(); if (!disabled) select(item) }}
                     onMouseEnter={() => { if (!disabled) setActive(selectIndex) }}
-                    className="w-full flex items-center gap-[var(--frv-space-2)] h-9 px-3 text-left type-label-14 rounded-[var(--frv-radius-sm)] transition-colors disabled:cursor-not-allowed"
-                    style={{
-                      color: disabled ? 'var(--frv-text-tertiary)' : isError ? 'var(--frv-error-text)' : 'var(--frv-text-primary)',
-                      background: isActive ? (isError ? 'var(--frv-error-light)' : 'var(--frv-gray-alpha-100)') : 'transparent',
-                      opacity: disabled ? 0.5 : undefined,
-                    }}
+                    className={cx(
+                      'w-full flex items-center gap-[var(--frv-space-2)] h-9 px-3 text-left type-label-14 rounded-[var(--frv-radius-sm)] transition-colors disabled:cursor-not-allowed',
+                      disabled ? 'text-(color:--frv-text-tertiary) opacity-50' : isError ? 'text-(color:--frv-error-text)' : 'text-(color:--frv-text-primary)',
+                      isActive ? (isError ? 'bg-(color:--frv-error-light)' : 'bg-(color:--frv-gray-alpha-100)') : 'bg-transparent',
+                    )}
                   >
-                    {item.icon && <span className="shrink-0 flex items-center" style={{ color: disabled ? 'var(--frv-text-tertiary)' : 'var(--frv-text-secondary)' }}>{item.icon}</span>}
+                    {item.icon && <span className={cx('shrink-0 flex items-center', disabled ? 'text-(color:--frv-text-tertiary)' : 'text-(color:--frv-text-secondary)')}>{item.icon}</span>}
                     {item.label}
                   </button>
                 )
@@ -4908,19 +5054,21 @@ export function CollapsibleSection({ title, storageKey, defaultOpen = true, badg
         )}
       >
         {!ghost && (
-          <ChevronDownIcon size={14} className={COLLAPSIBLE_CHEVRON_MOTION} style={{ color: 'var(--frv-text-secondary)', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+          <ChevronDownIcon size={14} className={cx(COLLAPSIBLE_CHEVRON_MOTION, 'text-(color:--frv-text-secondary)', open ? 'rotate-0' : '-rotate-90')} />
         )}
         <span
-          className={cx('transition-colors', ghost ? 'type-label-14 flex-1 min-w-0' : 'type-heading-14 group-hover:text-[var(--frv-text-secondary)]')}
-          style={{ color: ghost ? 'var(--frv-text-primary)' : 'var(--frv-text-tertiary)' }}
+          className={cx(
+            'transition-colors',
+            ghost ? 'type-label-14 flex-1 min-w-0 text-(color:--frv-text-primary)' : 'type-heading-14 text-(color:--frv-text-tertiary) group-hover:text-[var(--frv-text-secondary)]',
+          )}
         >
           {title}
         </span>
         {badge !== undefined && badge !== '' && <Badge variant="gray" contrast="low" size="sm">{badge}</Badge>}
         {ghost ? (
-          <ChevronDownIcon size={16} className={cx(COLLAPSIBLE_CHEVRON_MOTION, 'text-[var(--frv-text-tertiary)] group-hover:text-[var(--frv-text-secondary)]')} style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+          <ChevronDownIcon size={16} className={cx(COLLAPSIBLE_CHEVRON_MOTION, 'text-[var(--frv-text-tertiary)] group-hover:text-[var(--frv-text-secondary)]', open ? 'rotate-180' : 'rotate-0')} />
         ) : (
-          <div style={{ flex: 1, height: '1px', background: 'var(--frv-border)' }} />
+          <div className="flex-1 h-px bg-(color:--frv-border)" />
         )}
       </button>
 
@@ -5146,6 +5294,11 @@ export function BygningsdelKort({
       PageHeader
    ══════════════════════════════════════════════════════════════════════════ */
 
+// Kept in sync with the literal `max-w-[280px]` on the FloatingLayer panel
+// below by hand — a Tailwind class built from this constant at runtime
+// (`` max-w-[${BEGREP_PANEL_MAX_WIDTH}px] ``) would be invisible to
+// Tailwind's static scanner, which only sees literal class text in the
+// source, never an evaluated JS expression.
 const BEGREP_PANEL_MAX_WIDTH = 280
 
 export interface BegrepProps {
@@ -5208,8 +5361,7 @@ export function Begrep({ term, explanation, children, className }: BegrepProps) 
         onMouseLeave={() => setHover(false)}
         onFocus={() => setHover(true)}
         onBlur={() => setHover(false)}
-        className="bg-transparent border-0 p-0 m-0 cursor-help underline decoration-dotted underline-offset-[0.16em]"
-        style={{ font: 'inherit', color: 'inherit', textDecorationColor: 'var(--frv-text-tertiary)' }}
+        className="bg-transparent border-0 p-0 m-0 cursor-help underline decoration-dotted underline-offset-[0.16em] [font:inherit] text-inherit decoration-(color:--frv-text-tertiary)"
       >
         {children ?? term}
       </button>
@@ -5223,13 +5375,7 @@ export function Begrep({ term, explanation, children, className }: BegrepProps) 
         role="tooltip"
         panelRef={el => { panelRef.current = el }}
         onAnchorOutOfView={close}
-        className="type-label-13 pop-in"
-        style={{
-          width: 'max-content', maxWidth: BEGREP_PANEL_MAX_WIDTH,
-          background: 'var(--frv-text-primary)', color: 'var(--frv-bg)',
-          borderRadius: 'var(--frv-radius-sm)', boxShadow: 'var(--frv-shadow-tooltip)',
-          padding: 'var(--frv-space-1) var(--frv-space-2)',
-        }}
+        className="type-label-13 pop-in w-max max-w-[280px] bg-(color:--frv-text-primary) text-(color:--frv-bg) rounded-(--frv-radius-sm) shadow-(--frv-shadow-tooltip) py-(--frv-space-1) px-(--frv-space-2)"
       >
         <strong className="font-medium">{term}</strong> · {explanation}
       </FloatingLayer>
@@ -5245,7 +5391,6 @@ export function Begrep({ term, explanation, children, className }: BegrepProps) 
  * property, not defined by this token layer) to your bar's rendered height
  * so ActionBar sticks ABOVE it instead of behind it. Default is `0px` — no
  * bottom bar assumed. */
-const ACTIONBAR_CLEARANCE = 'calc(var(--frv-bottom-clearance, 0px) + env(safe-area-inset-bottom))'
 
 /** ActionBar — the page's primary action, always visible on mobile, and
  *  always the LAST element in the page's content (it IS the page's
@@ -5257,26 +5402,25 @@ const ACTIONBAR_CLEARANCE = 'calc(var(--frv-bottom-clearance, 0px) + env(safe-ar
  *  left. `label` is a short status line ("3 of 5 filled in"), not an
  *  explanation — use a note component for that.
  *
- *  Chrome (bg/border/shadow) is Tailwind arbitrary-value CLASSES, not inline
- *  `style` — deliberately, so the `sm:bg-transparent`/`sm:border-0`/
- *  `sm:shadow-none` overrides actually win at 640px. An inline style has
- *  higher precedence than any class regardless of breakpoint, so a version
- *  that set `style={{ background: ... }}` kept the mobile bar chrome baked
- *  in permanently and the desktop overrides never took effect — found in
- *  the source, 2026-09-11. Only `bottom` (a computed value) stays inline. */
+ *  Chrome (bg/border/shadow/bottom) is all Tailwind arbitrary-value CLASSES,
+ *  not inline `style` — deliberately, so the `sm:bg-transparent`/
+ *  `sm:border-0`/`sm:shadow-none` overrides actually win at 640px. An inline
+ *  style has higher precedence than any class regardless of breakpoint, so a
+ *  version that set `style={{ background: ... }}` kept the mobile bar chrome
+ *  baked in permanently and the desktop overrides never took effect — found
+ *  in the source, 2026-09-11. */
 export function ActionBar({ children, label, className }: { children: ReactNode; label?: ReactNode; className?: string }) {
   return (
     <div
       data-ui="actionbar"
       className={cx(
-        'sticky z-20 -mx-4 px-4 py-3 flex items-center justify-end gap-2',
+        'sticky z-20 -mx-4 px-4 py-3 flex items-center justify-end gap-2 bottom-[calc(var(--frv-bottom-clearance,0px)+env(safe-area-inset-bottom))]',
         'bg-[var(--frv-surface)] border-t border-[var(--frv-border)] shadow-[var(--frv-shadow-menu)]',
         'sm:static sm:mx-0 sm:px-0 sm:py-0 sm:bg-transparent sm:border-0 sm:shadow-none',
         className,
       )}
-      style={{ bottom: ACTIONBAR_CLEARANCE }}
     >
-      {label != null && <span className="type-label-13 mr-auto truncate" style={{ color: 'var(--frv-text-secondary)' }}>{label}</span>}
+      {label != null && <span className="type-label-13 mr-auto truncate text-(color:--frv-text-secondary)">{label}</span>}
       {children}
     </div>
   )
@@ -5468,17 +5612,21 @@ export function StepIndicator({
       {Array.from({ length: antall }).map((_, i) => {
         const isActive = i === aktiv
         const isDone = i < aktiv
-        const color = isActive ? 'var(--frv-text-primary)' : 'var(--frv-gray-alpha-300)'
-        const dim = variant === 'piller' ? 6 : isActive ? 8 : 6
-        const dotStyle: CSSProperties = { width: variant === 'piller' && isActive ? 20 : dim, height: dim, borderRadius: 'var(--frv-radius-full)', background: color, transition: 'all 0.25s' }
+        const dotClass = cx(
+          'rounded-(--frv-radius-full) transition-all duration-[250ms]',
+          isActive ? 'bg-(color:--frv-text-primary)' : 'bg-(color:--frv-gray-alpha-300)',
+          variant === 'piller'
+            ? (isActive ? 'w-5 h-1.5' : 'w-1.5 h-1.5')
+            : (isActive ? 'w-2 h-2' : 'w-1.5 h-1.5'),
+        )
         if (onStegKlikk && isDone) {
           return (
             <button key={i} type="button" onClick={() => onStegKlikk(i)} aria-label={`Go to step ${i + 1}`} className="p-1 -m-1 cursor-pointer">
-              <span style={dotStyle} />
+              <span className={dotClass} />
             </button>
           )
         }
-        return <span key={i} style={dotStyle} />
+        return <span key={i} className={dotClass} />
       })}
     </div>
   )
@@ -5638,18 +5786,26 @@ export function resetIntro(id: string) {
   try { localStorage.removeItem(FEATURE_INTRO_KEY_PREFIX + id) } catch { /* nothing stored to reset */ }
 }
 
-const FEATURE_INTRO_ARROW_EDGE = 'var(--frv-border-2)'
-const FEATURE_INTRO_ARROW_FILL = 'var(--frv-surface-2)'
-
 function FeatureIntroArrow({ direction }: { direction: 'up' | 'down' }) {
   const up = direction === 'up'
-  const shared = { left: 20, width: 0, height: 0 } as const
   return (
     <>
       {/* Edge — 1px larger than the fill, gives a thin stroke around the triangle. */}
-      <span aria-hidden className="absolute" style={{ ...shared, [up ? 'top' : 'bottom']: -8, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', ...(up ? { borderBottom: `8px solid ${FEATURE_INTRO_ARROW_EDGE}` } : { borderTop: `8px solid ${FEATURE_INTRO_ARROW_EDGE}` }) }} />
+      <span
+        aria-hidden
+        className={cx(
+          'absolute left-5 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent',
+          up ? 'top-[-8px] border-b-[8px] border-b-(color:--frv-border-2)' : 'bottom-[-8px] border-t-[8px] border-t-(color:--frv-border-2)',
+        )}
+      />
       {/* Fill — 1px inside the edge, offset toward the tip. */}
-      <span aria-hidden className="absolute" style={{ left: 21, width: 0, height: 0, [up ? 'top' : 'bottom']: -7, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', ...(up ? { borderBottom: `7px solid ${FEATURE_INTRO_ARROW_FILL}` } : { borderTop: `7px solid ${FEATURE_INTRO_ARROW_FILL}` }) }} />
+      <span
+        aria-hidden
+        className={cx(
+          'absolute left-[21px] w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent',
+          up ? 'top-[-7px] border-b-[7px] border-b-(color:--frv-surface-2)' : 'bottom-[-7px] border-t-[7px] border-t-(color:--frv-surface-2)',
+        )}
+      />
     </>
   )
 }
@@ -5840,8 +5996,11 @@ export function FeatureIntro({
 
   return (
     <div
-      className={cx('relative max-w-md rounded-[var(--frv-radius-md)] px-3.5 py-3', phase === 'closing' ? 'dismiss-out' : 'pop-in', className)}
-      style={{ background: FEATURE_INTRO_ARROW_FILL, border: `1px solid ${FEATURE_INTRO_ARROW_EDGE}` }}
+      className={cx(
+        'relative max-w-md rounded-[var(--frv-radius-md)] px-3.5 py-3 bg-(color:--frv-surface-2) border border-(color:--frv-border-2)',
+        phase === 'closing' ? 'dismiss-out' : 'pop-in',
+        className,
+      )}
       onAnimationEnd={finishClosing}
     >
       <FeatureIntroArrow direction={plassering === 'under' ? 'up' : 'down'} />
@@ -5930,20 +6089,20 @@ export function ErrorState({
 
   const detailsNode = details && (
     <details className={cx('w-full', compact ? 'mt-2' : 'mt-4 max-w-md text-left')}>
-      <summary className="type-label-12 cursor-pointer select-none" style={{ color: 'var(--frv-text-tertiary)' }}>Technical details</summary>
-      <pre className="type-copy-13-mono mt-2 p-3 whitespace-pre-wrap break-words rounded-[var(--frv-radius-sm)]" style={{ background: 'var(--frv-gray-alpha-100)', color: 'var(--frv-text-secondary)' }}>{details}</pre>
+      <summary className="type-label-12 cursor-pointer select-none text-(color:--frv-text-tertiary)">Technical details</summary>
+      <pre className="type-copy-13-mono mt-2 p-3 whitespace-pre-wrap break-words rounded-[var(--frv-radius-sm)] bg-(color:--frv-gray-alpha-100) text-(color:--frv-text-secondary)">{details}</pre>
     </details>
   )
 
   if (compact) {
     return (
-      <div role="alert" className={cx('flex flex-wrap items-center gap-3 p-3 rounded-[var(--frv-radius-md)]', className)} style={{ background: 'var(--frv-surface)', border: '1px solid var(--frv-border)' }}>
-        <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--frv-error-light)' }}>
-          <Icon size={14} style={{ color: 'var(--frv-error-text)' }} />
+      <div role="alert" className={cx('flex flex-wrap items-center gap-3 p-3 rounded-[var(--frv-radius-md)] bg-(color:--frv-surface) border border-(color:--frv-border)', className)}>
+        <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-(color:--frv-error-light)">
+          <Icon size={14} className="text-(color:--frv-error-text)" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="type-heading-14">{title}</p>
-          {message && <p className="type-copy-13" style={{ color: 'var(--frv-text-secondary)' }}>{message}</p>}
+          {message && <p className="type-copy-13 text-(color:--frv-text-secondary)">{message}</p>}
           {detailsNode}
         </div>
         {retryButton && <div className="ml-auto">{retryButton}</div>}
@@ -5952,12 +6111,12 @@ export function ErrorState({
   }
 
   return (
-    <div role="alert" className={cx('flex flex-col items-center justify-center py-12 px-6 text-center rounded-[var(--frv-radius-md)]', className)} style={{ background: 'var(--frv-surface)', border: '1px solid var(--frv-border)' }}>
-      <div className="w-10 h-10 rounded-full flex items-center justify-center mb-4" style={{ background: 'var(--frv-error-light)' }}>
-        <Icon size={18} style={{ color: 'var(--frv-error-text)' }} />
+    <div role="alert" className={cx('flex flex-col items-center justify-center py-12 px-6 text-center rounded-[var(--frv-radius-md)] bg-(color:--frv-surface) border border-(color:--frv-border)', className)}>
+      <div className="w-10 h-10 rounded-full flex items-center justify-center mb-4 bg-(color:--frv-error-light)">
+        <Icon size={18} className="text-(color:--frv-error-text)" />
       </div>
       <p className="type-heading-16 mb-1">{title}</p>
-      {message && <p className="type-copy-14 max-w-sm" style={{ color: 'var(--frv-text-secondary)' }}>{message}</p>}
+      {message && <p className="type-copy-14 max-w-sm text-(color:--frv-text-secondary)">{message}</p>}
       {retryButton && <div className="mt-5">{retryButton}</div>}
       {detailsNode}
     </div>
@@ -6175,7 +6334,7 @@ export function HoldToConfirm({
         onContextMenu={e => e.preventDefault()}
       >
         {phase === 'holding' && (
-          <span aria-hidden className="fill-x absolute inset-0 pointer-events-none" style={{ background: 'var(--frv-error-light)', '--hold-ms': `${holdMs}ms` } as CSSProperties} />
+          <span aria-hidden className="fill-x absolute inset-0 pointer-events-none bg-(color:--frv-error-light)" style={{ '--hold-ms': `${holdMs}ms` } as CSSProperties} />
         )}
         <span className="relative inline-flex items-center gap-1.5">{children}</span>
       </Button>
@@ -6357,8 +6516,8 @@ export function Dropdown({
     const isActive = i === activeIndex
     const content = (
       <>
-        <span className="truncate" style={{ color: 'var(--frv-text-primary)' }}>{item.label}</span>
-        {isSelected && <CheckIcon size={14} className="shrink-0" style={{ color: 'var(--frv-text-primary)' }} />}
+        <span className="truncate text-(color:--frv-text-primary)">{item.label}</span>
+        {isSelected && <CheckIcon size={14} className="shrink-0 text-(color:--frv-text-primary)" />}
       </>
     )
     const sharedProps = {
@@ -6367,8 +6526,7 @@ export function Dropdown({
       'aria-selected': isSelected,
       ref: (el: HTMLElement | null) => { itemRefs.current[i] = el },
       onMouseEnter: () => setActiveIndex(i),
-      className: cx(optionClass(isActive), item.sectionBreakBefore && 'border-t'),
-      style: item.sectionBreakBefore ? { borderColor: 'var(--frv-border)' } : undefined,
+      className: cx(optionClass(isActive), item.sectionBreakBefore && 'border-t border-(color:--frv-border)'),
     }
     if (item.href && !busy) {
       return <a key={item.id} {...sharedProps} href={item.href} onClick={() => { close(); onSelect?.(item.id) }}>{content}</a>
@@ -6399,7 +6557,7 @@ export function Dropdown({
         )}
       >
         <span className={cx('truncate', prominent && 'type-heading-14', variant === 'field' && 'max-w-[200px]')}>{triggerLabel}</span>
-        <ChevronDownIcon size={12} className="shrink-0" style={{ color: 'var(--frv-text-secondary)' }} />
+        <ChevronDownIcon size={12} className="shrink-0 text-(color:--frv-text-secondary)" />
       </button>
       {open && montert && createPortal(
         <div
@@ -6410,14 +6568,16 @@ export function Dropdown({
           aria-label={effectiveAriaLabel}
           aria-activedescendant={items[activeIndex] ? optionId(activeIndex) : undefined}
           onKeyDown={onListKeyDown}
-          className="fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden"
+          className={cx(
+            'fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden min-w-[220px] max-w-[min(320px,calc(100vw-2rem))] bg-(color:--frv-surface) shadow-(--frv-shadow-menu) p-(--frv-space-1) top-(--dropdown-top) left-(--dropdown-left)',
+            pos ? 'visible' : 'invisible',
+          )}
           style={{
-            top: pos?.top ?? 0, left: pos?.left ?? 0, minWidth: 220, maxWidth: 'min(320px, calc(100vw - 2rem))',
-            background: 'var(--frv-surface)', boxShadow: 'var(--frv-shadow-menu)', padding: 'var(--frv-space-1)',
-            visibility: pos ? 'visible' : 'hidden',
-          }}
+            '--dropdown-top': `${pos?.top ?? 0}px`,
+            '--dropdown-left': `${pos?.left ?? 0}px`,
+          } as CSSProperties}
         >
-          {groupLabel && <p className="px-3 pt-2.5 pb-1 type-label-12" style={{ color: 'var(--frv-text-tertiary)' }}>{groupLabel}</p>}
+          {groupLabel && <p className="px-3 pt-2.5 pb-1 type-label-12 text-(color:--frv-text-tertiary)">{groupLabel}</p>}
           <div className="max-h-[280px] overflow-y-auto">{items.map((item, i) => renderOption(item, i))}</div>
           {footer}
         </div>,
@@ -6700,8 +6860,8 @@ function dataTableRenderStandardverdi(v: DataTableVerdi): ReactNode {
 function DataTableSkeleton({ kolonneAntall, rader }: { kolonneAntall: number; rader: number }) {
   const bredder = Array.from({ length: Math.min(kolonneAntall, 5) }, (_, i) => (i === 0 ? '32%' : '14%'))
   return (
-    <div className="rounded-[var(--frv-radius-md)] overflow-hidden" style={{ border: '1px solid var(--frv-border)' }}>
-      <div className="h-11 flex items-center gap-4 px-3" style={{ background: 'var(--frv-surface-2)', borderBottom: '1px solid var(--frv-border-2)' }}>
+    <div className="rounded-[var(--frv-radius-md)] overflow-hidden border border-(color:--frv-border)">
+      <div className="h-11 flex items-center gap-4 px-3 bg-(color:--frv-surface-2) border-b border-(color:--frv-border-2)">
         {bredder.map((b, i) => <Skeleton key={i} width={b} />)}
       </div>
       <div className="divide-y divide-[var(--frv-border)]">
@@ -6759,12 +6919,14 @@ function DataTableKolonnevelger<T>({ kolonner, skjulte, onToggle }: {
           ref={el => { panelRef.current = el }}
           role="group"
           aria-label="Show or hide columns"
-          className="fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden"
+          className={cx(
+            'fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden min-w-[220px] bg-(color:--frv-surface) shadow-(--frv-shadow-menu) p-(--frv-space-1) top-(--kolonnevelger-top) left-(--kolonnevelger-left)',
+            pos ? 'visible' : 'invisible',
+          )}
           style={{
-            top: pos?.top ?? 0, left: pos?.left ?? 0, minWidth: 220,
-            background: 'var(--frv-surface)', boxShadow: 'var(--frv-shadow-menu)', padding: 'var(--frv-space-1)',
-            visibility: pos ? 'visible' : 'hidden',
-          }}
+            '--kolonnevelger-top': `${pos?.top ?? 0}px`,
+            '--kolonnevelger-left': `${pos?.left ?? 0}px`,
+          } as CSSProperties}
         >
           <div className="flex flex-col gap-0.5">
             {kolonner.map(k => (
@@ -7023,12 +7185,11 @@ export function AgentPlan({
     <div
       role="group"
       aria-labelledby={headingId}
-      className={cx('w-full max-w-[420px] rounded-[var(--frv-radius-md)] overflow-hidden', className)}
-      style={{ background: 'var(--frv-surface)', border: '1px solid var(--frv-border)' }}
+      className={cx('w-full max-w-[420px] rounded-[var(--frv-radius-md)] overflow-hidden bg-(color:--frv-surface) border border-(color:--frv-border)', className)}
     >
-      <div className="flex items-center justify-between gap-3 px-3.5 py-2.5" style={{ borderBottom: '1px solid var(--frv-border)' }}>
+      <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-(color:--frv-border)">
         <h3 id={headingId} className="type-heading-14">{title}</h3>
-        <span className="type-label-12-mono tabular-nums shrink-0" style={{ color: 'var(--frv-text-tertiary)' }}>
+        <span className="type-label-12-mono tabular-nums shrink-0 text-(color:--frv-text-tertiary)">
           {antallValgt}/{steps.length} steps
         </span>
       </div>
@@ -7038,7 +7199,7 @@ export function AgentPlan({
             50% opacity measured 2.1-3.4:1 against the surface (axe, 2026-09-12
             sweep). */}
         {steps.map((step, i) => (
-          <li key={step.id} className={cx('transition-colors duration-150', !step.valgt && 'line-through decoration-[var(--frv-text-tertiary)]')} style={{ color: step.valgt ? undefined : 'var(--frv-text-tertiary)' }}>
+          <li key={step.id} className={cx('transition-colors duration-150', !step.valgt && 'line-through decoration-[var(--frv-text-tertiary)] text-(color:--frv-text-tertiary)')}>
             <Checkbox
               size="sm"
               checked={step.valgt}
@@ -7046,7 +7207,7 @@ export function AgentPlan({
               className="w-full px-1.5 py-1.5 rounded-[var(--frv-radius-sm)] hover:bg-[var(--frv-gray-alpha-100)]"
               label={
                 <span>
-                  <span className="type-label-12-mono mr-1.5" style={{ color: 'var(--frv-text-tertiary)' }}>
+                  <span className="type-label-12-mono mr-1.5 text-(color:--frv-text-tertiary)">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   {step.tittel}
@@ -7058,7 +7219,7 @@ export function AgentPlan({
         ))}
       </ol>
 
-      <div className="flex items-center justify-end gap-2 px-3 py-2.5" style={{ borderTop: '1px solid var(--frv-border)' }}>
+      <div className="flex items-center justify-end gap-2 px-3 py-2.5 border-t border-(color:--frv-border)">
         <Button size="sm" variant="tertiary" onClick={onCancel} disabled={busy}>{cancelLabel}</Button>
         <Button
           size="sm"
@@ -7093,10 +7254,10 @@ function agentStagger(i: number): CSSProperties {
  *  bubble while a response streams in). */
 export function ThinkingDots({ label = 'Thinking', className }: { label?: string; className?: string }) {
   return (
-    <div role="status" aria-label={label} className={cx('inline-flex items-center gap-2.5', className)} style={{ color: 'var(--frv-text-secondary)' }}>
+    <div role="status" aria-label={label} className={cx('inline-flex items-center gap-2.5 text-(color:--frv-text-secondary)', className)}>
       <span aria-hidden className="inline-flex items-center gap-1">
         {[0, 1, 2].map(i => (
-          <span key={i} className="thinking-dot inline-block w-1.5 h-1.5 rounded-full" style={{ background: 'currentColor', ...agentStagger(i) }} />
+          <span key={i} className="thinking-dot inline-block w-1.5 h-1.5 rounded-full bg-current" style={agentStagger(i)} />
         ))}
       </span>
       <span className="type-copy-13">{label}</span>
@@ -7107,20 +7268,20 @@ export function ThinkingDots({ label = 'Thinking', className }: { label?: string
 function AgentStepStatusIcon({ status }: { status: AgentStepStatus }) {
   if (status === 'ferdig') {
     return (
-      <span className="check-pop grid place-items-center w-4 h-4 rounded-full shrink-0" style={{ background: 'var(--frv-success-solid)', color: 'var(--frv-success-fg)' }}>
+      <span className="check-pop grid place-items-center w-4 h-4 rounded-full shrink-0 bg-(color:--frv-success-solid) text-(color:--frv-success-fg)">
         <CheckIcon size={10} />
       </span>
     )
   }
   if (status === 'feilet') {
     return (
-      <span className="check-pop grid place-items-center w-4 h-4 rounded-full shrink-0" style={{ background: 'var(--frv-error-solid)', color: 'var(--frv-error-fg)' }}>
+      <span className="check-pop grid place-items-center w-4 h-4 rounded-full shrink-0 bg-(color:--frv-error-solid) text-(color:--frv-error-fg)">
         <CloseIcon size={10} />
       </span>
     )
   }
-  if (status === 'kjorer') return <LoaderIcon size={16} className="animate-spin shrink-0" style={{ color: 'var(--frv-accent-text)' }} />
-  return <CircleOutlineIcon size={14} className="shrink-0" style={{ color: 'var(--frv-text-tertiary)' }} />
+  if (status === 'kjorer') return <LoaderIcon size={16} className="animate-spin shrink-0 text-(color:--frv-accent-text)" />
+  return <CircleOutlineIcon size={14} className="shrink-0 text-(color:--frv-text-tertiary)" />
 }
 
 const AGENT_STEP_STATUS_LABEL: Record<AgentStepStatus, string | null> = {
@@ -7135,21 +7296,21 @@ function AgentStepRow({ step, last }: { step: AgentStep; last: boolean }) {
     <li className="relative flex gap-3">
       <div className="flex flex-col items-center pt-0.5">
         <AgentStepStatusIcon status={step.status} />
-        {!last && <span className="w-px flex-1 mt-1" style={{ background: 'var(--frv-border)' }} />}
+        {!last && <span className="w-px flex-1 mt-1 bg-(color:--frv-border)" />}
       </div>
       <div className={cx('min-w-0 flex-1', last ? 'pb-0' : 'pb-3')}>
         <div className="flex items-center gap-2 min-w-0">
-          <span className="type-label-13 truncate" style={{ color: step.status === 'venter' ? 'var(--frv-text-tertiary)' : 'var(--frv-text-primary)' }}>
+          <span className={cx('type-label-13 truncate', step.status === 'venter' ? 'text-(color:--frv-text-tertiary)' : 'text-(color:--frv-text-primary)')}>
             {step.tittel}
           </span>
           {AGENT_STEP_STATUS_LABEL[step.status] && (
-            <span className="type-label-12-mono uppercase shrink-0" style={{ color: step.status === 'feilet' ? 'var(--frv-error-text)' : 'var(--frv-text-tertiary)' }}>
+            <span className={cx('type-label-12-mono uppercase shrink-0', step.status === 'feilet' ? 'text-(color:--frv-error-text)' : 'text-(color:--frv-text-tertiary)')}>
               {AGENT_STEP_STATUS_LABEL[step.status]}
             </span>
           )}
         </div>
         {step.detalj && (
-          <p className="type-copy-13 mt-1" style={{ color: step.status === 'feilet' ? 'var(--frv-error-text)' : 'var(--frv-text-secondary)' }}>
+          <p className={cx('type-copy-13 mt-1', step.status === 'feilet' ? 'text-(color:--frv-error-text)' : 'text-(color:--frv-text-secondary)')}>
             {step.detalj}
           </p>
         )}
@@ -7216,20 +7377,19 @@ export function ReasoningTrace({ steps, status = 'ferdig', defaultOpen = false, 
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className="group inline-flex items-center gap-2 rounded-[var(--frv-radius-sm)] py-1 transition-colors duration-150 hover:text-[var(--frv-text-primary)]"
-        style={{ color: 'var(--frv-text-secondary)' }}
+        className="group inline-flex items-center gap-2 rounded-[var(--frv-radius-sm)] py-1 transition-colors duration-150 hover:text-[var(--frv-text-primary)] text-(color:--frv-text-secondary)"
       >
         <SparklesIcon size={14} className={status === 'tenker' ? 'motion-safe:animate-pulse' : undefined} />
         <span className="type-label-12">{status === 'tenker' ? 'Thinking…' : 'How the assistant reasoned'}</span>
-        <ChevronDownIcon size={12} style={{ color: 'var(--frv-text-tertiary)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
+        <ChevronDownIcon size={12} className={cx('text-(color:--frv-text-tertiary) transition-transform duration-200 ease-[ease]', open ? 'rotate-180' : 'rotate-0')} />
       </button>
 
       <div className="collapsible-rows" data-open={open}>
         <div className="collapsible-inner">
-          <ol role="list" className="ml-[7px] mt-1 pl-4 pb-1 pt-1 space-y-2" style={{ borderLeft: '1px solid var(--frv-border)' }}>
+          <ol role="list" className="ml-[7px] mt-1 pl-4 pb-1 pt-1 space-y-2 border-l border-(color:--frv-border)">
             {steps.map((step, i) => (
-              <li key={step.id} className="type-copy-13-mono flex gap-2.5" style={{ color: 'var(--frv-text-secondary)' }}>
-                <span className="type-label-12-mono shrink-0" style={{ color: 'var(--frv-text-tertiary)' }}>{String(i + 1).padStart(2, '0')}</span>
+              <li key={step.id} className="type-copy-13-mono flex gap-2.5 text-(color:--frv-text-secondary)">
+                <span className="type-label-12-mono shrink-0 text-(color:--frv-text-tertiary)">{String(i + 1).padStart(2, '0')}</span>
                 <span>{step.content}</span>
               </li>
             ))}
@@ -7288,26 +7448,29 @@ export function ProposalCard({
       role="group"
       aria-label={title}
       aria-live="polite"
-      className={cx('w-full max-w-[420px] rounded-[var(--frv-radius-md)] px-3.5 py-3 space-y-2', avvist && 'dismiss-out', className)}
-      style={{ background: 'var(--frv-surface-2)', border: '1px solid color-mix(in srgb, var(--frv-accent) 30%, var(--frv-border))' }}
+      className={cx(
+        'w-full max-w-[420px] rounded-[var(--frv-radius-md)] px-3.5 py-3 space-y-2 bg-(color:--frv-surface-2) border border-[color-mix(in_srgb,var(--frv-accent)_30%,var(--frv-border))]',
+        avvist && 'dismiss-out',
+        className,
+      )}
       onAnimationEnd={avvist ? onDismissed : undefined}
     >
       {godkjent ? (
         <div className="pop-in flex items-center gap-2.5 py-0.5">
-          <span className="grid place-items-center w-6 h-6 rounded-full shrink-0" style={{ background: 'var(--frv-success-solid)', color: 'var(--frv-success-fg)' }}>
+          <span className="grid place-items-center w-6 h-6 rounded-full shrink-0 bg-(color:--frv-success-solid) text-(color:--frv-success-fg)">
             <CheckIcon size={13} />
           </span>
           <div className="min-w-0">
-            <p className="type-label-13" style={{ color: 'var(--frv-text-primary)' }}>Approved</p>
-            {meta && <p className="type-label-12 truncate" style={{ color: 'var(--frv-text-tertiary)' }}>{meta}</p>}
+            <p className="type-label-13 text-(color:--frv-text-primary)">Approved</p>
+            {meta && <p className="type-label-12 truncate text-(color:--frv-text-tertiary)">{meta}</p>}
           </div>
         </div>
       ) : (
         <>
           <Badge>Suggestion</Badge>
           <p className="type-heading-14">{title}</p>
-          <p className="type-copy-13" style={{ color: 'var(--frv-text-secondary)' }}>{description}</p>
-          {meta && <p className="type-label-12" style={{ color: 'var(--frv-text-tertiary)' }}>{meta}</p>}
+          <p className="type-copy-13 text-(color:--frv-text-secondary)">{description}</p>
+          {meta && <p className="type-label-12 text-(color:--frv-text-tertiary)">{meta}</p>}
           {status === 'feilet' && error && <FormError size="label-12">{error}</FormError>}
           <div className="flex gap-2 pt-0.5">
             <Button size="sm" variant="tertiary" onClick={onReject} disabled={busy || avvist}>{rejectLabel}</Button>
@@ -7534,8 +7697,7 @@ export function MultiSelect({
       {verdi.map(chip => (
         <span
           key={chip.value}
-          className="inline-flex items-center gap-1 h-6 max-w-full pl-2 pr-1 rounded-[var(--frv-radius-full)] type-label-13 shrink-0"
-          style={{ background: 'var(--frv-gray-alpha-100)', color: 'var(--frv-text-primary)' }}
+          className="inline-flex items-center gap-1 h-6 max-w-full pl-2 pr-1 rounded-[var(--frv-radius-full)] type-label-13 shrink-0 bg-(color:--frv-gray-alpha-100) text-(color:--frv-text-primary)"
         >
           <span className="truncate max-w-[220px]">{chip.label}</span>
           {!disabled && (
@@ -7550,8 +7712,7 @@ export function MultiSelect({
               // box, not a pseudo-element's painted area. Padding grows the
               // real button box (32px mobile, 24px desktop), negative margin
               // pulls it back so the chip's own size is unchanged.
-              className="relative shrink-0 inline-flex items-center justify-center rounded-full p-[10.5px] -m-[10.5px] lg:p-[6.5px] lg:-m-[6.5px]"
-              style={{ color: 'var(--frv-text-secondary)' }}
+              className="relative shrink-0 inline-flex items-center justify-center rounded-full p-[10.5px] -m-[10.5px] lg:p-[6.5px] lg:-m-[6.5px] text-(color:--frv-text-secondary)"
             >
               <CloseIcon size={11} />
             </button>
@@ -7591,9 +7752,8 @@ export function MultiSelect({
           // differently for a bare `<input>` (Frivio measured 21px in WebKit
           // vs. ≥40px in Chromium for identical markup, 19 Sep 2026). Same
           // breakpoint as the row container's own `min-h-11 lg:min-h-10`.
-          'min-h-11 lg:min-h-10',
+          'min-h-11 lg:min-h-10', 'text-(color:--frv-text-primary)',
         )}
-        style={{ color: 'var(--frv-text-primary)' }}
       />
     </div>
   )
@@ -7613,20 +7773,21 @@ export function MultiSelect({
         <div
           ref={el => { panelRef.current = el }}
           hidden={!apen}
-          className="fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden"
-          style={{
-            top: pos?.top ?? 0,
-            left: pos?.left ?? 0,
-            minWidth: pos?.minWidth,
-            background: 'var(--frv-surface)',
-            boxShadow: 'var(--frv-shadow-menu)',
+          className={cx(
+            'fixed z-50 rounded-[var(--frv-radius-md)] overflow-hidden bg-(color:--frv-surface) shadow-(--frv-shadow-menu) top-(--ms-top) left-(--ms-left)',
+            pos?.minWidth !== undefined && 'min-w-(--ms-min-w)',
             // Invisible until the FIRST measurement is done — see useFloatingPosition.
-            visibility: pos ? 'visible' : 'hidden',
-          }}
+            pos ? 'visible' : 'invisible',
+          )}
+          style={{
+            '--ms-top': `${pos?.top ?? 0}px`,
+            '--ms-left': `${pos?.left ?? 0}px`,
+            '--ms-min-w': pos?.minWidth !== undefined ? `${pos.minWidth}px` : undefined,
+          } as CSSProperties}
         >
           <CommandPrimitive.List className="max-h-[280px] overflow-y-auto p-1" label={ariaLabel}>
             {laster ? (
-              <div className="flex items-center gap-2 px-3 py-3 type-copy-13" style={{ color: 'var(--frv-text-tertiary)' }}>
+              <div className="flex items-center gap-2 px-3 py-3 type-copy-13 text-(color:--frv-text-tertiary)">
                 <Spinner size="xs" /> Searching…
               </div>
             ) : (
@@ -7642,7 +7803,7 @@ export function MultiSelect({
                   // no matches in that group).
                   <CommandPrimitive.Group key={g.heading || gi} className="px-1">
                     {g.heading && (
-                      <p className="px-2.5 pt-2 pb-1 type-label-12" style={{ color: 'var(--frv-text-tertiary)' }}>
+                      <p className="px-2.5 pt-2 pb-1 type-label-12 text-(color:--frv-text-tertiary)">
                         {g.heading}
                       </p>
                     )}
@@ -7664,17 +7825,17 @@ export function MultiSelect({
                           )}
                         >
                           <span className="min-w-0">
-                            <span className="block truncate" style={{ color: 'var(--frv-text-primary)' }}>
+                            <span className="block truncate text-(color:--frv-text-primary)">
                               {opt.label}
                               {valgt && <span className="sr-only">, selected</span>}
                             </span>
                             {opt.description && (
-                              <span className="block truncate type-label-12" style={{ color: 'var(--frv-text-tertiary)' }}>
+                              <span className="block truncate type-label-12 text-(color:--frv-text-tertiary)">
                                 {opt.description}
                               </span>
                             )}
                           </span>
-                          {valgt && <CheckIcon size={14} className="shrink-0" style={{ color: 'var(--frv-text-primary)' }} />}
+                          {valgt && <CheckIcon size={14} className="shrink-0 text-(color:--frv-text-primary)" />}
                         </CommandPrimitive.Item>
                       )
                     })}
@@ -7687,11 +7848,11 @@ export function MultiSelect({
                     onMouseDown={e => e.preventDefault()}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-[var(--frv-radius-sm)] type-label-14 cursor-pointer data-[selected=true]:bg-[var(--frv-gray-alpha-100)]"
                   >
-                    <PlusIcon size={14} className="shrink-0" style={{ color: 'var(--frv-text-secondary)' }} />
-                    <span style={{ color: 'var(--frv-text-primary)' }}>Create “{query.trim()}”</span>
+                    <PlusIcon size={14} className="shrink-0 text-(color:--frv-text-secondary)" />
+                    <span className="text-(color:--frv-text-primary)">Create “{query.trim()}”</span>
                   </CommandPrimitive.Item>
                 )}
-                <CommandPrimitive.Empty className="px-2.5 py-3 type-copy-13" style={{ color: 'var(--frv-text-tertiary)' }}>
+                <CommandPrimitive.Empty className="px-2.5 py-3 type-copy-13 text-(color:--frv-text-tertiary)">
                   {tomTekst ?? 'No matches'}
                 </CommandPrimitive.Empty>
               </>
