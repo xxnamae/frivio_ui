@@ -5175,7 +5175,28 @@ export interface BygningsdelKortProps {
   onLastOppFdv?: () => void
   /** Whether the expandable section starts open. Default closed — the card is an overview, not a page of its own. */
   defaultOpen?: boolean
+  /** `standard` (default) | `kompakt` — a sketch (2026-09-20) that replaces the
+   *  three-heading accordion with one fact line and three collapsed `PillTabs`
+   *  sections (one open at a time). See the function body for the split. */
+  variant?: 'standard' | 'kompakt'
   className?: string
+}
+
+function bdkSisteLinjeKompakt(entry: { year: string; note: string }, nyeste?: BygningsdelHistorikkRad): string {
+  if (nyeste) return `Last done ${nyeste.kunAar ? nyeste.dato.slice(0, 4) : nyeste.dato}`
+  if (entry.year) return `Last done ${entry.year}`
+  return 'Last done unknown'
+}
+
+/** Inline tap target for a number inside the fact line: padding + negative
+ *  margin grows the hit area to 40px without changing the line's own height
+ *  (same trick `Begrep`'s inline hint link uses below). */
+function bdkFaktaTrykk(children: ReactNode, onClick?: () => void, href?: string) {
+  const cls = 'inline-block py-3 -my-3 px-1 -mx-1 type-label-13-strong underline'
+  const style = { color: 'var(--frv-accent-text)' }
+  return href
+    ? <a href={href} className={cls} style={style}>{children}</a>
+    : <button type="button" onClick={onClick} className={cls} style={style}>{children}</button>
 }
 
 function bdkSisteLinje(entry: { year: string; note: string }, nyeste?: BygningsdelHistorikkRad): string {
@@ -5198,10 +5219,84 @@ function bdkRadBeholder(children: ReactNode) {
 export function BygningsdelKort({
   componentKey, label, sublabel, icon: Icon, entry, tilstandsgrad, apneTiltak, apneTiltakHref,
   historikk = [], materialer = [], fdv = [], onRegistrerHendelse, onRegistrerMateriale, onLastOppFdv,
-  defaultOpen = false, className,
+  defaultOpen = false, variant = 'standard', className,
 }: BygningsdelKortProps) {
   const nyeste = historikk[0]
   const totalDetaljer = historikk.length + materialer.length + fdv.length
+  // Declared unconditionally (hooks rule) even though only the "kompakt"
+  // branch reads it — this single-file kit has no server/client split to
+  // protect (unlike `components/ui/BygningsdelKort.tsx`, which delegates to a
+  // separate client file for exactly this reason).
+  const [apneSeksjon, setApneSeksjon] = useState<'historikk' | 'materialer' | 'fdv' | null>(null)
+
+  if (variant === 'kompakt') {
+    const veksle = (s: 'historikk' | 'materialer' | 'fdv') => setApneSeksjon(g => (g === s ? null : s))
+    const faner: PillTab[] = [
+      { key: 'historikk', label: historikk.length > 0 ? `History ${historikk.length}` : 'History' },
+      { key: 'materialer', label: materialer.length > 0 ? `Materials ${materialer.length}` : 'Materials' },
+      { key: 'fdv', label: fdv.length > 0 ? `FDV ${fdv.length}` : 'FDV' },
+    ]
+    const fakta: ReactNode[] = [bdkSisteLinjeKompakt(entry, nyeste)]
+    if (apneTiltakHref) fakta.push(bdkFaktaTrykk(`${apneTiltak} open ${apneTiltak === 1 ? 'task' : 'tasks'}`, undefined, apneTiltakHref))
+    else if (apneTiltak > 0) fakta.push(`${apneTiltak} open ${apneTiltak === 1 ? 'task' : 'tasks'}`)
+    if (materialer.length > 0) fakta.push(bdkFaktaTrykk(`${materialer.length} ${materialer.length === 1 ? 'material' : 'materials'}`, () => veksle('materialer')))
+    if (fdv.length > 0) fakta.push(bdkFaktaTrykk(`${fdv.length} FDV`, () => veksle('fdv')))
+
+    return (
+      <Card className={cx('p-4 flex flex-col gap-2', className)}>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {Icon && <IconTile icon={Icon} tone="neutral" size="md" />}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="type-heading-16 truncate">{label}</span>
+                {tilstandsgrad && <Badge variant={tgVariant(tilstandsgrad)}>{tilstandsgrad}</Badge>}
+              </div>
+              {sublabel && <span className="type-label-12 block" style={{ color: 'var(--frv-text-tertiary)' }}>{sublabel}</span>}
+            </div>
+          </div>
+          <Button variant="secondary" size="sm" onClick={onRegistrerHendelse}>
+            <PlusIcon size={14} />Register event
+          </Button>
+        </div>
+
+        <p className="type-label-13 flex flex-wrap items-baseline gap-x-1.5" style={{ color: 'var(--frv-text-secondary)' }}>
+          {fakta.map((del, i) => (
+            <span key={i} className="inline-flex items-baseline gap-x-1.5">
+              {i > 0 && <span aria-hidden style={{ color: 'var(--frv-text-quaternary)' }}>·</span>}
+              {del}
+            </span>
+          ))}
+        </p>
+
+        <PillTabs tabs={faner} activeKey={apneSeksjon ?? ''} onSelect={k => veksle(k as 'historikk' | 'materialer' | 'fdv')} />
+
+        {apneSeksjon === 'historikk' && historikk.length > 0 && (
+          <div className="pt-1">
+            {bdkRadBeholder(historikk.map(h => (
+              <ListRow key={h.id} title={h.tittel} secondary={[h.utfortAv ? `By ${h.utfortAv}` : null, h.materiale ? `Material: ${h.materiale}` : null].filter((x): x is string => x != null)} value={h.kunAar ? h.dato.slice(0, 4) : h.dato} href={h.href ?? undefined} />
+            )))}
+          </div>
+        )}
+        {apneSeksjon === 'materialer' && (
+          <div className="pt-1 flex flex-col gap-2 items-start">
+            {materialer.length > 0 && bdkRadBeholder(materialer.map(m => (
+              <ListRow key={m.id} title={m.produkt || 'Unnamed product'} secondary={[m.kode, m.leverandor].filter(Boolean)} value={m.aar || undefined} />
+            )))}
+            {onRegistrerMateriale && <Button variant="link" size="sm" onClick={onRegistrerMateriale}><PlusIcon size={12} />Add material</Button>}
+          </div>
+        )}
+        {apneSeksjon === 'fdv' && (
+          <div className="pt-1 flex flex-col gap-2 items-start">
+            {fdv.length > 0 && bdkRadBeholder(fdv.map(f => (
+              <ListRow key={f.id} title={f.title} secondary={[f.supplierName, f.utfortDato].filter(Boolean)} href={f.docUrl ?? undefined} />
+            )))}
+            {onLastOppFdv && <Button variant="link" size="sm" onClick={onLastOppFdv}><PlusIcon size={12} />Upload FDV</Button>}
+          </div>
+        )}
+      </Card>
+    )
+  }
 
   return (
     <Card className={cx('p-5 flex flex-col gap-3', className)}>
