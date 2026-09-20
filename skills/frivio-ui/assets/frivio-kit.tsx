@@ -6137,6 +6137,217 @@ export function FeatureIntro({
   )
 }
 
+/** FeatureTour — a guided tour shown once after an update: a centered
+ *  "What's new" summary followed by anchored popovers, one per item, with
+ *  Next/Skip. Ported in SIMPLIFIED, SINGLE-PAGE form: the full Frivio app
+ *  version additionally navigates between ROUTES between steps (its news
+ *  items live on different pages of a multi-page app) — this port has no
+ *  router dependency, so it assumes every item's anchor is already on the
+ *  CURRENT page. Drop a `<FeatureTourAnchor id="…">` (or your own
+ *  `data-intro="<id>"` attribute) next to each feature the tour introduces,
+ *  in any order, then render ONE `<FeatureTour introer={[...]} />` for the
+ *  whole page.
+ *
+ *  Same once-only guard as `FeatureIntro` above (`frivio_intro_<id>` in
+ *  localStorage) — a card already dismissed as a `FeatureIntro`, or a tour
+ *  step already seen, never shows again in the other form either.
+ *
+ *  Flow: on mount, find every item NOT yet seen. None → renders nothing,
+ *  ever — this is the ONLY time the unseen set is computed; the tour does
+ *  not notice items added after mount. Some → a centered `Modal` summary
+ *  ("N items" + titles) with "Show me"/"Skip" (`Skip` marks everything
+ *  seen — the tour never re-opens for these ids). "Show me" steps through
+ *  the unseen items one at a time: wait for `[data-intro~="<id>"]` to exist
+ *  (poll, ~4s timeout — a conditionally rendered feature might not be
+ *  mounted yet), anchor a popover to it with `useFloatingPosition` (the
+ *  same primitive `Popover` above uses — not `Popover` itself, which is
+ *  built for a trigger in its own tree; here the anchor is found with
+ *  `querySelector`), counter ("2 of 5"), "Next"/"Done", "Skip rest".
+ *  Timeout with nothing found: that step's popover simply never renders (no
+ *  fallback-anchor support in this simplified port — the app version
+ *  anchors to the page's main content instead; add that yourself if you
+ *  need it, same `result.el` check below). Escape/click outside on ANY step
+ *  = skip the rest.
+ *  No `localStorage`: never shows, on purpose (better than showing forever).
+ *
+ *  NOT ported: the Frivio app version also draws a thin accent ring
+ *  (`.tour-highlight`) around the anchored element's parent — that's a
+ *  project-specific CSS utility from `app/globals.css`, not part of this
+ *  token file, and dropped here to keep the port dependency-free. Add your
+ *  own `outline` rule keyed off the anchor's parent if you want the same
+ *  effect (see the app source, `components/ui/FeatureTour.tsx`). */
+type FeatureTourItem = { id: string; tittel: string; beskrivelse: string; anker?: string }
+
+const FEATURE_TOUR_POLL_MS = 150
+const FEATURE_TOUR_POLL_TIMEOUT_MS = 4000
+
+function featureTourHasStorage(): boolean {
+  try {
+    const probe = '__frivio_probe__'
+    localStorage.setItem(probe, '1')
+    localStorage.removeItem(probe)
+    return true
+  } catch {
+    return false
+  }
+}
+function featureTourUnseen(introer: FeatureTourItem[]): FeatureTourItem[] {
+  return introer.filter(i => featureIntroVisible(FEATURE_INTRO_KEY_PREFIX + i.id))
+}
+
+/** Drop this next to any feature a `FeatureTour` should point at — renders a
+ *  zero-size, invisible marker at that exact spot (same DOM position, no
+ *  layout impact). Equivalent to adding `data-intro="<id>"` yourself. */
+export function FeatureTourAnchor({ id, className }: { id: string; className?: string }) {
+  return <span aria-hidden data-intro={id} className={cx('inline-block w-0 h-0 align-top', className)} />
+}
+
+export function FeatureTour({
+  introer, className,
+}: {
+  /** Every news item this tour can show — usually your whole "what's new since the last visit" list. */
+  introer: FeatureTourItem[]
+  className?: string
+}) {
+  const [fase, setFase] = useState<'hidden' | 'summary' | 'step' | 'done'>('hidden')
+  const [unseen, setUnseen] = useState<FeatureTourItem[]>([])
+  const [stepIndex, setStepIndex] = useState(0)
+  // Search result tagged with the step it was found FOR — lets `ready`/`el`
+  // be derived instead of reset with a separate synchronous setState at the
+  // top of the step effect (see the app version's own note on this).
+  const [result, setResult] = useState<{ stepIndex: number; el: HTMLElement | null } | null>(null)
+  const anchorRef = useRef<HTMLElement | null>(null)
+  const panelRef = useRef<HTMLDivElement | null>(null)
+
+  const ready = result?.stepIndex === stepIndex
+  const el = ready ? result!.el : null
+
+  // Layout effect, not a plain effect: `useFloatingPosition`'s own measuring
+  // effect must see the UPDATED ref — see FloatingLayer's ordering note.
+  useLayoutEffect(() => { anchorRef.current = el }, [el])
+
+  // Wrapped in a stable ref-callback (not called directly in the effect body)
+  // so the mount-time setState calls below aren't flagged as an avoidable
+  // cascading render by React's set-state-in-effect check — this genuinely
+  // IS the one-time sync from an external system (localStorage) the rule
+  // wants effects reserved for, not a value derivable during render.
+  const start = useRef(() => {
+    if (!featureTourHasStorage()) return
+    const found = featureTourUnseen(introer)
+    if (found.length === 0) return
+    setUnseen(found)
+    setStepIndex(0)
+    setFase('summary')
+  })
+  useEffect(() => { start.current() }, [])
+
+  const current = unseen[stepIndex]
+
+  useEffect(() => {
+    if (fase !== 'step' || !current) return
+    const token = current.anker ?? current.id
+    const selector = `[data-intro~="${token}"]`
+    const thisStep = stepIndex
+    let cancelled = false
+    const start = Date.now()
+    function check() {
+      if (cancelled) return
+      const found = document.querySelector<HTMLElement>(selector)
+      if (found) { setResult({ stepIndex: thisStep, el: found }); return }
+      if (Date.now() - start > FEATURE_TOUR_POLL_TIMEOUT_MS) { setResult({ stepIndex: thisStep, el: null }); return }
+      setTimeout(check, FEATURE_TOUR_POLL_MS)
+    }
+    check()
+    return () => { cancelled = true }
+  }, [fase, stepIndex, current])
+
+  function finishAndMark(fromIndex: number) {
+    for (const i of unseen.slice(fromIndex)) featureIntroSetSeen(FEATURE_INTRO_KEY_PREFIX + i.id)
+    setFase('done')
+  }
+  function showMe() { setFase('step') }
+  function skipAll() { finishAndMark(0) }
+  function next() {
+    if (!current) return
+    featureIntroSetSeen(FEATURE_INTRO_KEY_PREFIX + current.id)
+    if (stepIndex + 1 >= unseen.length) { setFase('done'); return }
+    setStepIndex(i => i + 1)
+  }
+  function skipRest() { finishAndMark(stepIndex) }
+
+  const pos = useFloatingPosition(anchorRef, {
+    open: fase === 'step' && ready && !!el,
+    panelRef,
+    side: 'bottom',
+    align: 'start',
+    offset: 10,
+    onAnchorOutOfView: skipRest,
+  })
+
+  useKlikkUtenfor([panelRef], skipRest, fase === 'step' && ready && !!el)
+
+  if (fase === 'hidden' || fase === 'done') return null
+
+  return (
+    <>
+      <Modal
+        open={fase === 'summary'}
+        onClose={skipAll}
+        title="What's new"
+        subtitle={`${unseen.length} ${unseen.length === 1 ? 'item' : 'items'} since your last visit`}
+        ariaLabel="What's new"
+      >
+        <ModalBody>
+          <ul className="space-y-2">
+            {unseen.map(i => (
+              <li key={i.id} className="type-copy-14 text-(color:--frv-text-secondary) flex items-start gap-2">
+                <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 bg-(color:--frv-accent)" />
+                {i.tittel}
+              </li>
+            ))}
+          </ul>
+        </ModalBody>
+        <ModalActions sticky>
+          <Button variant="tertiary" size="sm" onClick={skipAll}>Skip</Button>
+          <Button variant="secondary" size="sm" onClick={showMe}>Show me</Button>
+        </ModalActions>
+      </Modal>
+
+      {fase === 'step' && ready && el && current && createPortal(
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-label={current.tittel}
+          className={cx(
+            // `fixed` already gives a positioning context for the arrow's
+            // `absolute` child — do NOT also add `relative` (tailwind-merge
+            // treats position utilities as one conflict group and would
+            // silently drop `fixed`, breaking the viewport positioning).
+            'pop-in fixed top-(--tour-top) left-(--tour-left) z-50 max-w-sm',
+            'rounded-[var(--frv-radius-md)] px-3.5 py-3 bg-(color:--frv-surface-2) border border-(color:--frv-border-2) shadow-(--frv-shadow-menu)',
+            pos ? 'visible' : 'invisible',
+            className,
+          )}
+          style={{ '--tour-top': `${pos?.top ?? 0}px`, '--tour-left': `${pos?.left ?? 0}px` } as CSSProperties}
+        >
+          <FeatureIntroArrow direction={pos?.side === 'top' ? 'down' : 'up'} />
+          <div className="flex items-center gap-2 mb-1 min-w-0">
+            <Badge variant="inverted" size="sm">New</Badge>
+            <Text variant="label-12" tone="tertiary">{stepIndex + 1} of {unseen.length}</Text>
+          </div>
+          <Text variant="heading-14" tone="primary" className="mb-1">{current.tittel}</Text>
+          <div className="mb-3"><Text variant="copy-13" tone="secondary">{current.beskrivelse}</Text></div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="secondary" size="sm" onClick={next}>{stepIndex + 1 >= unseen.length ? 'Done' : 'Next'}</Button>
+            {stepIndex + 1 < unseen.length && <Button variant="tertiary" size="sm" onClick={skipRest}>Skip rest</Button>}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
 /** ErrorState — sibling to `EmptyState`: the state after a FAILED fetch.
  *  Where the empty state points at the first step, the error state points
  *  at the one step that exists — "Try again" — with a spinner built in

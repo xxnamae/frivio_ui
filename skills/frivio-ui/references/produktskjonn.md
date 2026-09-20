@@ -4461,3 +4461,24 @@ er lov bare med konkret grunn, og «trenger prop X på Y» er en bestilling, ikk
 **Håndhevelse:** `@shadcn/lint` (warn + lintvakt-ratchet i CI). Egne designverdener er unntatt:
 landingssiden (`--lp-*`), print-flatene (`--print-*`) og AnalysisView («kino»).
 
+---
+
+## regel/nyheter-som-omvisning
+
+**Kilde:** Founder 20. sep 2026 (skjermbilde av «Nytt»-boksen øverst på Bygget): «Alle disse
+"nytt"-tooltipene bør i stedet være en popover med "neste" og avbryt etc. når man åpner appen på
+nytt når noe er blitt oppdatert.»
+
+**Funn:** 40 `FeatureIntro`-bokser lå inline i sidene, dyttet innholdet ned, og dukket opp én og én
+etter hvert som brukeren tilfeldigvis besøkte sidene — uten sammenheng, over dager.
+
+**Regel:** Nyheter introduseres som ÉN omvisning ved oppstart, ikke som bokser i flyten. Kilden er
+registeret `lib/introer/register.ts` (id, rute, tittel, beskrivelse, dato); stedet markeres med
+`<FeatureIntro id="…" />`; `FeatureTour` viser «Nytt siden sist» med antall og titler, «Vis meg»
+navigerer trinn for trinn til riktig side og forankrer en popover ved elementet, «Neste»/«Hopp
+over» markerer som sett, og omvisningen kommer aldri igjen. «Vis omvisningen på nytt» ligger på
+/system/endringslogg («Siden sist»). Inline-boksen finnes bare i docs (`inline`-prop).
+
+**Rettet i:** `components/ui/FeatureTour.tsx` (ny), `components/ui/FeatureIntro.tsx`,
+`lib/introer/register.ts` (ny), `app/(dashboard)/layout.tsx`, 46 kallsteder.
+
