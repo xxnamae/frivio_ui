@@ -4434,3 +4434,30 @@ ikonet større for å nå målet. `npm run vakt:mobil -- --modus docs` teller al
 `MultiSelect`, `ReasoningTrace`, `Input`/`Select`, `ComponentDocPage`, `Table`/`DataTable`,
 `OverflowMenu`, `BygningsdelKort`, `StatCard`.
 
+---
+
+## regel/stil-i-klasser-ikke-inline
+
+**Kilde:** Founder 19.–20. sep 2026 («Tailwind-lint. Bør vi ikke fikse de inline-stilene?» → «kjør»).
+Bølge 1: kodemoden `scripts/kodemod/inline-farger.mjs` skrev om 1508 inline-farger. Bølge 2: fem
+agenter tok de resterende ~2600 advarslene fil for fil, 288 filer, med computed-style-diff og
+visuellvakt (0 avvik på 84 docs-sider) som bevis på at ingenting endret utseende.
+
+**Regel:** Stil uttrykkes i klasser, aldri i `style={{ … }}`. Syntaksen for tokens er
+`text-(color:--color-x)`, `bg-(color:--color-x)`, `border-(color:--color-x)`, `shadow-(--shadow-x)`,
+`rounded-(--radius-x)` — og `bg-(image:--gradient-x)` for gradienter (uten `image:`-hintet gjetter
+Tailwind `background-color`, og gradienten forsvinner stille; funnet på ColorsPage). Genuint
+dynamiske verdier (beregnet bredde, prosent, grid-kolonner) settes som CSS-variabel på elementet
+(`style={{ '--w': … }}`) og leses av en klasse (`w-(--w)`); et `style` som bare setter `--x` er lov.
+Fargeternærer blir `cn(cond ? 'text-(color:--a)' : 'text-(color:--b)')`.
+
+**Kallsteder restyler ikke primitiver.** Trenger et kallsted en annen tetthet, tone eller
+typografi, får primitivet en prop eller variant (IconButton `tone`, Button `variant`, Input
+`size`), ikke en className som overstyrer. Unntakene som primitivet selv dokumenterer (Card sin
+padding/delelinje-overstyring, Callout sin typografi, ModalBody/EmptyState sin tetthet) står som
+`contracts` i `eslint.config.mjs`, ikke som eslint-disable. Et `eslint-disable-next-line shadcn/…`
+er lov bare med konkret grunn, og «trenger prop X på Y» er en bestilling, ikke en løsning.
+
+**Håndhevelse:** `@shadcn/lint` (warn + lintvakt-ratchet i CI). Egne designverdener er unntatt:
+landingssiden (`--lp-*`), print-flatene (`--print-*`) og AnalysisView («kino»).
+
