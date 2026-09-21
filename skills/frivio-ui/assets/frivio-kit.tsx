@@ -4751,8 +4751,8 @@ export interface SidePanelProps {
   children: ReactNode
   /** Bottom action row — ONE primary action plus secondaries. Omitted: no footer. */
   footer?: ReactNode
-  /** 400 / 480 (default) / 640px on desktop. Always full width below 768px. */
-  bredde?: 'sm' | 'md' | 'lg'
+  /** 400 / 480 (default) / 640 / 704px (`xl`) on desktop. Always full width below 768px. */
+  bredde?: 'sm' | 'md' | 'lg' | 'xl'
   /** aria-label on the close button. */
   lukkeetikett?: string
 }
@@ -4761,6 +4761,7 @@ const SIDE_PANEL_WIDTH: Record<NonNullable<SidePanelProps['bredde']>, string> = 
   sm: 'md:w-[400px]',
   md: 'md:w-[480px]',
   lg: 'md:w-[640px]',
+  xl: 'md:w-[704px]',
 }
 
 const SIDE_PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
