@@ -4499,3 +4499,21 @@ over» markerer som sett, og omvisningen kommer aldri igjen. «Vis omvisningen p
 **Rettet i:** `components/ui/FeatureTour.tsx` (ny), `components/ui/FeatureIntro.tsx`,
 `lib/introer/register.ts` (ny), `app/(dashboard)/layout.tsx`, 46 kallsteder.
 
+---
+
+## regel/feltetiketter-i-primaerfarge
+
+**Kilde:** Founder 21. sep 2026 (skjermbilde av gjøremål-panelet): «Titlene her som "Frist", "Bygg"
+etc. kan gjerne få en mørkere farge, kanskje svart. Gjelder gjennomgående i appen. Dette vil skape
+et bedre visuelt hierarki.»
+
+**Regel:** Feltetiketter og nøkler (rollen «Etikett/feltnavn»: `Field`, `DescriptionList`-nøkkel,
+`Input`/`Select`-etikett) er `.type-label-13-strong` i `text-primary`. Verdien under er 400 i
+`text-primary`; hierarkiet bæres av vekten (500 mot 400), ikke av at etiketten er dempet. Dempet
+(`text-secondary`) er forbeholdt sekundær informasjon: kolonnehoder i tabeller, sub-linjer,
+StatCard-etiketter og hjelpetekst. Endres rollen, endres den i primitivene og i typografitabellen i
+design.md, aldri per side.
+
+**Rettet i:** `DescriptionList`, `Field`, `Input`, `Select` (+ kit). Docs-sidene som viser dem
+oppdatert i visuell-baselinen.
+
