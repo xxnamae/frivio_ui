@@ -4517,3 +4517,25 @@ design.md, aldri per side.
 **Rettet i:** `DescriptionList`, `Field`, `Input`, `Select` (+ kit). Docs-sidene som viser dem
 oppdatert i visuell-baselinen.
 
+---
+
+## regel/omvisning-forste-besok-er-stille
+
+**Kilde:** Agentfunn 21. sep 2026 under nettleserverifisering (fersk Playwright-kontekst): «Nytt siden
+sist — 50 nyheter siden sist du var innom», med «Nytt: filtrer på periode» fem ganger i listen.
+Founder: «Agree, fix.»
+
+**Funn:** Omvisningen regnet alt i registeret som ulest for en nettleser uten sett-flagg — altså
+også for en helt ny bruker, som da fikk hele historikken som «nyheter» før hen hadde sett appen.
+Og fem sider som fikk samme filter samme dag ga fem identiske linjer.
+
+**Regel:** (1) Første besøk i en nettleser er stille: markøren `frivio_omvisning_forste_besok`
+settes, alt i registeret markeres som sett, ingen omvisning. Nyheter er det som kommer ETTER at
+brukeren begynte. «Vis omvisningen på nytt» (/system/endringslogg) nullstiller likevel de siste
+30 dagene for den som vil se. Brukere med sett-flagg fra før markøren fantes regnes som
+tilbakevendende. (2) Like titler slås sammen i oppsummeringen til én linje med «· N steder»
+(`grupperTitler`, `lib/introer/omvisning.ts`); stegene forblir ett per side, hvert med sitt anker.
+Prøv å gi nyheter på flere sider ulike titler når de faktisk er ulike.
+
+**Rettet i:** `components/ui/FeatureTour.tsx`, `lib/introer/omvisning.ts` (ny, testet), docs-demoen
+for FeatureTour, `public/design.md`, AGENTS.md.
