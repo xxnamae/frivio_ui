@@ -2427,7 +2427,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       // (prefix/suffix) the caller's `className` lands HERE (`flex-1`,
       // `min-w-[180px]`, `w-full`); without a slot it stays on the `<input>` as before.
       <div className={cx('flex flex-col gap-1.5 min-w-0', hasSlot && className)}>
-        {label && <label htmlFor={fieldId} className="type-label-13-strong text-[var(--frv-text-secondary)]">{label}</label>}
+        {label && <label htmlFor={fieldId} className="type-label-13-strong text-[var(--frv-text-primary)]">{label}</label>}
         {field}
         {hint && <p id={hintId} className="type-label-12 text-[var(--frv-text-tertiary)]">{hint}</p>}
         {error && <FormError id={errorId} size="label-12">{error}</FormError>}
@@ -2456,7 +2456,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const describedBy = [hint && hintId, error && errorId].filter(Boolean).join(' ') || undefined
     return (
       <div className="flex flex-col gap-1.5 min-w-0">
-        {label && <label htmlFor={fieldId} className="type-label-13-strong text-[var(--frv-text-secondary)]">{label}</label>}
+        {label && <label htmlFor={fieldId} className="type-label-13-strong text-[var(--frv-text-primary)]">{label}</label>}
         <textarea
           ref={ref}
           id={fieldId}
@@ -2519,7 +2519,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 
     return (
       <div className="flex flex-col gap-1.5 min-w-0">
-        {label && <label htmlFor={fieldId} className="type-label-13-strong text-[var(--frv-text-secondary)]">{label}</label>}
+        {label && <label htmlFor={fieldId} className="type-label-13-strong text-[var(--frv-text-primary)]">{label}</label>}
         {field}
         {error && <FormError id={errorId} size="label-12">{error}</FormError>}
       </div>
@@ -3543,7 +3543,7 @@ export function Field({ label, mono = false, valueStyle, className, children }: 
     <div className={cx('flex flex-col gap-[var(--frv-space-1)] min-w-0', className)}>
       {/* 13px, not 12: same role ("label/field name") and size as Input/Select/Table's
           label, so "Email" looks the same in read and edit mode (typography hierarchy, 2026-09-13). */}
-      <span className="type-label-13-strong flex items-center gap-1 text-(color:--frv-text-secondary)">{label}</span>
+      <span className="type-label-13-strong flex items-center gap-1 text-(color:--frv-text-primary)">{label}</span>
       <div className={cx(mono ? 'type-label-14-mono' : 'type-label-14', 'text-(color:--frv-text-primary)')} style={valueStyle}>{children}</div>
     </div>
   )
@@ -3571,7 +3571,7 @@ export function DescriptionList({ items, minColBredde = '10rem', className }: {
         <div key={i} className="min-w-0">
           {/* label-13-strong in text-secondary, not tertiary — 500 weight in tertiary measures too weak.
               13px, same as Input's label: same role, same size (typography hierarchy, 2026-09-13). */}
-          <p className="type-label-13-strong mb-0.5 text-(color:--frv-text-secondary)">{it.label}</p>
+          <p className="type-label-13-strong mb-0.5 text-(color:--frv-text-primary)">{it.label}</p>
           <p className="type-copy-14 text-(color:--frv-text-primary)">{it.verdi}</p>
         </div>
       ))}
