@@ -854,7 +854,16 @@ function avatarInitials(name: string): string {
    Hover fan (2026-09-12): on hover OR focus of the group, the avatars slide
    from overlapping to spaced out — plain CSS `transform`/`transition`
    (`motion-safe`), no extra dependency. */
-export function Avatar({ src, name, size = 32, title, className }: AvatarProps) {
+const AVATAR_TONER = [
+  'bg-(color:--frv-blue-100) text-(color:--frv-blue-900)',
+  'bg-(color:--frv-purple-100) text-(color:--frv-purple-900)',
+  'bg-(color:--frv-teal-100) text-(color:--frv-teal-900)',
+  'bg-(color:--frv-pink-100) text-(color:--frv-pink-900)',
+  'bg-(color:--frv-green-100) text-(color:--frv-green-900)',
+] as const
+function avatarToneForNavn(navn: string): string { let h = 0; for (const c of navn.trim().toLowerCase()) h = (h * 31 + c.charCodeAt(0)) >>> 0; return AVATAR_TONER[h % AVATAR_TONER.length]! }
+
+export function Avatar({ src, name, size = 32, title, tone = 'noytral', className }: AvatarProps & { tone?: 'noytral' | 'farget' }) {
   const [failed, setFailed] = useState(false)
   const showImage = !!src && !failed
   return (
@@ -862,7 +871,7 @@ export function Avatar({ src, name, size = 32, title, className }: AvatarProps) 
       role="img"
       aria-label={title ?? name}
       title={title ?? name}
-      className={cx('inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden select-none bg-(color:--frv-gray-200) text-(color:--frv-text-secondary)', AVATAR_SIZE_TYPE[size], AVATAR_SIZE_DIM[size], className)}
+      className={cx('inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden select-none', tone === 'farget' ? avatarToneForNavn(name) : 'bg-(color:--frv-gray-200) text-(color:--frv-text-secondary)', AVATAR_SIZE_TYPE[size], AVATAR_SIZE_DIM[size], className)}
     >
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element -- plain avatar thumbnail, no next/image optimization needed for a tiny icon-sized image.
