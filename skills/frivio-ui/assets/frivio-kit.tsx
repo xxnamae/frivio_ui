@@ -66,6 +66,13 @@
    next unread) and "Next" only switching which one is shown; see the
    "ONE AT A TIME, NOT A BULLET LIST" note in that section.
 
+   Synced 2026-09-21: a due-date/status pill row (five buckets, e.g. "overdue/
+   this month/next 3 months/this year/all") is now a DROPDOWN with the
+   selected bucket + its count shown right on the trigger — see `FristVelger`
+   near the end of the `Dropdown` section. `Dropdown` itself gained an
+   optional `icon` prop (a leading icon in the trigger) to support this
+   without a bespoke fourth dropdown variant.
+
    ── Setup (three steps) ──────────────────────────────────────────────────
    1. Import `frivio-tokens.css` ONCE at the root of your app. Every component
       here reads its colors, radii, spacing and shadows from the CSS variables
@@ -6704,7 +6711,7 @@ export interface DropdownItem {
    `mobilArk` is accepted for API parity with the source but has no effect
    here. */
 export function Dropdown({
-  items, selectedId, onSelect, ariaLabel, groupLabel, footer,
+  items, selectedId, onSelect, ariaLabel, groupLabel, icon: Icon, footer,
   variant = 'field', size = 'sm', prominent = false, fill = false, busy = false,
   className, defaultOpen = false, mobilArk = true,
 }: {
@@ -6716,6 +6723,8 @@ export function Dropdown({
   ariaLabel?: string
   /** Short label — no longer shown in front of the value in the trigger. Used as aria context and as a heading in the list. */
   groupLabel?: string
+  /** Optional icon in front of the trigger's label (e.g. `CalendarRangeIcon` for a due-date filter) — added for `FristVelger` below. Omitted: no icon, trigger unchanged. */
+  icon?: React.ComponentType<{ size?: number; className?: string }>
   footer?: ReactNode
   /** `nav`: transparent sidebar/topbar toggle. `field`: bordered field-style button, same body as a pill/Select trigger. */
   variant?: 'nav' | 'field'
@@ -6879,7 +6888,10 @@ export function Dropdown({
           fill && 'w-full',
         )}
       >
-        <span className={cx('truncate', prominent && 'type-heading-14', variant === 'field' && 'max-w-[200px]')}>{triggerLabel}</span>
+        <span className={cx('inline-flex items-center gap-1.5 min-w-0', variant === 'field' && 'max-w-[200px]')}>
+          {Icon && <Icon size={14} className="shrink-0 text-(color:--frv-text-secondary)" />}
+          <span className={cx('truncate', prominent && 'type-heading-14')}>{triggerLabel}</span>
+        </span>
         <ChevronDownIcon size={12} className="shrink-0 text-(color:--frv-text-secondary)" />
       </button>
       {open && montert && createPortal(
@@ -6907,6 +6919,47 @@ export function Dropdown({
         document.body,
       )}
     </div>
+  )
+}
+
+/* FristVelger (NEW, 2026-09-21, founder: "the overdue/this month/next 3
+   months/this year filter should be a dropdown with a counter on the button,
+   same as the building/source pickers" — reversing an EARLIER decision, a
+   week prior, to keep it as a pill row). Built ON `Dropdown` above (its new
+   `icon` prop), not a fresh popover implementation: only translates a set of
+   "due date bucket" tabs + counts into `DropdownItem[]`. Generic over the key
+   type `K` so a consuming project's own bucket union (its equivalent of the
+   source's `FristFaneNokkel`) plugs straight in — port the PATTERN, not
+   Frivio's specific five buckets. */
+export interface FristValgFane<K extends string = string> {
+  nokkel: K
+  label: string
+}
+
+export function FristVelger<K extends string>({
+  verdi, tellere, onChange, size = 'md', className,
+}: {
+  /** Selected bucket key. */
+  verdi: K
+  /** Buckets with a count already computed — same shape the call site uses to render "Overdue (2)" today. */
+  tellere: (FristValgFane<K> & { antall: number })[]
+  onChange: (verdi: K) => void
+  /** `md` (40px, default — matches Button md/Select md in a Toolbar) or `sm` (32px). */
+  size?: 'sm' | 'md'
+  className?: string
+}) {
+  const items: DropdownItem[] = tellere.map(f => ({ id: f.nokkel, label: `${f.label} (${f.antall})` }))
+  return (
+    <Dropdown
+      items={items}
+      selectedId={verdi}
+      onSelect={id => onChange(id as K)}
+      icon={CalendarRangeIcon}
+      groupLabel="Due date"
+      variant="field"
+      size={size}
+      className={className}
+    />
   )
 }
 
