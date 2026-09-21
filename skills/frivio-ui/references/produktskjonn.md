@@ -4154,6 +4154,14 @@ kontroll for mye, ikke en for smal skjerm.
 
 ## regel/en-pillerad-per-verktoylinje
 
+> **Endret 21. sep 2026 (founder, skjermbilde av Å gjøre):** fristfilteret er IKKE lenger en pillerad.
+> «Forfalt, denne måneden, neste 3 måneder, i år bør være et dropdown-filter, samme som Alle bygg og
+> Alle kilder, som 2026-knappen på Fullført. Oppdater alle plasser det er synlig, også styreplikter.»
+> Det opphever valget 18. sep om å beholde fristene som piller: et nedtrekk viser valgt verdi og
+> teller på selve knappen, så «tellerne er sammendraget»-argumentet gjelder ikke lenger. Primitiven er
+> `FristVelger` (components/ui); PillTabs i verktøylinje brukes nå bare for ekte visningsfaner
+> (f.eks. «Alle / Med åpne tiltak» på Bygget). Resten av regelen (maks én pillerad) står.
+
 **Kilde:** Founder 14. sep 2026, Å gjøre: «Filtrere på frister her burde være en dropdown, tror du
 ikke?» Skjermbildet viste to pillerader side om side i samme verktøylinje: fristfanene (fem
 piller med tellere) og kildefilteret (Alle · Felleskostnad, uten tellere) — sju piller på rad, to
