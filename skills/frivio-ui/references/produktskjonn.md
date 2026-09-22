@@ -4617,3 +4617,43 @@ skal tåle smal bredde selv, uten at siden kompenserer.
 **Rettet i:** `components/ui/Toolbar.tsx` (`shrink-0` → `min-w-0`), lappen fjernet fra
 `components/gjoremal/GjoremalListe.tsx`, kontrakten låst i `tests/unit/ui/toolbar.test.tsx`.
 
+---
+
+## regel/ingen-teknisk-merkelapp
+
+**Kilde:** Founder 21. sep 2026 (Avtaleregister): «Hvorfor står det "fra Brønnøysund" på noen av
+avtalene og andre ikke?»
+
+**Funn:** Merkelappen sto på avtaler der leverandøren tilfeldigvis var valgt gjennom
+Brønnøysund-søket i stedet for skrevet inn for hånd. For styret så det ut som en egenskap ved
+avtalen, og fraværet så ut som en mangel. Den fortalte i virkeligheten bare hvilken kodevei som
+hadde satt et felt.
+
+**Regel:** En merkelapp skal si noe om SAKEN, ikke om hvordan dataene kom inn. Kan du ikke skrive én
+setning om hva leseren skal gjøre annerledes når merkelappen står der, hører den ikke hjemme i
+flaten. Den samme merkelappen kan være riktig et annet sted: på et FORSLAG forklarer «Fra
+Brønnøysund» hvor navnet kom fra, og der ble den stående.
+
+**Rettet i:** `components/buildings/ServiceAgreementsPanel.tsx` (fjernet fra avtaleraden, beholdt på
+regnskapsforslagene).
+
+---
+
+## regel/en-vei-inn-per-handling
+
+**Kilde:** Founder 21. sep 2026: «Avtaler og leverandører — innkjøp: denne skal vel vekk? Dette tas
+i avtaleregister.»
+
+**Funn:** «Innkjøp» var en egen side som sendte NØYAKTIG samme forespørsel som «Innhent tilbud» på
+en avtale, til samme API og samme tabell. To innganger til én handling betyr at halvparten av
+bruken skjer et sted der resten av konteksten mangler, og at hver ny forbedring må gjøres to
+ganger.
+
+**Regel:** Én handling har én vei inn, og den ligger der arbeidet ellers foregår. Oppdager du en
+duplikat inngang, legges SIDEN ned, ikke funksjonen: ruten blir en redirect, og det siden eide
+alene (historikk, forklaring) flyttes dit brukeren nå står. Salgs- og hjelpetekster som peker på
+den gamle veien er en del av samme leveranse.
+
+**Rettet i:** `/tjenester` → redirect til Avtaleregister, historikken til Mottatte tilbud,
+`docs/SALGSGUIDE.md`, `docs/BRUKERGUIDE.md`, `docs/OMHU-DOKUMENTER.md`, `docs/SIDEKART-2026-09.md`.
+
