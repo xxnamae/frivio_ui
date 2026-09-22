@@ -5275,6 +5275,9 @@ export interface BygningsdelKortProps {
   tilstandsgrad?: string | null
   apneTiltak: number
   apneTiltakHref?: string
+  /** The open tasks themselves (variant `rad`). Given, they become the first
+   *  pill — the count alone made people curious with nowhere to go. */
+  apneTiltakListe?: { id: string; tittel: string; frist?: string | null; status?: string | null; href: string }[]
   historikk?: BygningsdelHistorikkRad[]
   materialer?: BygningsdelMateriale[]
   fdv?: BygningsdelFdvDokument[]
@@ -5286,14 +5289,16 @@ export interface BygningsdelKortProps {
   onLastOppFdv?: () => void
   /** Whether the expandable section starts open. Default closed — the card is an overview, not a page of its own. */
   defaultOpen?: boolean
-  /** `standard` (default) | `kompakt` — a sketch (2026-09-20) that replaces the
-   *  three-heading accordion with one fact line and three collapsed `PillTabs`
-   *  sections (one open at a time). See the function body for the split. */
-  variant?: 'standard' | 'kompakt'
+  /** `standard` (default) | `rad` — the row variant (founder 2026-09-21: the
+   *  building parts are a list, not a wall of cards) replaces the three-heading
+   *  accordion with one plain fact line and collapsed `PillTabs` sections, one
+   *  open at a time. The fact line stays TEXT: tap targets live in the pills.
+   *  Open tasks, when passed, are the first pill and link out per task. */
+  variant?: 'standard' | 'rad'
   className?: string
 }
 
-function bdkSisteLinjeKompakt(entry: { year: string; note: string }, nyeste?: BygningsdelHistorikkRad): string {
+function bdkSisteLinjeRad(entry: { year: string; note: string }, nyeste?: BygningsdelHistorikkRad): string {
   if (nyeste) return `Last done ${nyeste.kunAar ? nyeste.dato.slice(0, 4) : nyeste.dato}`
   if (entry.year) return `Last done ${entry.year}`
   return 'Last done unknown'
@@ -5328,26 +5333,27 @@ function bdkRadBeholder(children: ReactNode) {
 }
 
 export function BygningsdelKort({
-  componentKey, label, sublabel, icon: Icon, entry, tilstandsgrad, apneTiltak, apneTiltakHref,
+  componentKey, label, sublabel, icon: Icon, entry, tilstandsgrad, apneTiltak, apneTiltakHref, apneTiltakListe = [],
   historikk = [], materialer = [], fdv = [], onRegistrerHendelse, onRegistrerMateriale, onLastOppFdv,
   defaultOpen = false, variant = 'standard', className,
 }: BygningsdelKortProps) {
   const nyeste = historikk[0]
   const totalDetaljer = historikk.length + materialer.length + fdv.length
-  // Declared unconditionally (hooks rule) even though only the "kompakt"
+  // Declared unconditionally (hooks rule) even though only the "rad"
   // branch reads it — this single-file kit has no server/client split to
   // protect (unlike `components/ui/BygningsdelKort.tsx`, which delegates to a
   // separate client file for exactly this reason).
-  const [apneSeksjon, setApneSeksjon] = useState<'historikk' | 'materialer' | 'fdv' | null>(null)
+  const [apneSeksjon, setApneSeksjon] = useState<'tiltak' | 'historikk' | 'materialer' | 'fdv' | null>(null)
 
-  if (variant === 'kompakt') {
-    const veksle = (s: 'historikk' | 'materialer' | 'fdv') => setApneSeksjon(g => (g === s ? null : s))
+  if (variant === 'rad') {
+    const veksle = (s: 'tiltak' | 'historikk' | 'materialer' | 'fdv') => setApneSeksjon(g => (g === s ? null : s))
     const faner: PillTab[] = [
+      ...(apneTiltakListe.length > 0 ? [{ key: 'tiltak', label: `Tasks ${apneTiltakListe.length}` }] : []),
       { key: 'historikk', label: historikk.length > 0 ? `History ${historikk.length}` : 'History' },
       { key: 'materialer', label: materialer.length > 0 ? `Materials ${materialer.length}` : 'Materials' },
       { key: 'fdv', label: fdv.length > 0 ? `FDV ${fdv.length}` : 'FDV' },
     ]
-    const fakta: ReactNode[] = [bdkSisteLinjeKompakt(entry, nyeste)]
+    const fakta: ReactNode[] = [bdkSisteLinjeRad(entry, nyeste)]
     if (apneTiltakHref) fakta.push(bdkFaktaTrykk(`${apneTiltak} open ${apneTiltak === 1 ? 'task' : 'tasks'}`, undefined, apneTiltakHref))
     else if (apneTiltak > 0) fakta.push(`${apneTiltak} open ${apneTiltak === 1 ? 'task' : 'tasks'}`)
     if (materialer.length > 0) fakta.push(bdkFaktaTrykk(`${materialer.length} ${materialer.length === 1 ? 'material' : 'materials'}`, () => veksle('materialer')))
@@ -5380,7 +5386,15 @@ export function BygningsdelKort({
           ))}
         </p>
 
-        <PillTabs tabs={faner} activeKey={apneSeksjon ?? ''} onSelect={k => veksle(k as 'historikk' | 'materialer' | 'fdv')} />
+        <PillTabs tabs={faner} activeKey={apneSeksjon ?? ''} onSelect={k => veksle(k as 'tiltak' | 'historikk' | 'materialer' | 'fdv')} />
+
+        {apneSeksjon === 'tiltak' && apneTiltakListe.length > 0 && (
+          <div className="pt-1">
+            {bdkRadBeholder(apneTiltakListe.map(t => (
+              <ListRow key={t.id} title={t.tittel} secondary={[t.frist ? `Due ${t.frist}` : null].filter((x): x is string => x != null)} value={t.status ?? undefined} href={t.href} />
+            )))}
+          </div>
+        )}
 
         {apneSeksjon === 'historikk' && historikk.length > 0 && (
           <div className="pt-1">
