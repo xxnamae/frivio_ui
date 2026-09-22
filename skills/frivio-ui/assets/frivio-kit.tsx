@@ -5213,9 +5213,27 @@ export function tgVariant(tg: string): 'lav' | 'default' | 'middels' | 'akutt' {
   return 'default'
 }
 
-/* BygningsdelKort — added 2026-09-18, ported 2026-09-18 (with the
- * `onRegistrerMateriale`/`onLastOppFdv` secondary actions from day one, so
- * there is no separate "port it later" step for this wave).
+/* BygningsdelKort — added 2026-09-18, ported 2026-09-18, re-synced with the
+ * app 2026-09-22 (see "VARIANT rad" below; the `kompakt` sketch this kit
+ * carried until then no longer exists in the app).
+ *
+ * VARIANT rad (app 2026-09-21, this kit 2026-09-22): founder on the building
+ * parts tab — "a list with an accordion, not a grid of cards" — so the row
+ * variant is NOT a small card: it is a plain `ListRow` with its own
+ * `expanded`/`details` accordion. Closed, it shows an icon tile, the part's
+ * name, a TG badge when graded, and a PLAIN-TEXT fact line ("Last done … ·
+ * N open tasks · N materials · N FDV", zero counts dropped) with a rotating
+ * chevron. Open, it shows "Register event" as a SECONDARY action, then
+ * full-width `PillTabs` with one section visible at a time. History,
+ * Materials and FDV always have a pill (each with its own empty text);
+ * Tasks only gets one when there ARE open tasks, since the fact line
+ * already omits a zero. Materials and FDV keep a "+ Add"/"Upload" link in
+ * their empty state. Open/closed belongs to the LIST (only one row open at
+ * a time) via `expanded`/`onToggle`; WHICH section is showing is the row's
+ * own state.
+ *
+ * The `onRegistrerMateriale`/`onLastOppFdv` secondary actions came with the
+ * first port, so there is no separate "port it later" step for them.
  *
  * Source docstring (components/ui/BygningsdelKort.tsx) explains the shape:
  * one recurring card per "building component" (roof, facade, elevator, …)
@@ -5275,9 +5293,22 @@ export interface BygningsdelKortProps {
   tilstandsgrad?: string | null
   apneTiltak: number
   apneTiltakHref?: string
-  /** The open tasks themselves (variant `rad`). Given, they become the first
-   *  pill — the count alone made people curious with nowhere to go. */
-  apneTiltakListe?: { id: string; tittel: string; frist?: string | null; status?: string | null; href: string }[]
+  /** The part's OPEN tasks (variant `rad` only). Non-empty = they become the
+   *  FIRST pill; empty/omitted = no section at all, never an empty one. The
+   *  count in the fact line (`apneTiltak`) is a separate prop — the caller
+   *  keeps the two in sync, this component does not.
+   *  KIT DIFFERENCE: `status` is the ready-made label string ("Open",
+   *  "Quote received", …). The app maps its closed `TaskStatus` union to
+   *  Norwegian labels; this kit has no task model to map from.
+   *  `href` is built by the caller (it knows the building) and should deep-link
+   *  to the task. */
+  apneTiltakListe?: { id: string; title: string; dueDate?: string | null; status?: string | null; href: string }[]
+  /** Variant `rad`: is this row open? Owned by the LIST, which keeps "only one
+   *  open at a time". KIT DIFFERENCE: omit `onToggle` and the row falls back to
+   *  its own state, so a single row still works when dropped in on its own. */
+  expanded?: boolean
+  /** Variant `rad`: open/close this row. */
+  onToggle?: () => void
   historikk?: BygningsdelHistorikkRad[]
   materialer?: BygningsdelMateriale[]
   fdv?: BygningsdelFdvDokument[]
@@ -5304,17 +5335,6 @@ function bdkSisteLinjeRad(entry: { year: string; note: string }, nyeste?: Bygnin
   return 'Last done unknown'
 }
 
-/** Inline tap target for a number inside the fact line: padding + negative
- *  margin grows the hit area to 40px without changing the line's own height
- *  (same trick `Begrep`'s inline hint link uses below). */
-function bdkFaktaTrykk(children: ReactNode, onClick?: () => void, href?: string) {
-  const cls = 'inline-block py-3 -my-3 px-1 -mx-1 type-label-13-strong underline'
-  const style = { color: 'var(--frv-accent-text)' }
-  return href
-    ? <a href={href} className={cls} style={style}>{children}</a>
-    : <button type="button" onClick={onClick} className={cls} style={style}>{children}</button>
-}
-
 function bdkSisteLinje(entry: { year: string; note: string }, nyeste?: BygningsdelHistorikkRad): string {
   if (nyeste) {
     const delene = [nyeste.kunAar ? nyeste.dato.slice(0, 4) : nyeste.dato, nyeste.utfortAv, nyeste.materiale].filter(Boolean)
@@ -5335,7 +5355,7 @@ function bdkRadBeholder(children: ReactNode) {
 export function BygningsdelKort({
   componentKey, label, sublabel, icon: Icon, entry, tilstandsgrad, apneTiltak, apneTiltakHref, apneTiltakListe = [],
   historikk = [], materialer = [], fdv = [], onRegistrerHendelse, onRegistrerMateriale, onLastOppFdv,
-  defaultOpen = false, variant = 'standard', className,
+  defaultOpen = false, variant = 'standard', expanded, onToggle, className,
 }: BygningsdelKortProps) {
   const nyeste = historikk[0]
   const totalDetaljer = historikk.length + materialer.length + fdv.length
@@ -5344,82 +5364,127 @@ export function BygningsdelKort({
   // protect (unlike `components/ui/BygningsdelKort.tsx`, which delegates to a
   // separate client file for exactly this reason).
   const [apneSeksjon, setApneSeksjon] = useState<'tiltak' | 'historikk' | 'materialer' | 'fdv' | null>(null)
+  // Uncontrolled fallback for `expanded`/`onToggle` — see the props above.
+  const [internExpanded, setInternExpanded] = useState(false)
+  const veksle = (key: string) =>
+    setApneSeksjon(gjeldende => (gjeldende === key ? null : (key as 'tiltak' | 'historikk' | 'materialer' | 'fdv')))
 
   if (variant === 'rad') {
-    const veksle = (s: 'tiltak' | 'historikk' | 'materialer' | 'fdv') => setApneSeksjon(g => (g === s ? null : s))
+    // The fact line is PLAIN TEXT: the row itself is the tap target that opens
+    // the sections, so a second target inside the line would be two ways to the
+    // same place. Zero counts are dropped (ListRow filters null out of
+    // `secondary`), which is also why the Tasks pill only appears when there
+    // ARE open tasks — a visible-but-empty pill would contradict the line.
+    const fakta: ReactNode[] = [
+      bdkSisteLinjeRad(entry, nyeste),
+      apneTiltak > 0 ? `${apneTiltak} open ${apneTiltak === 1 ? 'task' : 'tasks'}` : null,
+      materialer.length > 0 ? `${materialer.length} ${materialer.length === 1 ? 'material' : 'materials'}` : null,
+      fdv.length > 0 ? `${fdv.length} FDV` : null,
+    ]
     const faner: PillTab[] = [
       ...(apneTiltakListe.length > 0 ? [{ key: 'tiltak', label: `Tasks ${apneTiltakListe.length}` }] : []),
       { key: 'historikk', label: historikk.length > 0 ? `History ${historikk.length}` : 'History' },
       { key: 'materialer', label: materialer.length > 0 ? `Materials ${materialer.length}` : 'Materials' },
       { key: 'fdv', label: fdv.length > 0 ? `FDV ${fdv.length}` : 'FDV' },
     ]
-    const fakta: ReactNode[] = [bdkSisteLinjeRad(entry, nyeste)]
-    if (apneTiltakHref) fakta.push(bdkFaktaTrykk(`${apneTiltak} open ${apneTiltak === 1 ? 'task' : 'tasks'}`, undefined, apneTiltakHref))
-    else if (apneTiltak > 0) fakta.push(`${apneTiltak} open ${apneTiltak === 1 ? 'task' : 'tasks'}`)
-    if (materialer.length > 0) fakta.push(bdkFaktaTrykk(`${materialer.length} ${materialer.length === 1 ? 'material' : 'materials'}`, () => veksle('materialer')))
-    if (fdv.length > 0) fakta.push(bdkFaktaTrykk(`${fdv.length} FDV`, () => veksle('fdv')))
+    const apen = onToggle ? !!expanded : internExpanded
+    const veksleRad = onToggle ?? (() => setInternExpanded(v => !v))
 
     return (
-      <Card className={cx('p-4 flex flex-col gap-2', className)}>
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5 min-w-0">
-            {Icon && <IconTile icon={Icon} tone="neutral" size="md" />}
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="type-heading-16 truncate">{label}</span>
-                {tilstandsgrad && <Badge variant={tgVariant(tilstandsgrad)}>{tilstandsgrad}</Badge>}
-              </div>
-              {sublabel && <span className="type-label-12 block" style={{ color: 'var(--frv-text-tertiary)' }}>{sublabel}</span>}
+      <ListRow
+        onClick={veksleRad}
+        expanded={apen}
+        /* `sublabel` is deliberately dropped in this variant: only some parts
+           have one, so the extra line would make row heights differ down the
+           list and break the closed row's ≤56px target. */
+        leading={Icon ? <IconTile icon={Icon} tone="neutral" size="sm" /> : undefined}
+        title={label}
+        meta={tilstandsgrad ? <Badge variant={tgVariant(tilstandsgrad)}>{tilstandsgrad}</Badge> : undefined}
+        secondary={fakta}
+        trailing={
+          <ChevronDownIcon
+            size={16}
+            className={cx(
+              'motion-safe:transition-transform motion-safe:duration-[var(--frv-duration-popover)] motion-safe:ease-[var(--frv-ease-spring)]',
+              apen ? 'rotate-180' : 'rotate-0',
+            )}
+            style={{ color: 'var(--frv-text-tertiary)' }}
+          />
+        }
+        details={
+          <div className="flex flex-col gap-3">
+            {/* "Register event" is SECONDARY here: the row's one primary action
+                is opening and closing it (one-primary-action-per-surface). */}
+            <div className="flex justify-end">
+              <Button variant="secondary" size="sm" onClick={onRegistrerHendelse}>
+                <PlusIcon size={14} />Register event
+              </Button>
             </div>
-          </div>
-          <Button variant="secondary" size="sm" onClick={onRegistrerHendelse}>
-            <PlusIcon size={14} />Register event
-          </Button>
-        </div>
+            <PillTabs tabs={faner} activeKey={apneSeksjon ?? ''} onSelect={veksle} fullBredde />
 
-        <p className="type-label-13 flex flex-wrap items-baseline gap-x-1.5" style={{ color: 'var(--frv-text-secondary)' }}>
-          {fakta.map((del, i) => (
-            <span key={i} className="inline-flex items-baseline gap-x-1.5">
-              {i > 0 && <span aria-hidden style={{ color: 'var(--frv-text-quaternary)' }}>·</span>}
-              {del}
-            </span>
-          ))}
-        </p>
+            {apneSeksjon === 'tiltak' && apneTiltakListe.length > 0 && bdkRadBeholder(apneTiltakListe.map(t => (
+              <ListRow
+                key={t.id}
+                title={t.title}
+                meta={t.status ? <Badge variant="default">{t.status}</Badge> : undefined}
+                value={t.dueDate ? `Due ${t.dueDate}` : undefined}
+                href={t.href}
+                trailing={<ChevronRightIcon size={14} style={{ color: 'var(--frv-text-quaternary)' }} />}
+              />
+            )))}
 
-        <PillTabs tabs={faner} activeKey={apneSeksjon ?? ''} onSelect={k => veksle(k as 'tiltak' | 'historikk' | 'materialer' | 'fdv')} />
+            {apneSeksjon === 'historikk' && (
+              historikk.length > 0 ? bdkRadBeholder(historikk.map(h => (
+                <ListRow
+                  key={h.id}
+                  title={h.tittel}
+                  secondary={[h.utfortAv ? `By ${h.utfortAv}` : null, h.materiale ? `Material: ${h.materiale}` : null].filter((x): x is string => x != null)}
+                  value={h.kunAar ? h.dato.slice(0, 4) : h.dato}
+                  href={h.href ?? undefined}
+                  trailing={h.href ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-quaternary)' }} /> : undefined}
+                />
+              ))) : <span className="type-copy-13" style={{ color: 'var(--frv-text-tertiary)' }}>No history on record yet.</span>
+            )}
 
-        {apneSeksjon === 'tiltak' && apneTiltakListe.length > 0 && (
-          <div className="pt-1">
-            {bdkRadBeholder(apneTiltakListe.map(t => (
-              <ListRow key={t.id} title={t.tittel} secondary={[t.frist ? `Due ${t.frist}` : null].filter((x): x is string => x != null)} value={t.status ?? undefined} href={t.href} />
-            )))}
-          </div>
-        )}
+            {apneSeksjon === 'materialer' && (
+              <div className="flex flex-col gap-2 items-start">
+                {materialer.length > 0
+                  ? bdkRadBeholder(materialer.map(m => (
+                    <ListRow key={m.id} title={m.produkt || 'Unnamed product'} secondary={[m.kode, m.leverandor].filter(Boolean)} value={m.aar || undefined} />
+                  )))
+                  : <span className="type-copy-13" style={{ color: 'var(--frv-text-tertiary)' }}>No materials on record for this part.</span>}
+                {onRegistrerMateriale && (
+                  <Button variant="link" size="sm" onClick={onRegistrerMateriale}>
+                    <PlusIcon size={12} />Add material
+                  </Button>
+                )}
+              </div>
+            )}
 
-        {apneSeksjon === 'historikk' && historikk.length > 0 && (
-          <div className="pt-1">
-            {bdkRadBeholder(historikk.map(h => (
-              <ListRow key={h.id} title={h.tittel} secondary={[h.utfortAv ? `By ${h.utfortAv}` : null, h.materiale ? `Material: ${h.materiale}` : null].filter((x): x is string => x != null)} value={h.kunAar ? h.dato.slice(0, 4) : h.dato} href={h.href ?? undefined} />
-            )))}
+            {apneSeksjon === 'fdv' && (
+              <div className="flex flex-col gap-2 items-start">
+                {fdv.length > 0
+                  ? bdkRadBeholder(fdv.map(f => (
+                    <ListRow
+                      key={f.id}
+                      title={f.title}
+                      secondary={[f.supplierName, f.utfortDato].filter(Boolean)}
+                      href={f.docUrl ?? undefined}
+                      trailing={f.docUrl ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-quaternary)' }} /> : undefined}
+                    />
+                  )))
+                  : <span className="type-copy-13" style={{ color: 'var(--frv-text-tertiary)' }}>No FDV documents for this part.</span>}
+                {onLastOppFdv && (
+                  <Button variant="link" size="sm" onClick={onLastOppFdv}>
+                    <PlusIcon size={12} />Upload FDV
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
-        )}
-        {apneSeksjon === 'materialer' && (
-          <div className="pt-1 flex flex-col gap-2 items-start">
-            {materialer.length > 0 && bdkRadBeholder(materialer.map(m => (
-              <ListRow key={m.id} title={m.produkt || 'Unnamed product'} secondary={[m.kode, m.leverandor].filter(Boolean)} value={m.aar || undefined} />
-            )))}
-            {onRegistrerMateriale && <Button variant="link" size="sm" onClick={onRegistrerMateriale}><PlusIcon size={12} />Add material</Button>}
-          </div>
-        )}
-        {apneSeksjon === 'fdv' && (
-          <div className="pt-1 flex flex-col gap-2 items-start">
-            {fdv.length > 0 && bdkRadBeholder(fdv.map(f => (
-              <ListRow key={f.id} title={f.title} secondary={[f.supplierName, f.utfortDato].filter(Boolean)} href={f.docUrl ?? undefined} />
-            )))}
-            {onLastOppFdv && <Button variant="link" size="sm" onClick={onLastOppFdv}><PlusIcon size={12} />Upload FDV</Button>}
-          </div>
-        )}
-      </Card>
+        }
+        className={className}
+      />
     )
   }
 
