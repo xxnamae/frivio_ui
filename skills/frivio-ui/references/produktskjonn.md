@@ -4539,3 +4539,61 @@ Prøv å gi nyheter på flere sider ulike titler når de faktisk er ulike.
 
 **Rettet i:** `components/ui/FeatureTour.tsx`, `lib/introer/omvisning.ts` (ny, testet), docs-demoen
 for FeatureTour, `public/design.md`, AGENTS.md.
+
+---
+
+## regel/ett-felt-en-parser
+
+**Kilde:** Founder 21. sep 2026 (skjermbilde av seksjonslisten): «Her står det at alle mangler
+eierbrøk — hvorfor det? Den er jo registrert.»
+
+**Funn:** `units.ownership_fraction` er fritekst og ble lest av TO parsere. Den ene godtok bare
+«45/1000» og desimaltall under 1, den andre godtok også «7,75 %». Den strengeste styrte
+merkelappen, den mildeste styrte utregningen, og kolonnen ved siden av viste råteksten. Resultatet
+var at hver eneste rad ble merket som mangelfull mens tallet sto rett ved siden av.
+
+**Regel:** Ett felt har ÉN parser. Skal en verdi tolkes flere steder, ligger tolkningen i én ren,
+testet funksjon som alle importerer, sammen med formateringen for visning. Er feltet fritekst,
+valideres det ved lagring med samme funksjon, og feilteksten sier hvilke former som godtas.
+Finner du en andre parser for samme kolonne, er det den som skal bort, ikke en tredje som skal til.
+Symptomet å kjenne igjen: en tomtilstand eller en mangel-merkelapp som slår ut på ALLE rader.
+
+**Rettet i:** `lib/seksjoner/eierbrok.ts` (ny), `lib/skatt/fordeling.ts`, `lib/finansiering.ts`,
+`lib/seksjoner/fullstendighet.ts`, `components/buildings/UnitsPanel.tsx`, begge units-API-rutene.
+
+---
+
+## regel/flytende-lag-over-modal
+
+**Kilde:** Founder 21. sep 2026 (Avtaleregister): «når jeg prøvde å teste å endre leverandør ble
+forslagslista fra Brønnøysund i bakgrunnen så jeg kunne ikke se den.»
+
+**Funn:** Alt som portaleres ut av et skjema (Autocomplete, Dropdown, OverflowMenu, Tooltip) lå på
+lag 50, modalen på lag 60. Nedtrekket fantes i DOM-en, var «åpent» i koden, og var usynlig for
+brukeren. En test som bare sjekker at elementet finnes, godkjenner denne feilen.
+
+**Regel:** Det flytende laget ligger ALLTID over det laget som åpnet det. Stigen står som én
+kommentar i `globals.css` ved `.popover-panel` og skal leses før noen rører et z-tall: ActionBar 20,
+launcher 40, bunnmeny 50, modal og sidepanel 60, flytende lag 70, arkets scrim 75, mobilark 76,
+toast 90, kommandopalett 100. Nytt lag legges inn i den stigen, ikke som et løst tall ved siden av.
+Verifiser med `elementFromPoint` på midten av elementet, aldri med at noden finnes.
+
+**Rettet i:** `app/globals.css`, `components/ui/FloatingLayer.tsx`, `Tooltip`, `Toast`,
+`FeatureTour`.
+
+---
+
+## regel/gruppetittel-utvider-ikke-navigerer
+
+**Kilde:** Founder 21. sep 2026 (Rapportering): «den viser fremdeles pil som om det er
+underpunkter, men trykker du på Skatterapportering så lukkes utvidelsen og du er på skatteoppgaven.»
+
+**Funn:** Gruppetittelen i sidemenyen var både lenke og bryter. Ett klikk navigerte og lukket
+gruppen samtidig, så pilen lovet noe den ikke holdt.
+
+**Regel:** Et element gjør én ting. En gruppetittel med barn er en bryter (`button`,
+`aria-expanded`), barna er lenkene. Skal gruppen også ha en egen side, er den en av barna, øverst.
+Gjelder alle utvidbare mønstre, ikke bare sidemenyen.
+
+**Rettet i:** `app/(dashboard)/SidebarNav.tsx`.
+

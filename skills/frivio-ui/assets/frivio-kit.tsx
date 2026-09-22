@@ -282,6 +282,18 @@ function CheckIcon({ size = 13, className, style }: ChromeIconProps) {
   )
 }
 
+// Hand-drawn approximation of lucide's `copy` glyph (two overlapping rounded
+// rects) — used only by `KopierKnapp` below, no icon dependency to match.
+function CopyIcon({ size = 16, className, style }: ChromeIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className} style={style}>
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  )
+}
+
 function MinusIcon({ size = 11, className, style }: ChromeIconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
@@ -693,6 +705,77 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
 )
 
 IconButton.displayName = 'IconButton'
+
+type KopierKnappFelles = { tekst: string; varighetMs?: number; className?: string }
+
+type KopierKnappSomTekst = KopierKnappFelles & {
+  visning?: 'tekst'
+  children: ReactNode
+  variant?: ButtonProps['variant']
+  size?: ButtonProps['size']
+}
+
+type KopierKnappSomIkon = KopierKnappFelles & {
+  visning: 'ikon'
+  'aria-label': string
+  tone?: IconButtonProps['tone']
+}
+
+export type KopierKnappProps = KopierKnappSomTekst | KopierKnappSomIkon
+
+/* KopierKnapp
+   Copies `tekst` to the clipboard and shows a brief "Kopiert" ("Copied")
+   confirmation — built on Button/IconButton, never hand-rolled markup. Two
+   forms, picked with `visning`: `'tekst'` (default) is a Button with a
+   copy/check icon ahead of the label; `'ikon'` is a compact IconButton for a
+   tight row or next to a bare number, and requires `aria-label` (TS-enforced,
+   same rule as IconButton itself) since it has no visible label.
+   `navigator.clipboard` can be missing or reject (insecure context, missing
+   permission, older browser) — both are caught; the component never throws,
+   it simply shows no confirmation when the copy actually failed. */
+export function KopierKnapp(props: KopierKnappProps) {
+  const [kopiert, setKopiert] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+  }, [])
+
+  async function kopier() {
+    let lyktes = true
+    try {
+      await navigator.clipboard.writeText(props.tekst)
+    } catch {
+      lyktes = false
+    }
+    if (!lyktes) return
+    setKopiert(true)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setKopiert(false), props.varighetMs ?? 2000)
+  }
+
+  if (props.visning === 'ikon') {
+    const { className, tone, 'aria-label': ariaLabel } = props
+    return (
+      <IconButton
+        aria-label={kopiert ? 'Kopiert' : ariaLabel}
+        aria-live="polite"
+        onClick={kopier}
+        tone={tone}
+        className={className}
+      >
+        {kopiert ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
+      </IconButton>
+    )
+  }
+
+  const { className, variant = 'secondary', size = 'sm', children } = props
+  return (
+    <Button variant={variant} size={size} onClick={kopier} confirmed={kopiert} className={className}>
+      {kopiert ? <CheckIcon size={12} /> : <CopyIcon size={12} />} {kopiert ? 'Kopiert' : children}
+    </Button>
+  )
+}
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   /** `default` (bg surface) | `hero` (the `--frv-gradient-hero` background —
