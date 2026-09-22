@@ -4597,3 +4597,23 @@ Gjelder alle utvidbare mønstre, ikke bare sidemenyen.
 
 **Rettet i:** `app/(dashboard)/SidebarNav.tsx`.
 
+---
+
+## regel/primitivet-fikses-i-primitivet
+
+**Kilde:** Agentfunn under Å gjøre-sveipen 22. sep 2026: tre filtre i verktøylinja skjøv det siste
+160 px utenfor viewporten på 375 px, usynlig og uklikkbart. Årsaken satt i `Toolbar`, men
+oppdraget hadde ikke den fila i sitt filområde, så den ble lappet i kallstedet i stedet.
+
+**Funn:** `Toolbar` sin `end`-beholder hadde `shrink-0` OG `flex-wrap` på samme element. Da regner
+beholderen sin egen bredde som om ingenting bryter om, og barna kommer aldri ned på ny linje. Hver
+side som bruker verktøylinja arver feilen, og en lapp på én side skjuler den for de andre.
+
+**Regel:** Ligger årsaken i et delt primitiv, rettes den i primitivet. Har du ikke den fila i
+oppdraget, rapporterer du funnet i stedet for å lappe kallstedet. En lokal `max-w-[calc(...)]` eller
+en overstyring av et primitivs klasser er et varsel om at feilen står et annet sted. Og et primitiv
+skal tåle smal bredde selv, uten at siden kompenserer.
+
+**Rettet i:** `components/ui/Toolbar.tsx` (`shrink-0` → `min-w-0`), lappen fjernet fra
+`components/gjoremal/GjoremalListe.tsx`, kontrakten låst i `tests/unit/ui/toolbar.test.tsx`.
+
