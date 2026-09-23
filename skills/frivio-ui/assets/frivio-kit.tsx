@@ -294,6 +294,21 @@ function CopyIcon({ size = 16, className, style }: ChromeIconProps) {
   )
 }
 
+// Hand-drawn approximation of lucide's `trash-2` glyph — added 2026-09-23 for
+// the BygningsdelKort Tilstand section's per-row delete action (`onSlettTilstand`).
+function TrashIcon({ size = 14, className, style }: ChromeIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className} style={style}>
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" x2="10" y1="11" y2="17" />
+      <line x1="14" x2="14" y1="11" y2="17" />
+    </svg>
+  )
+}
+
 function MinusIcon({ size = 11, className, style }: ChromeIconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
@@ -4161,13 +4176,20 @@ export function PillTabs({
   const pillClass = (active: boolean) =>
     cx(
       'min-h-10 lg:min-h-0 inline-flex items-center rounded-[var(--frv-radius-full)] transition-colors motion-reduce:transition-none whitespace-nowrap',
-      fullBredde ? 'flex-1 justify-center text-center min-w-0 px-0.5 sm:px-3' : 'px-3',
+      // fullBredde (synced 2026-09-23): share the width equally WHEN there is
+      // room (flex-1) but never shrink below the label (shrink-0); when the
+      // pills don't fit, the track scrolls instead. The old "share and
+      // truncate" rule clipped labels to "Histori…" with five pills at 375px.
+      fullBredde ? 'flex-1 shrink-0 justify-center text-center px-3' : 'px-3',
       size === 'md' ? 'h-9' : 'h-7',
       active ? 'bg-[var(--frv-text-primary)] text-[var(--frv-bg)]' : 'text-[var(--frv-text-secondary)] hover:bg-[var(--frv-gray-alpha-100)]',
     )
   const trackClass = cx(
     'items-center gap-1.5 p-px rounded-[var(--frv-radius-full)] bg-[var(--frv-surface)] border border-[var(--frv-border)] min-w-0',
-    fullBredde ? 'flex w-full' : 'inline-flex',
+    // Scrolls inside its own track when the pills don't fit (never clips).
+    // KIT DIFFERENCE: the app adds a `.rad-fade` edge hint; this port keeps
+    // only the scroll, same choice as the kit's ListRow line 2.
+    fullBredde ? 'flex w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'inline-flex',
   )
 
   /* Active pill NAMES (400 reads, 500 names) → -strong, which shifts glyph
@@ -4179,9 +4201,9 @@ export function PillTabs({
   const strongClass = size === 'md' ? 'type-label-14-strong' : 'type-label-13-strong'
   const baseClass = size === 'md' ? 'type-label-14' : 'type-label-13'
   const pillLabel = (label: string, active: boolean) => (
-    <span className={cx('grid', fullBredde && 'min-w-0 w-full')}>
-      <span aria-hidden className={cx('invisible col-start-1 row-start-1', strongClass, fullBredde && 'truncate')}>{label}</span>
-      <span className={cx('col-start-1 row-start-1', active ? strongClass : baseClass, fullBredde && 'truncate')}>{label}</span>
+    <span className="grid">
+      <span aria-hidden className={cx('invisible col-start-1 row-start-1', strongClass)}>{label}</span>
+      <span className={cx('col-start-1 row-start-1', active ? strongClass : baseClass)}>{label}</span>
     </span>
   )
 
@@ -5215,7 +5237,21 @@ export function tgVariant(tg: string): 'lav' | 'default' | 'middels' | 'akutt' {
 
 /* BygningsdelKort — added 2026-09-18, ported 2026-09-18, re-synced with the
  * app 2026-09-22 (see "VARIANT rad" below; the `kompakt` sketch this kit
- * carried until then no longer exists in the app).
+ * carried until then no longer exists in the app) and again 2026-09-23 (see
+ * "TILSTAND SECTION" below).
+ *
+ * TILSTAND SECTION (app fase 4, 2026-09-22, this kit 2026-09-23): a new
+ * pill, "Condition", FIRST in the tab row, mirroring
+ * `lib/bygningsdeler/tilstand.ts`: grade/date/source live on the
+ * part itself with history, so a task's suggested grade survives the task
+ * closing. Shown only when `tilstand` is passed. Order inside: a suggestion
+ * from an open task (`Callout` tone="accent" — a QUESTION, never a stated
+ * fact) → the board's latest confirmed assessment (Badge + date + source +
+ * note) or a neutral empty line falling back to the derived worst-open-task
+ * grade → earlier assessments as `ListRow`s with a delete action per row →
+ * "Register condition". KIT DIFFERENCE: the source app derives `avledet`/
+ * `forslag` with pure helpers this kit does not port (see the interfaces'
+ * own note) — the caller passes an already-derived `tilstand` object.
  *
  * VARIANT rad (app 2026-09-21, this kit 2026-09-22): founder on the building
  * parts tab — "a list with an accordion, not a grid of cards" — so the row
@@ -5281,6 +5317,70 @@ export interface BygningsdelFdvDokument {
   utfortDato: string | null
 }
 
+/* Condition ("Tilstand") section — added 2026-09-23, mirroring the app's
+ * fase 4 (see `lib/bygningsdeler/tilstand.ts`): grade, date and source live
+ * on the building part itself, with history, so a task's suggested grade
+ * survives the task closing. KIT DIFFERENCE: the source app computes
+ * `avledet`/`forslag` with pure helpers (`tilstandVisning`, `forslagFraTiltak`)
+ * this kit does not port — a caller-supplied, already-derived `tilstand`
+ * object keeps this a display-only port like the rest of the file. */
+export type BygningsdelTilstandKilde = 'rapport' | 'befaring' | 'styret' | 'tiltak'
+
+const TILSTAND_KILDE_LABEL: Record<BygningsdelTilstandKilde, string> = {
+  rapport: 'Condition report',
+  befaring: 'Site visit',
+  styret: 'Board assessment',
+  tiltak: 'From task',
+}
+
+export interface BygningsdelTilstandRad {
+  id: string
+  /** e.g. "TG0"..."TG3" or "IU" (not inspected) — free text, not validated by this kit. */
+  grad: string
+  /** ISO date (YYYY-MM-DD) the condition was ASSESSED, not when the row was saved. */
+  dato: string
+  kilde: BygningsdelTilstandKilde
+  notat: string | null
+}
+
+export interface BygningsdelTilstandForslag {
+  grad: string
+  tiltakTittel: string
+  /** ISO date (YYYY-MM-DD) for when the task came in. */
+  dato: string
+}
+
+/** Everything the Tilstand section needs — the caller derives this (see the
+ *  KIT DIFFERENCE note above), the section only displays it. */
+export interface BygningsdelTilstandVisning {
+  /** Latest CONFIRMED assessment, or null — the board's word, nothing else. */
+  gjeldende: BygningsdelTilstandRad | null
+  /** Worst grade among the part's open tasks — fallback label while nothing is confirmed. */
+  avledet: string | null
+  /** Newest first. */
+  historikk: BygningsdelTilstandRad[]
+  /** An open task pointing at a grade the board hasn't confirmed — a QUESTION, never a stated fact. */
+  forslag: BygningsdelTilstandForslag | null
+}
+
+function bdkTilstandHistorikkRader(historikk: BygningsdelTilstandRad[], onSlett?: (radId: string) => void) {
+  if (historikk.length === 0) return null
+  return bdkRadBeholder(historikk.map(rad => (
+    <ListRow
+      key={rad.id}
+      title={TILSTAND_KILDE_LABEL[rad.kilde]}
+      meta={<Badge variant={tgVariant(rad.grad)}>{rad.grad}</Badge>}
+      secondary={rad.notat ?? undefined}
+      value={rad.dato}
+      trailing={onSlett ? (
+        <IconButton aria-label={`Delete the ${rad.grad} assessment from ${rad.dato}`} tone="error" onClick={() => onSlett(rad.id)}>
+          <TrashIcon size={14} />
+        </IconButton>
+      ) : undefined}
+    />
+  )))
+}
+
 export interface BygningsdelKortProps {
   /** Only used to derive the accordion's `storageKey` — no display effect. */
   componentKey: string
@@ -5303,6 +5403,17 @@ export interface BygningsdelKortProps {
    *  `href` is built by the caller (it knows the building) and should deep-link
    *  to the task. */
   apneTiltakListe?: { id: string; title: string; dueDate?: string | null; status?: string | null; href: string }[]
+  /** The part's confirmed condition, derived grade and any suggestion (variant
+   *  `rad` only). A "Tilstand" pill FIRST in the tab row, shown only when this
+   *  is passed — omitted call sites are unaffected. The section makes no API
+   *  calls itself; see `onRegistrerTilstand`/`onBekreftForslag`/`onSlettTilstand`. */
+  tilstand?: BygningsdelTilstandVisning
+  /** Opens registering a new confirmed condition assessment. Omitted = no "Register condition" button. */
+  onRegistrerTilstand?: () => void
+  /** Confirms `tilstand.forslag` as a new assessment. Omitted = no "Confirm" button on the suggestion. */
+  onBekreftForslag?: () => void
+  /** Deletes one historical condition row (its `id`). Omitted = no delete action in the history. */
+  onSlettTilstand?: (radId: string) => void
   /** Variant `rad`: is this row open? Owned by the LIST, which keeps "only one
    *  open at a time". KIT DIFFERENCE: omit `onToggle` and the row falls back to
    *  its own state, so a single row still works when dropped in on its own. */
@@ -5354,7 +5465,8 @@ function bdkRadBeholder(children: ReactNode) {
 
 export function BygningsdelKort({
   componentKey, label, sublabel, icon: Icon, entry, tilstandsgrad, apneTiltak, apneTiltakHref, apneTiltakListe = [],
-  historikk = [], materialer = [], fdv = [], onRegistrerHendelse, onRegistrerMateriale, onLastOppFdv,
+  historikk = [], materialer = [], fdv = [], tilstand, onRegistrerHendelse, onRegistrerMateriale, onLastOppFdv,
+  onRegistrerTilstand, onBekreftForslag, onSlettTilstand,
   defaultOpen = false, variant = 'standard', expanded, onToggle, className,
 }: BygningsdelKortProps) {
   const nyeste = historikk[0]
@@ -5363,11 +5475,11 @@ export function BygningsdelKort({
   // branch reads it — this single-file kit has no server/client split to
   // protect (unlike `components/ui/BygningsdelKort.tsx`, which delegates to a
   // separate client file for exactly this reason).
-  const [apneSeksjon, setApneSeksjon] = useState<'tiltak' | 'historikk' | 'materialer' | 'fdv' | null>(null)
+  const [apneSeksjon, setApneSeksjon] = useState<'tilstand' | 'tiltak' | 'historikk' | 'materialer' | 'fdv' | null>(null)
   // Uncontrolled fallback for `expanded`/`onToggle` — see the props above.
   const [internExpanded, setInternExpanded] = useState(false)
   const veksle = (key: string) =>
-    setApneSeksjon(gjeldende => (gjeldende === key ? null : (key as 'tiltak' | 'historikk' | 'materialer' | 'fdv')))
+    setApneSeksjon(gjeldende => (gjeldende === key ? null : (key as 'tilstand' | 'tiltak' | 'historikk' | 'materialer' | 'fdv')))
 
   if (variant === 'rad') {
     // The fact line is PLAIN TEXT: the row itself is the tap target that opens
@@ -5382,6 +5494,7 @@ export function BygningsdelKort({
       fdv.length > 0 ? `${fdv.length} FDV` : null,
     ]
     const faner: PillTab[] = [
+      ...(tilstand ? [{ key: 'tilstand', label: 'Condition' }] : []),
       ...(apneTiltakListe.length > 0 ? [{ key: 'tiltak', label: `Tasks ${apneTiltakListe.length}` }] : []),
       { key: 'historikk', label: historikk.length > 0 ? `History ${historikk.length}` : 'History' },
       { key: 'materialer', label: materialer.length > 0 ? `Materials ${materialer.length}` : 'Materials' },
@@ -5421,6 +5534,50 @@ export function BygningsdelKort({
               </Button>
             </div>
             <PillTabs tabs={faner} activeKey={apneSeksjon ?? ''} onSelect={veksle} fullBredde />
+
+            {apneSeksjon === 'tilstand' && tilstand && (
+              <div className="flex flex-col gap-3 items-start">
+                {tilstand.forslag && (
+                  <Callout
+                    tone="accent"
+                    size="small"
+                    className="w-full"
+                    action={onBekreftForslag && (
+                      <Button variant="secondary" size="sm" onClick={onBekreftForslag}>
+                        Confirm {tilstand.forslag.grad}
+                      </Button>
+                    )}
+                  >
+                    <span className="type-copy-13">
+                      &ldquo;{tilstand.forslag.tiltakTittel}&rdquo; ({tilstand.forslag.dato}) points to {tilstand.forslag.grad} — is that right?
+                    </span>
+                  </Callout>
+                )}
+                {tilstand.gjeldende ? (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant={tgVariant(tilstand.gjeldende.grad)}>{tilstand.gjeldende.grad}</Badge>
+                      <span className="type-label-13" style={{ color: 'var(--frv-text-secondary)' }}>
+                        {tilstand.gjeldende.dato} · {TILSTAND_KILDE_LABEL[tilstand.gjeldende.kilde]}
+                      </span>
+                    </div>
+                    {tilstand.gjeldende.notat && (
+                      <span className="type-copy-13" style={{ color: 'var(--frv-text-secondary)' }}>{tilstand.gjeldende.notat}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="type-copy-13" style={{ color: 'var(--frv-text-tertiary)' }}>
+                    No assessment confirmed yet{tilstand.avledet ? ` — the label shows the worst grade among open tasks (${tilstand.avledet}).` : '.'}
+                  </span>
+                )}
+                {bdkTilstandHistorikkRader(tilstand.historikk.slice(tilstand.gjeldende ? 1 : 0), onSlettTilstand)}
+                {onRegistrerTilstand && (
+                  <Button variant="link" size="sm" onClick={onRegistrerTilstand}>
+                    Register condition
+                  </Button>
+                )}
+              </div>
+            )}
 
             {apneSeksjon === 'tiltak' && apneTiltakListe.length > 0 && bdkRadBeholder(apneTiltakListe.map(t => (
               <ListRow
