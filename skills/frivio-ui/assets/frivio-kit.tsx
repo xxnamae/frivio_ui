@@ -134,9 +134,11 @@
    • `Tabs` drops the `.tabs-fade` scroll-edge gradient hint (a CSS
      `:has()` rule in the app stylesheet) — the sliding underline, keyboard
      nav and scroll-into-view are intact.
-   • `ListRow`'s narrow-container line 2 (secondary/meta/value) keeps
-     `overflow-x-auto` as a safety net but drops the `.rad-fade`/`RadFade`
-     scroll-edge gradient hint, same reasoning as `Tabs` above.
+   • `ListRow`'s narrow-container line 2 (meta/secondary/value — reordered
+     2026-09-23 so a long fact line can't push a status badge out of view,
+     same priority as the wide container) keeps `overflow-x-auto` as a
+     safety net but drops the `.rad-fade`/`RadFade` scroll-edge gradient
+     hint, same reasoning as `Tabs` above.
    • `Toast`'s public API is intentionally still Norwegian
      (`useToast().vis({ tekst, tone, handling, varighet, preserve,
      vedLukking })`) — see that section for why.
@@ -3105,13 +3107,18 @@ export function ListRow(props: ListRowProps) {
           flytter til linje 2, høyrestilt. `overflow-x-auto` er beholdt som
           sikkerhetsnett; kildens `.rad-fade`/`RadFade`-kant-hint (CSS `:has()`
           + en liten klientøy som setter data-scroll-start/-end) er droppet
-          for portabilitet, samme begrunnelse som `.tabs-fade` over. */}
+          for portabilitet, samme begrunnelse som `.tabs-fade` over.
+          Rekkefølge `meta`→`secondary`→`value` (reordered 2026-09-23, was
+          `secondary`→`meta`→`value`): a long fact line could otherwise push a
+          status badge out of view before the row's own scroll hint existed
+          to save it — same priority as the wide container above, where
+          `meta` never shrinks and `secondary` truncates first. */}
       <div className="flex @md:hidden flex-col gap-1 min-w-0">
         <div className="min-w-0">{titleEl('type-heading-14 line-clamp-2')}</div>
         {(secondaryContent != null || meta != null || value != null) && (
           <div className="flex items-center gap-x-[var(--frv-space-2)] overflow-x-auto whitespace-nowrap min-w-0">
-            {secondaryContent != null && <span className="type-label-13 shrink-0 text-(color:--frv-text-secondary)">{secondaryContent}</span>}
             {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{meta}</span>}
+            {secondaryContent != null && <span className="type-label-13 shrink-0 text-(color:--frv-text-secondary)">{secondaryContent}</span>}
             {value != null && <span className="type-label-13 tabular-nums shrink-0 ml-auto text-right text-(color:--frv-text-primary)">{value}</span>}
           </div>
         )}
