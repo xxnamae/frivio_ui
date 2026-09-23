@@ -5349,6 +5349,11 @@ export interface BygningsdelFdvDokument {
 export interface BygningsdelFakta {
   byggeaar: number | null
   sistUtskiftet: number | null
+  /** Year of the last inspection by a professional (e.g. an electrical
+   *  inspection) — added 2026-09-23 (fase 8). Different from `sistUtskiftet`:
+   *  an inspection replaces nothing. Only relevant for parts that ask for it
+   *  (in the source app, only the electrical system). */
+  sistKontrollert: number | null
   /** The lifespan the plan uses for the part, or null when neither the board
    *  set one nor a standard figure exists. */
   levetid: number | null
@@ -5386,6 +5391,7 @@ function bdkOmDelenTekst(fakta: BygningsdelFakta): string {
   return [
     fakta.byggeaar != null ? `Built ${fakta.byggeaar}` : null,
     fakta.sistUtskiftet != null ? `Last replaced ${fakta.sistUtskiftet}` : null,
+    fakta.sistKontrollert != null ? `Last inspected ${fakta.sistKontrollert}` : null,
     levetidTekst,
     mengdeTekst,
   ].filter((x): x is string => x != null).join(' · ')
