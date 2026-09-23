@@ -5245,7 +5245,21 @@ export function tgVariant(tg: string): 'lav' | 'default' | 'middels' | 'akutt' {
 /* BygningsdelKort — added 2026-09-18, ported 2026-09-18, re-synced with the
  * app 2026-09-22 (see "VARIANT rad" below; the `kompakt` sketch this kit
  * carried until then no longer exists in the app) and again 2026-09-23 (see
- * "TILSTAND SECTION" below).
+ * "TILSTAND SECTION" and "ABOUT THE PART" below).
+ *
+ * ABOUT THE PART section (app fase 5, 2026-09-23, mirroring
+ * `lib/bygningsdeler/fakta.ts`: the ten-year plan now runs off the part's OWN
+ * numbers instead of one build year in a string): an "About this part" fact
+ * line at the very TOP of the open row, above the tab row and "Register
+ * event" — build year, last replaced, lifespan (its SOURCE always spelled
+ * out, "standard" vs. "set by the board", since a standard figure must never
+ * read as something the board decided) and quantity with a unit, each shown
+ * only when set. A "Rediger"-style link button next to it opens editing when
+ * `onRedigerDel` is passed. Right under it, a `Callout` when
+ * `utskiftingForslag` is passed: a completed task nothing about the part has
+ * been updated since, phrased as a QUESTION ("was the part replaced?"), same
+ * tone as the Condition section's own suggestion. Neither changes the closed
+ * row.
  *
  * TILSTAND SECTION (app fase 4, 2026-09-22, this kit 2026-09-23): a new
  * pill, "Condition", FIRST in the tab row, mirroring
@@ -5322,6 +5336,58 @@ export interface BygningsdelFdvDokument {
   supplierName: string | null
   docUrl: string | null
   utfortDato: string | null
+}
+
+/* "About this part" facts — added 2026-09-23, mirroring the app's fase 5
+ * (`lib/bygningsdeler/fakta.ts`): build year, last replaced, lifespan (with
+ * its source) and quantity, all optional, feeding the ten-year plan instead
+ * of one build year in a string. KIT DIFFERENCE: the source app derives
+ * `levetid`/`levetidKilde` from a norm-figure table this kit does not carry
+ * — a caller-supplied, already-derived `BygningsdelFakta` keeps this a
+ * display-only port like the rest of the file. */
+export interface BygningsdelFakta {
+  byggeaar: number | null
+  sistUtskiftet: number | null
+  /** The lifespan the plan uses for the part, or null when neither the board
+   *  set one nor a standard figure exists. */
+  levetid: number | null
+  levetidKilde: 'styret' | 'normert' | null
+  mengde: number | null
+  enhet: 'm2' | 'stk' | 'lm' | null
+  materiale: string | null
+  notat: string | null
+}
+
+const BDK_ENHET_LABEL: Record<NonNullable<BygningsdelFakta['enhet']>, string> = {
+  m2: 'm²',
+  stk: 'units',
+  lm: 'lin. m',
+}
+
+/** A completed task pointing at a possible replacement, not yet confirmed on
+ *  the part itself. */
+export interface BygningsdelUtskiftingForslag {
+  tiltakId: string
+  tiltakTittel: string
+  /** Year the task was completed — the value "Set last replaced" writes. */
+  aar: number
+  /** ISO date (YYYY-MM-DD) of completion, for display. */
+  dato: string
+}
+
+function bdkOmDelenTekst(fakta: BygningsdelFakta): string {
+  const levetidTekst = fakta.levetid != null
+    ? `${fakta.levetid}y, ${fakta.levetidKilde === 'styret' ? 'set by the board' : 'standard'}`
+    : null
+  const mengdeTekst = fakta.mengde != null && fakta.enhet != null
+    ? `${fakta.mengde} ${BDK_ENHET_LABEL[fakta.enhet]}`
+    : null
+  return [
+    fakta.byggeaar != null ? `Built ${fakta.byggeaar}` : null,
+    fakta.sistUtskiftet != null ? `Last replaced ${fakta.sistUtskiftet}` : null,
+    levetidTekst,
+    mengdeTekst,
+  ].filter((x): x is string => x != null).join(' · ')
 }
 
 /* Condition ("Tilstand") section — added 2026-09-23, mirroring the app's
@@ -5421,6 +5487,18 @@ export interface BygningsdelKortProps {
   onBekreftForslag?: () => void
   /** Deletes one historical condition row (its `id`). Omitted = no delete action in the history. */
   onSlettTilstand?: (radId: string) => void
+  /** Build year, last replaced, lifespan (with source) and quantity (variant
+   *  `rad` only, app fase 5). An "About this part" fact line at the very TOP
+   *  of the open row, above the tab row. Omitted = no line. */
+  fakta?: BygningsdelFakta
+  /** A completed task nothing about the part has been updated since (variant
+   *  `rad` only) — a `Callout` right under the fact line, phrased as a
+   *  question, never a stated fact. `null`/omitted = no suggestion shown. */
+  utskiftingForslag?: BygningsdelUtskiftingForslag | null
+  /** Opens editing the part's facts. Omitted = no "Rediger" link next to the fact line. */
+  onRedigerDel?: () => void
+  /** Confirms `utskiftingForslag`: sets the part's last-replaced year to the suggestion's year. Omitted = no button. */
+  onBekreftUtskifting?: () => void
   /** Variant `rad`: is this row open? Owned by the LIST, which keeps "only one
    *  open at a time". KIT DIFFERENCE: omit `onToggle` and the row falls back to
    *  its own state, so a single row still works when dropped in on its own. */
@@ -5474,6 +5552,7 @@ export function BygningsdelKort({
   componentKey, label, sublabel, icon: Icon, entry, tilstandsgrad, apneTiltak, apneTiltakHref, apneTiltakListe = [],
   historikk = [], materialer = [], fdv = [], tilstand, onRegistrerHendelse, onRegistrerMateriale, onLastOppFdv,
   onRegistrerTilstand, onBekreftForslag, onSlettTilstand,
+  fakta: delFakta, utskiftingForslag, onRedigerDel, onBekreftUtskifting,
   defaultOpen = false, variant = 'standard', expanded, onToggle, className,
 }: BygningsdelKortProps) {
   const nyeste = historikk[0]
@@ -5533,6 +5612,32 @@ export function BygningsdelKort({
         }
         details={
           <div className="flex flex-col gap-3">
+            {delFakta && (bdkOmDelenTekst(delFakta) || onRedigerDel) && (
+              <div className="flex items-start justify-between gap-2 flex-wrap">
+                {bdkOmDelenTekst(delFakta) && (
+                  <span className="type-copy-13" style={{ color: 'var(--frv-text-secondary)' }}>{bdkOmDelenTekst(delFakta)}</span>
+                )}
+                {onRedigerDel && (
+                  <Button variant="link" size="sm" onClick={onRedigerDel}>Rediger</Button>
+                )}
+              </div>
+            )}
+            {utskiftingForslag && (
+              <Callout
+                tone="accent"
+                size="small"
+                className="w-full"
+                action={onBekreftUtskifting && (
+                  <Button variant="secondary" size="sm" onClick={onBekreftUtskifting}>
+                    Set last replaced to {utskiftingForslag.aar}
+                  </Button>
+                )}
+              >
+                <span className="type-copy-13">
+                  &ldquo;{utskiftingForslag.tiltakTittel}&rdquo; was completed ({utskiftingForslag.dato}) — was the part replaced?
+                </span>
+              </Callout>
+            )}
             {/* "Register event" is SECONDARY here: the row's one primary action
                 is opening and closing it (one-primary-action-per-surface). */}
             <div className="flex justify-end">
