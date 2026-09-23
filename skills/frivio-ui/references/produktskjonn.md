@@ -4657,3 +4657,21 @@ den gamle veien er en del av samme leveranse.
 **Rettet i:** `/tjenester` → redirect til Avtaleregister, historikken til Mottatte tilbud,
 `docs/SALGSGUIDE.md`, `docs/BRUKERGUIDE.md`, `docs/OMHU-DOKUMENTER.md`, `docs/SIDEKART-2026-09.md`.
 
+---
+
+## regel/sperre-slaar-instruks
+
+**Kilde:** 23. sep 2026, to hendelser samme dag. Agenter som verifiserte i nettleseren skrev til
+founders ekte data — først via en bygningsdel-velger som lagrer i det du velger, så via «Registrer
+tilstand», som opprettet en rad — selv om oppdraget i begge tilfeller eksplisitt forbød det. Etter
+første hendelse ble regelen skjerpet i AGENTS.md. Det hjalp ikke.
+
+**Regel:** Når samme type feil skjer igjen etter at regelen er skrevet, er neste steg en TEKNISK
+sperre, ikke flere ord. Sperren skal sitte der ALLE forekomster passerer (her: API-klienten i
+nettleseren, der robusthetsvakten allerede tvinger alle skrivinger gjennom), være umulig å slå på i
+produksjon, og være bevist i en ekte nettleser — en knapp klikket, null kall på nettet. Si også
+tydelig hva sperren IKKE dekker, så ingen tror den dekker mer.
+
+**Rettet i:** `lib/apiClient.ts`, `lib/lesemodus.ts`, `app/api/dev/login/route.ts`
+(`?lesemodus=1`), `scripts/mobilsveip.mjs`, `scripts/visuellvakt.mjs`, `scripts/shoot.mjs`, AGENTS.md.
+
