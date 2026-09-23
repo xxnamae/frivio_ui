@@ -5245,7 +5245,8 @@ export function tgVariant(tg: string): 'lav' | 'default' | 'middels' | 'akutt' {
 /* BygningsdelKort — added 2026-09-18, ported 2026-09-18, re-synced with the
  * app 2026-09-22 (see "VARIANT rad" below; the `kompakt` sketch this kit
  * carried until then no longer exists in the app) and again 2026-09-23 (see
- * "TILSTAND SECTION" and "ABOUT THE PART" below).
+ * "TILSTAND SECTION" and "ABOUT THE PART" below, plus fase 6's
+ * `BygningsdelTilstandForslag.rapport` a few lines below that).
  *
  * ABOUT THE PART section (app fase 5, 2026-09-23, mirroring
  * `lib/bygningsdeler/fakta.ts`: the ten-year plan now runs off the part's OWN
@@ -5419,8 +5420,14 @@ export interface BygningsdelTilstandRad {
 export interface BygningsdelTilstandForslag {
   grad: string
   tiltakTittel: string
-  /** ISO date (YYYY-MM-DD) for when the task came in. */
+  /** ISO date (YYYY-MM-DD) for when the task came in, or the report's date
+   *  when `rapport` is set. */
   dato: string
+  /** Added 2026-09-23 (app fase 6, condition-report import): set when the
+   *  task suggesting this grade itself came from a condition report — then
+   *  the REPORT is the one assessing, not the task, and the question below
+   *  names the report (file name, date) instead of the task's title. */
+  rapport?: { id: string; filnavn: string; dato: string } | null
 }
 
 /** Everything the Tilstand section needs — the caller derives this (see the
@@ -5661,7 +5668,11 @@ export function BygningsdelKort({
                     )}
                   >
                     <span className="type-copy-13">
-                      &ldquo;{tilstand.forslag.tiltakTittel}&rdquo; ({tilstand.forslag.dato}) points to {tilstand.forslag.grad} — is that right?
+                      {tilstand.forslag.rapport ? (
+                        <>Condition report &ldquo;{tilstand.forslag.rapport.filnavn}&rdquo; ({tilstand.forslag.rapport.dato}) rates the part {tilstand.forslag.grad} — is that right?</>
+                      ) : (
+                        <>&ldquo;{tilstand.forslag.tiltakTittel}&rdquo; ({tilstand.forslag.dato}) points to {tilstand.forslag.grad} — is that right?</>
+                      )}
                     </span>
                   </Callout>
                 )}
