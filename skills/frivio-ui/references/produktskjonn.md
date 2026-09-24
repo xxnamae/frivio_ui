@@ -4758,3 +4758,24 @@ uansett hvor liten statusen er.
 
 **Rettet i:** `lib/dashboard/omradeKort.ts` (økonomi/eiendom/hms/seksjoner/dokumenter-kortene på
 Oversikt), `components/buildings/AllBuildingsDutiesList.tsx` (Styreplikter › Alle bygg).
+
+## regel/primaerhandling-staar-fast
+
+**Kilde:** Founder, 24. sep 2026, skjermbilde av veiviserskissen (`/design/components/veiviser`):
+«"neste"-knappen bør være konsistent på alle stegene. Se vedlegg der den er malplassert.» På steg 1
+dyttet forklaringen på den sperrede knappen («Velg sameiet fra listen …») «Neste» ned under seg,
+mens «Gjør senere» sto igjen til høyre på linjen over — knappen byttet plass fra steg til steg etter
+hvor lang hjelpeteksten var.
+
+**Regel:** I en flerstegsflyt (veiviser, StegForm, flerstegsmodal) står primærhandlingen på
+NØYAKTIG samme sted i hvert steg, uansett innhold. Sekundærhandlingene («Tilbake», «Gjør senere»)
+har også faste plasser. Hjelpetekst — forklaringen på en sperret knapp, en feilmelding, en
+fremdriftslinje — får en reservert plass som aldri flytter knappene. Plasseringen eies av
+primitivet, ikke av kallstedet.
+
+**Eksempel:** `Veiviser` sin bunnrad: forklaringen på sperret «Neste» ligger i en egen linje med
+fast høyde over knapperaden (tom når knappen er aktiv), ikke inne i knapperaden.
+
+**Samme tilbakemelding, samme sted:** Tittelen i en veiviser er stegets ene budskap og skal være
+stor (heading 32 eller større på desktop). Innholdet i en fullskjerms veiviser er midtstilt i ruten
+(vannrett, og loddrett når innholdet er kort), ikke limt til toppen av et venstrejustert felt.
