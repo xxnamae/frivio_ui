@@ -2660,6 +2660,41 @@ Handlinger) ruller sidelengs med sveip-hintet under den bredden
 
 ---
 
+## regel/rullbar-region-er-tastaturnabar
+
+**Regel:** En beholder med `overflow-x-auto`/`overflow-y-auto` som FAKTISK
+klipper innhold (`scrollWidth > clientWidth`) skal ha `tabIndex={0}` og en
+ikke-widget-rolle (`role="group"` + `aria-label`) NÅR den klipper — fjernet
+igjen når den ikke gjør det (målt, ikke statisk satt). Aldri en fast
+`tabIndex={0}` på en beholder som ikke ruller — det legger et tomt Tab-stopp
+på hver rad/kort i en liste.
+
+**Scope:** Enhver egenbygd horisontal/vertikal scroll-beholder i
+`components/ui/` (ikke innebygd tabell-rulling som allerede har sitt eget
+mønster, se `regel/kolonner-skjules-for-rulling`).
+
+**Hvorfor:** axe sin `scrollable-region-focusable` (`serious`) — go-live-
+revisjonen 2026-09-24 (Vedlegg D) fant 52 noder på 4 kjernesider på 375px:
+`ListRow` sin meta/secondary/value-linje (`RadFade`) fikk `overflow-x-auto`
+uten `tabIndex`/`role`, så tastaturbrukere ikke kunne rulle den og
+skjermlesere ikke annonserte den som rullbar. `role="group"` (ikke en
+widget-rolle som `button`/`link`) unngår nested-interactive selv når
+beholderen ligger inni en rad som selv er `role="button"` — en fokuserbar,
+ikke-interaktiv gruppe inni en knapp er gyldig, ulikt en knapp/lenke inni en
+knapp.
+
+**Unntak:** Ingen kjent i dag.
+
+**Kilde:** `arkiv/rapporter/GO-LIVE-REVISJON-2026-09-24.md`, Vedlegg D;
+implementasjon i `components/ui/RadFade.tsx`.
+
+**Dårlig → godt:** `<div className="overflow-x-auto">…</div>` uten mål av
+faktisk overflow → mål `scrollWidth > clientWidth` i en `useLayoutEffect`
+(samme klientøy-mønster som `RadFade`) og sett `tabIndex`/`role`/`aria-label`
+KUN da.
+
+---
+
 # Regler til fletting inn i skill/frivio-ui/references/produktskjonn.md
 
 To regler fra founder-tilbakemelding 12. sep 2026 (skjermbilder fra docs-sidene,
@@ -4696,3 +4731,30 @@ ekte nettleser; kan det ikke prøves, si at det ikke er prøvd.
 
 **Rettet i:** `components/ui/Autocomplete.tsx` (footer pakket i blur-vern), bevist headless på
 avtaleskjemaet (1280 mus og 375 berøring, Chromium og WebKit, null skrivinger).
+
+---
+
+## regel/tom-er-ikke-gronn
+
+**Kilde:** Go-live-revisjonen, 24. sep 2026 (brukertest som nytt styremedlem, «Testsameie Frivio 1»).
+Dashboardets HMS-kort viste «Alt i årshjulet er gjort» med 0 plikter i det hele tatt (årshjulet var
+aldri generert), og Økonomi-kortet viste «À jour» uten et eneste regnskap, budsjett eller
+bankkobling registrert. Samme mønster i «Alle bygg»-visningen av Styreplikter: «Alt i årshjulet er
+gjort for alle bygg, eller ingen bygg har satt opp et årshjul ennå» slo sammen to STIKK MOTSATTE
+tilstander i én setning.
+
+**Funn:** En status-funksjon som bare teller ÅPNE/gjenstående rader (0 forfalte tiltak, 0 seksjoner
+uten kontaktinfo, 0 fakturaer i karantene) kan ikke skille «alt er unnagjort» fra «ingenting er satt
+opp ennå» — begge gir 0. For en helt ny styreleder er forskjellen alt: den ene betyr «ingenting å
+gjøre», den andre betyr «du har et steg igjen du ikke vet om». En status uten noe grunnlag å vurdere
+skal ALDRI se ut som en bekreftelse.
+
+**Regel:** Enhver «alt i orden»/«à jour»-status skal ta inn (eller selv regne ut, uten en ny
+spørring der tallet alt finnes — se `lib/dashboard/omradeKort.ts`) en egen «finnes det data å
+vurdere»-boolsk, atskilt fra «er alt gjort». Mangler grunnlaget, er svaret en TREDJE tilstand
+(«Ikke satt opp», med et konkret neste steg — aldri bare fraværet av et tall), ikke den samme
+tertiære/muted à jour-stilen. To motsatte nulltall som produserer samme tekst er alltid en feil,
+uansett hvor liten statusen er.
+
+**Rettet i:** `lib/dashboard/omradeKort.ts` (økonomi/eiendom/hms/seksjoner/dokumenter-kortene på
+Oversikt), `components/buildings/AllBuildingsDutiesList.tsx` (Styreplikter › Alle bygg).
