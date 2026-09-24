@@ -4675,3 +4675,24 @@ tydelig hva sperren IKKE dekker, så ingen tror den dekker mer.
 **Rettet i:** `lib/apiClient.ts`, `lib/lesemodus.ts`, `app/api/dev/login/route.ts`
 (`?lesemodus=1`), `scripts/mobilsveip.mjs`, `scripts/visuellvakt.mjs`, `scripts/shoot.mjs`, AGENTS.md.
 
+---
+
+## regel/vernet-bor-i-primitivet
+
+**Kilde:** Founder, 24. sep 2026, under oppretting av testkontoer: «Neste» ble ikke aktiv i
+registreringen for «Testsameie Frivio 1», og veien jeg anviste («+ Legg til «…» uten
+Brønnøysund-oppslag») virket ikke heller. Jeg hadde gitt instruksen fra koden uten å prøve den.
+
+**Funn:** `Autocomplete` krevde i en kommentar at *kallstedet* la `onMouseDown={e =>
+e.preventDefault()}` på innholdet i `footer`. `BrregSearch` gjorde det ikke. Et klikk flyttet
+fokus bort fra feltet, panelet lukket seg før klikket landet, og valget ble aldri tatt — i Chromium
+og WebKit, med mus og berøring. Det stengte registreringen for alle sameier som ikke finnes i
+Brønnøysund, og samme fallback i avtaleskjemaet.
+
+**Regel:** Et vern et primitiv trenger for å virke (fokus, blur, trykkflate, lag-rekkefølge) ligger
+I primitivet, aldri som en huskeregel for kallstedet — en kontrakt i en kommentar blir glemt av
+neste kallsted. Og en instruks til en bruker om å klikke noe gis først når klikket er prøvd i en
+ekte nettleser; kan det ikke prøves, si at det ikke er prøvd.
+
+**Rettet i:** `components/ui/Autocomplete.tsx` (footer pakket i blur-vern), bevist headless på
+avtaleskjemaet (1280 mus og 375 berøring, Chromium og WebKit, null skrivinger).
