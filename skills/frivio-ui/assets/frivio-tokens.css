@@ -482,6 +482,7 @@
   .type-copy-14-mono  { font: 400 14px/20px var(--frv-font-mono); }
   .type-copy-13-mono  { font: 400 13px/18px var(--frv-font-mono); }
   .type-page-title { font: var(--frv-type-heading-24); letter-spacing: var(--frv-type-heading-24-ls); }
+  .type-veiviser-title { font: var(--frv-type-heading-32); letter-spacing: var(--frv-type-heading-32-ls); }
   .type-display-1 { font: var(--frv-type-heading-40); font-weight: 500; letter-spacing: var(--frv-type-heading-40-ls); }
   .type-display-2 { font: var(--frv-type-heading-32); font-weight: 500; letter-spacing: var(--frv-type-heading-32-ls); }
 }
