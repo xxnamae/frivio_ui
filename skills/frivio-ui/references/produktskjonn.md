@@ -4779,3 +4779,35 @@ fast høyde over knapperaden (tom når knappen er aktiv), ikke inne i knapperade
 **Samme tilbakemelding, samme sted:** Tittelen i en veiviser er stegets ene budskap og skal være
 stor (heading 32 eller større på desktop). Innholdet i en fullskjerms veiviser er midtstilt i ruten
 (vannrett, og loddrett når innholdet er kort), ikke limt til toppen av et venstrejustert felt.
+
+## regel/ingen-tegnede-illustrasjoner
+
+**Kilde:** Founder, 25. sep 2026, om veiviserutkastene med `Illustrasjon` (spot-illustrasjoner per
+steg) og `ByggSkisse` (en tegnet boligblokk som bygget seg opp): «Fjerne illustrasjoner fra
+veiviser, de ser veldig billige ut.» Samme dag som founder ba om «noe visuelt» — det visuelle
+skal altså komme fra noe annet enn tegninger.
+
+**Regel:** Frivio bruker ikke tegnede illustrasjoner (spot-illustrasjoner, clipart, tegnede
+bygg/personer) i produktet. Det visuelle løftet kommer fra typografi (stor, trygg tittel),
+luft, komposisjon, ekte data og produktflater — for eksempel en live forhåndsvisning av det
+brukeren bygger, satt sammen av de samme primitivene appen bruker (Card, DescriptionList,
+Badge, StatCard). Ikoner fra `icons.tsx` er fortsatt riktig der de bærer betydning.
+
+**Eksempel:** Veiviserens utkast B viser i stedet for en tegnet bygning et levende «Sameiet
+ditt»-kort som fylles med navn, org.nr., byggeår, seksjoner og styret etter hvert som brukeren
+svarer — slik sameiet faktisk vil se ut i Frivio.
+
+## regel/aapning-lagrer-ingenting
+
+**Kilde:** Founder, 25. sep 2026: «"Ny innkalling" bør først lagre når du faktisk har skrevet
+noe. Et dobbeltklikk hos en ekte bruker gir ellers tomme utkast.» Bakgrunn: «Ny innkalling» på
+Styremøter lagret et utkast i det man trykket, og mobilsveipet etterlot 39 tomme innkallinger
+på founders konto 20.–22. sep.
+
+**Regel:** Å åpne et nytt skjema, en mal eller en editor skriver aldri til databasen. Raden
+opprettes først når brukeren lagrer, eller når en handling som krever den (send, del) utføres —
+da lagres den i samme trykk. Går brukeren fra en ulagret ny tekst hen har endret, spør vi før
+den forkastes; uten endringer lukkes den stille.
+
+**Eksempel:** `StyremoterClient` åpner malen lokalt (id `''`); `save()` oppretter ved første
+lagring og oppdaterer deretter; «Send til styret» lagrer først om nødvendig.

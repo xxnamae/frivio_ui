@@ -112,3 +112,16 @@ inkassovarsel, restanse og bankmatching adresserer fortsatt ÉN kontaktperson pe
 (`units.owner_*`). Medeiere er solidarisk ansvarlige for felleskostnaden, så det er forsvarlig —
 og founder avgjorde 2026-09-09: **nei, medeiere trenger ikke kopi** — én kontaktperson per seksjon
 forblir modellen. Ikke foreslå e-post per eierperiode igjen uten founder-initiativ.
+
+## Listene er ikke like — én listefamilie venter på founders valg (2026-09-25, åpen)
+
+**Kilde:** Founder 25. sep 2026: «listene våre er ikke så like. Ref vedlikeholdsplan og f.eks å
+gjøre. Avtaleregister også, leverandører, styret, styremøte … ja egentlig de fleste.» Målt i
+Spectrum-lab runde 4 (`/design/lab/spectrum/runde-4#lister`, gren `spectrum`): ni av elleve lister
+bruker `ListRow`, men radhøyden spriker fra 48 til 81 px på skjerm og 72 til 129 px på telefon;
+status står til venstre i tre lister, til høyre i tre, begge steder i tre og ingen steder i to;
+fem lister er klikkbare på hele raden, fem ikke. **Åpent:** founder velger forslag A (ListRow
+utvidet) eller B (Spectrum-inspirert) i Del 3 av laben. Deretter skal ÉN oppskrift (anatomi,
+radhøyde, statusplass, handlinger, klikkflate, mobil, tomtilstand) inn i `ListRow`/designsystemet
+og tas i bruk på alle elleve — og da blir denne linjen en `regel/` i produktskjonn.md. Inntil
+valget er tatt: ingen ny liste skal finne opp sin egen variant; bruk `ListRow` slik Å gjøre gjør.
