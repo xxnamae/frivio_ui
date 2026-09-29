@@ -39,7 +39,13 @@ failed even if every token is correct.
 Not "discoverable with a tooltip" — genuinely obvious to someone who will never
 read documentation and will blame themselves, not you, when they get lost.
 
-Full documentation, live, with every component on its own page: <https://design.frivio.no>.
+Full documentation, live, with every component on its own page: <https://design.frivio.no>. Each
+component page carries a "Visning" (view) switcher — Mobile 375 · Pad 768 · Desktop 1280 · All
+three, rendered in real `<iframe>`s at that exact width, since a narrow demo box on a wide screen
+never shows the actual mobile layout. A new or meaningfully changed component is not done until
+it has been checked there (`regel/enhetsvisning-foer-ferdig`, `references/produktskjonn.md`) —
+<https://design.frivio.no/responsiv> shows the same for typography and a set of key components,
+side by side, without clicking into each one.
 
 ## Setup
 
@@ -108,22 +114,23 @@ failure: transliterating decoration.
 
 | Source element | Frivio UI |
 |---|---|
-| Page title with description | `PageHeader` pattern — `h1` + one-sentence purpose line. A page-level context switcher (building, year) goes in `context`, next to `action` — never its own row under the title, which steals a full row of height. |
-| Search + filter + action row above a list/table | `Toolbar` — one shared 40px height for `SearchInput`, `PillTabs size="md"` and `Button` md, `end` slot for actions; wraps cleanly under 640px |
+| Page title with description | `PageHeader` pattern — `h1` + one-sentence purpose line. A page-level context switcher (building, year) goes in `context`, next to `action` — never its own row under the title, which steals a full row of height. `context`/`action` never overlap on mobile: `context` shrinks and truncates, `action` never shrinks below its widest single button. |
+| Title + short support text as ONE pair (a checkbox/radio/switch label+description, a tight step title+detail) | `TittelTekst` — the one source for "title never smaller than its support text"; `storrelse="14"` (default) or `"13"` (tight rows) |
+| Search + filter + action row above a list/table | `Toolbar` — one shared 40px height for `SearchInput`, `PillTabs size="md"` and `Button` md, `end` slot for actions; wraps cleanly under 640px. `enLinje` (opt-in): the row shrinks instead of wrapping, for a narrow pair of filters that must stay on one line. `sok`/`meny` (opt-in): below `36rem` container width, search and secondary actions move behind a `ToolbarMer` ("…" floating panel) instead of wrapping — `merAktiv` marks it with a dot when something hidden is in use. |
 | Section heading inside a page | `SectionHeader` |
 | Card, panel, widget | `Card` |
-| Row in a list, table row, record | `ListRow` in a `divide-y` container — short facts in `secondary`, amount/date in `value` |
-| Metric, KPI, stat block | `StatCard` (row of several on mobile: `StatCardRad`, never a hand-rolled grid — 2 columns minimum on phone). Numbers ≥ 1 million compress to mill./mrd.; full precision with øre is for accounting tables only, right-aligned with tabular figures. |
-| Labelled value, metadata field, definition list | `Field` |
-| Status pill, tag, priority | `Badge` — icon and text always stay on one line, never wrap |
-| Tip, info box, warning banner | `Callout` (tone `accent`/`success`/`warning`/`error`) |
+| Row in a list, table row, record | `ListRow` in a `divide-y` container — short facts in `secondary`, amount/date in `value`, status/state chips as DATA in `merkelapper` (ListRow picks pill vs. text per width), a plain right-chevron in `pil` (never in `trailing`). Narrow (< `@md`) is exactly two lines: title alone, then at most one colored pill + muted text + value |
+| Metric, KPI, stat block | `StatCard` (row of several on mobile: `StatCardRad`, never a hand-rolled grid — one column below `sm` with the VALUE shown first (large), then icon+label, then sub — flipped visually via `flex-col-reverse`, DOM order unchanged; `kompaktMobil` for two SHORT label+number pairs with no sub/sparkline/endring). Value defaults to `type-heading-32`, stepping down through 24/20/16 via an `@container` cascade keyed to BOTH the card's own width and the value's length — never 14, never px overrides. A value containing digits NEVER wraps, not even a dash-range like "651 000–893 000 kr" — only a pure-text value with no digits may wrap, max 2 lines. Numbers ≥ 1 million compress to mill./mrd.; full precision with øre is for accounting tables only, right-aligned with tabular figures. |
+| Labelled value, metadata field, definition list | `Field`; several side by side → `FieldRad` (owns the 32px column / 16px row gap) |
+| Status pill, tag, priority | `Badge` — icon and text always stay on one line, never wrap. One contrast level only (bg hue-100/text hue-900) — the former solid `contrast="high"` fill was removed 2026-09-28, zero production uses |
+| Tip, info box, warning banner | `Callout` (tone `accent`/`success`/`warning`/`error`) — the colored tones share the SAME neutral surface/border as `default`/`secondary`; the tone shows only on the icon (and on the body text/`label` via the explicit `textColor="tone"` opt-in) |
 | Structural aside — "belongs here, isn't the step itself" | `Callout` (tone `default`/`secondary`) |
 | Comment attached to a number above it | `InlineNote` |
 | Jargon term the reader needs foreknowledge for | `Begrep` (dotted underline, explanation on hover/tap right where the word stands — never a paragraph explaining it above) |
 | Validation or action error | `FormError` |
 | Error state after a failed fetch | `ErrorState` — sibling to `EmptyState`: icon in the error tint, title, plain-language message, "Try again" with a built-in spinner |
 | Text field, search | `Input` |
-| One-time code field | `OtpInput` — jumps to large, tracked digits once it has content |
+| One-time code field | `OtpInput` — one digit per box (6 or 8), backed by a single invisible real `<input>` for native focus/paste/backspace behaviour |
 | Multi-line text | `Textarea` |
 | Dropdown, picker (a native form field) | `Select` |
 | A trigger + popup list where the value itself is the label (a building/context switcher, a nav filter) | `Dropdown` — button + portaled popup list, not a form field |
@@ -134,15 +141,16 @@ failure: transliterating decoration.
 | Low-emphasis action | `Button variant="tertiary"` |
 | Tonal neutral secondary action (e.g. "Copy" next to content) | `Button variant="soft"` |
 | Destructive action | `Button variant="error"` |
-| Warning action | `Button variant="warning"` |
+| Standalone action link, real hit target (never inline in prose) | `Button variant="link"` — neutral text-primary, always-visible underline; hover/focus thicken the line rather than change color |
+| Brief confirmation that an action succeeded ("Saved") | `Button confirmed` — a state, not a variant; composes with every variant. `confirmedIcon={false}` only when the call site already swaps its own icon |
 | Primary action on a long page that must survive scroll on mobile | `ActionBar` (sticky bottom row under 640px, a plain right-aligned row with no bar chrome from 640px, max two buttons — never a page-specific fixed footer). Always the LAST element in the page content. |
-| Icon-only standalone control | `IconButton` (always 44×44) |
+| Icon-only standalone control | `IconButton` (always 44×44 hit area; hover/focus surface is a fixed 32px inner square regardless of tone; `border` opt-in for a thin `--frv-border`) |
 | On/off setting that saves immediately | `Switch` |
-| Checkbox in a form saved as a whole, or a row selection | `Checkbox` (`indeterminate` for "some, not all") |
+| Checkbox in a form saved as a whole, or a row selection | `Checkbox` (`indeterminate` for "some, not all"; `shape="round"` for a COMPLETED-TASK checkmark on a task row — never in a form/table where several boxes stay checked at once, it reads as a radio there) |
 | One choice from a long list, each with its own description | `Radio` / `RadioGroup` — NOT for 2-4 plain choices, that's still `PillTabs`/`Select` |
 | Sibling views sharing scope/data model | `Tabs` (underline) — a VIEW switch, never a filter |
 | Tab bar, filter chips, segmented control | `PillTabs` (a shared track, active tab inverted; hidden tabs collapse behind a trigger showing the COUNT, "+2", never a bare "…") — a FILTER within one view, never navigation between siblings. `size="md"` (36px) pairs it with `SearchInput`/`Button` in a `Toolbar`; `size="sm"` (28px, default) elsewhere. `Tabs`, `PillTabs` and `YearSelector` cover three distinct jobs (view / filter / period) and must never look alike. |
-| Period selector (year, a date range stepped one unit at a time) | `YearSelector` — a period, never a tab; don't reach for `PillTabs` to page through years |
+| Period selector (year, a date range stepped one unit at a time) | `YearSelector` — a period, never a tab; don't reach for `PillTabs` to page through years. `size="sm"` next to other `sm` controls in a header row; default `size="md"` matches `Button`/`Dropdown` md |
 | Period filter spanning several years (year, optionally a month within it, or "all years") | `PeriodeVelger` — a single trigger button opening an anchored panel with its own year row, a "whole year" + month grid, and "all years" as its own choice. Built independently of `YearSelector`, not from it. |
 | Dialog, drawer, sheet | `Modal` (+ `ModalBody`/`ModalActions` for the two-slot layout) |
 | Confirm-before for a destructive action | `ConfirmDialog` (`useConfirm()` inside a `ConfirmProvider`) |
@@ -159,19 +167,20 @@ failure: transliterating decoration.
 | Progress through a fixed number of steps (position, not a nav element) | `StepIndicator` |
 | A ready-made multi-step form frame | `StegForm` — `StepIndicator` + one step panel at a time + Back/Next/Finish in an `ActionBar`, per-step validation |
 | Announcing a new user-facing capability | `FeatureIntro` — inline next to the feature, once per user (see this skill's rule on new functionality) |
-| Expandable section | `CollapsibleSection` |
+| Expandable section | `CollapsibleSection` — `default` when STACKED with other sections (no frame, dividers alone separate rows); `variant="kort"` when the section stands ALONE with no other `CollapsibleSection` beside it (framed like `Card`); `ghost` for a tight Q&A-style row |
 | Full-height centered shell for an out-of-app page (login/invite/token/404) | `CenteredPage` (`as="main"` when it IS the page, `as="div"` when nested inside one that already has a landmark) |
 | Round identity surface (image or initials) | `Avatar` / `AvatarGroup` |
 | Small state dot inline in text or a row | `StatusDot` |
 | 1px divider, horizontal or vertical | `Separator` |
 | One keyboard key | `Kbd` |
-| Page navigation for a paged list | `Pagination` |
+| Page navigation for a paged list | `Pagination` — full page-number row from `sm`; below `sm` always a single "‹ 3 / 12 ›" row regardless of page count, never the number row |
 | Bar comparing amount ACROSS rows in a set | `LoadBar` |
 | Bar showing share of ONE whole completed | `Progress` |
 | An AI-assistant-suggested plan awaiting selective approval | `AgentPlan` — several toggleable actions, one combined run/cancel row |
 | Progress while assistant-suggested actions actually run | `AgentSteps` (+ `ThinkingDots`) — one step at a time, status + error per step |
 | A collapsible "here's how the assistant reasoned" log | `ReasoningTrace` |
 | ONE assistant-suggested action awaiting approval | `ProposalCard` — nothing runs before "Approve" |
+| A printable document (invoice, letter, protocol, statement) | `Dokument` + `DokumentHode`/`DokumentMottaker`/`DokumentSeksjon`/`DokumentNokkelverdi`/`DokumentTabell`/`DokumentMerknad`/`DokumentEtikett`/`DokumentSignatur`/`DokumentFot` — a canvas + a flat, thin-bordered A4 sheet ("Brevark": sender left / date-ref right over a strong divider, title below as its own line), ALWAYS `--frv-print-*` tokens, never theme tokens (`regel/print-er-temauavhengig`) |
 | Any text at all | `Text` / `Heading`, or a `.type-*` class |
 
 ### 3. Choose fidelity
@@ -240,12 +249,12 @@ judgment**, below, for the Frivio-specific decisions layered on top of these.
    | Page blurb | `.type-copy-14` | 400 | `PageHeader` (children) |
    | Section title | `.type-heading-16` | 600 | `SectionHeader` |
    | Card title | `.type-heading-16` | 600 | `Card` convention |
-   | Row title | `.type-heading-14` | 600 | `ListRow` (title) |
+   | Row title | `.type-heading-14` | 500 (R4, 2026-09-26 — was 600) | `ListRow` (title) |
    | Row secondary text | `.type-label-13` | 400 | `ListRow` (secondary/value) |
    | Field label | `.type-label-13-strong` | 500 | `Field`/`DescriptionList` (key) · `Input`/`Select` (label) · `Table` (column header) |
    | Body copy | `.type-copy-14` | 400 | general prose, `Text` default |
    | Help text | `.type-copy-14` | 400 | `Callout`/`InlineNote` content |
-   | Big number | `.type-heading-24 tabular-nums` | 600 | `StatCard` (value) |
+   | Big number | `.type-heading-32 tabular-nums` | 600 | `StatCard` (value; steps down to 24/20/16 via `@container`, never wraps if it has digits) |
    | Button | `.type-button-16`/`-14`/`-12` | 500 | `Button` |
    | Overline | `.type-overline` | 500 (mono, caps) | `DocsSectionTitle` · `SectionHeader` (eyebrow) |
 

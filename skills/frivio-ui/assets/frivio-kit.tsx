@@ -73,6 +73,17 @@
    optional `icon` prop (a leading icon in the trigger) to support this
    without a bespoke fourth dropdown variant.
 
+   Synced 2026-09-29 (designrevisjon runde 4): `StatCard`'s value defaults to
+   `type-heading-32` (was 24) and steps down through 24/20/16 — never 14 —
+   via an `@container` cascade keyed to BOTH the card's own width and the
+   value's length tier, not length alone; see `statCardTier` in
+   its own section. A value containing a digit now NEVER wraps, not even a
+   dash-range ("651 000–893 000 kr") — only a pure-text value with no digits
+   may still wrap, max 2 lines. Below `sm`, the card shows the VALUE first
+   (large), then icon+label, then sub/trend — flipped purely visually with
+   `flex-col-reverse` (DOM order is unchanged: label markup still precedes
+   the value paragraph).
+
    ── Setup (three steps) ──────────────────────────────────────────────────
    1. Import `frivio-tokens.css` ONCE at the root of your app. Every component
       here reads its colors, radii, spacing and shadows from the CSS variables
@@ -166,6 +177,7 @@
 
 import {
   Children,
+  Fragment,
   createContext,
   createElement,
   forwardRef,
@@ -450,25 +462,48 @@ interface ButtonOwnProps {
    *  a filled button or a colored action — typically "Copy" next to content.
    *  It previously used an accent tint, which made it hard to tell apart
    *  from `accent` and from a link.
-   *  `link` (added 2026-09-19): a text link with a real hit target — accent
-   *  color, underlined, no fill/border. For a STANDALONE action link ("5
-   *  paid →"), never inline in running prose (use a plain `.link`-styled
-   *  anchor there instead). */
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'error' | 'warning' | 'accent' | 'soft' | 'link'
+   *  `link` (added 2026-09-19, expression CHANGED 2026-09-28): a text link
+   *  with a real hit target. Founder ruling 28. sep 2026: NEUTRAL
+   *  `--frv-text-primary` with an ALWAYS-visible underline; hover/focus
+   *  thicken the underline instead of changing color — a calm, predictable
+   *  state rather than a brand-new marker appearing. Replaces the prior
+   *  no-underline-at-rest/accent-colored expression. For a STANDALONE action
+   *  link ("5 paid →"), never inline in running prose (use `.link` there).
+   *
+   *  `warning` REMOVED 2026-09-27: zero uses in production code. Build a
+   *  new, named variant if a real consequence-warning ever needs styling —
+   *  don't reintroduce this one speculatively. */
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'error' | 'accent' | 'soft' | 'link'
   size?: 'xs' | 'sm' | 'md' | 'lg'
   loading?: boolean
   /** Brief confirmation that the action succeeded — "Copied", "Saved". A
    *  STATE, not a variant: the same button changes color for a moment and
    *  reverts, so it composes with every variant instead of forcing the call
    *  site to swap `variant="success"` back and forth. The call site owns the
-   *  label/icon; the component only swaps colors. */
+   *  label; the icon is Button's own since 2026-09-27 (`confirmedIcon`, see
+   *  below). */
   confirmed?: boolean
+  /** Turns off Button's own automatic checkmark on `confirmed` (added
+   *  2026-09-27, default `true`). Set `false` only for call sites that
+   *  already render their own icon in `children` and swap it manually
+   *  (e.g. `KopierKnapp`) — otherwise the checkmark doubles up. */
+  confirmedIcon?: boolean
+  /** Thin, subtle border (`--frv-border`, 1px — same token/pattern as
+   *  `IconButton`'s own `border` prop) for `shape="square"|"circle"` on a
+   *  variant that otherwise carries none of its own (e.g. `tertiary`/
+   *  `accent`/`primary`) — `secondary` already has a border (same token), so
+   *  `border` there is a no-op. Added 2026-09-27. */
+  border?: boolean
+  /** Tighter icon+text gap (6px) instead of the size's own gap — for a text
+   *  button with ONE leading/trailing icon where `md`'s default 8px gap
+   *  reads too airy. Only changes the gap, never height/padding/type. */
+  tightIconGap?: boolean
   /** Shared disabled state for both modes. On button-mode this is native
    *  `disabled`; on link-mode there is no such attribute (an `<a>` is always
    *  focusable), so it's simulated with `aria-disabled` + removed tab stop +
    *  blocked click. Same prop name either way. */
   disabled?: boolean
-  /** Why the button is disabled, shown as a `type-label-12` line right below
+  /** Why the button is disabled, shown as a `type-label-13` line right below
    *  it (info icon + text, tertiary color) and wired with `aria-describedby`.
    *  Proactive rights explanation: a user without write access should see WHY
    *  before trying, not a 403 after. Purely additive — omitting it leaves
@@ -515,12 +550,12 @@ const BTN_VARIANT_CLASS: Record<NonNullable<ButtonProps['variant']>, string> = {
   secondary: 'text-[var(--frv-text-primary)] bg-[var(--frv-surface)] border border-[var(--frv-gray-alpha-400)] hover:border-[var(--frv-gray-alpha-500)] hover:bg-[var(--frv-gray-alpha-100)]',
   tertiary:  'bg-transparent text-[var(--frv-text-primary)] hover:bg-[var(--frv-gray-alpha-100)]',
   error:     'text-[var(--frv-error-fg)] bg-[var(--frv-error-solid)] hover:brightness-110',
-  warning:   'text-[var(--frv-warning-fg)] bg-[var(--frv-warning-solid)] hover:brightness-110',
   accent:    'text-[var(--frv-accent-fg)] bg-[var(--frv-accent-strong)] hover:bg-[var(--frv-accent-strong-hover)]',
   soft:      'text-[var(--frv-text-primary)] bg-[var(--frv-gray-alpha-100)] hover:bg-[var(--frv-gray-alpha-200)]',
-  // Same recipe as the `.link` CSS utility: dimmed underline at rest
-  // (color-mix 45% currentColor), full color on hover.
-  link:      'bg-transparent text-[var(--frv-accent-text)] underline decoration-1 underline-offset-[0.16em] decoration-[color-mix(in_srgb,currentColor_45%,transparent)] hover:decoration-current',
+  // Founder ruling 2026-09-28: NEUTRAL text-primary (not accent — accent is
+  // `.link` for inline text links) with an ALWAYS-visible underline; hover/
+  // focus thicken the underline instead of changing color.
+  link:      'bg-transparent text-[var(--frv-text-primary)] underline underline-offset-[0.16em] decoration-1 hover:decoration-2 focus-visible:decoration-2',
 }
 
 const BTN_HEIGHT: Record<NonNullable<ButtonProps['size']>, string> = { xs: 'h-6', sm: 'h-8', md: 'h-10', lg: 'h-12' }
@@ -565,13 +600,13 @@ const BTN_RADIUS: Record<NonNullable<ButtonProps['shape']>, string> = {
    mobile — no `hidden sm:inline` at the call site. A button with a text
    label keeps it at every width; shorten the wording instead of hiding it. */
 export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', shape = 'default', loading, confirmed, disabled, disabledReason, children, style, href, ...rest }, ref) => {
+  ({ className, variant = 'primary', size = 'md', shape = 'default', loading, confirmed, confirmedIcon = true, disabled, disabledReason, tightIconGap, border, children, style, href, ...rest }, ref) => {
     const base = 'inline-flex items-center justify-center whitespace-nowrap transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed select-none'
     const autoId = useId()
     const showReason = !!disabled && !!disabledReason
     const reasonId = showReason ? `btn-reason-${autoId}` : undefined
     const reasonNode = showReason ? (
-      <p id={reasonId} className="type-label-12 inline-flex items-start gap-1.5 mt-1.5 text-(color:--frv-text-tertiary)">
+      <p id={reasonId} className="type-label-13 inline-flex items-start gap-1.5 mt-1.5 text-(color:--frv-text-tertiary)">
         <InfoIcon size={12} className="mt-0.5 shrink-0 text-(color:--frv-text-tertiary)" />
         {disabledReason}
       </p>
@@ -596,12 +631,16 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
       base,
       BTN_VARIANT_CLASS[variant],
       BTN_HEIGHT[size],
-      BTN_GAP[size],
+      tightIconGap ? 'gap-1.5' : BTN_GAP[size],
       BTN_TEXT[size],
       BTN_MIN_H[size],
       BTN_MIN_W[size],
       BTN_RADIUS[shape],
       isIconOnly ? 'aspect-square' : BTN_PAD_X[size],
+      // `border` (2026-09-27): opt-in thin border for variants without one of
+      // their own — a no-op on `secondary`, which already carries this token.
+      border && 'border border-(color:--frv-border)',
+      confirmed && 'check-pop',
       // Filled variants have no border; in confirmed state they need one, or
       // the button loses its shape once the fill is removed. `secondary`
       // already has a border (no duplicate); `soft`/`link` need none — `soft`
@@ -612,14 +651,19 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
       className,
     )
     const combinedStyle: CSSProperties = { ...confirmedStyle, ...style }
+    // Icon scales with the button size, same convention as Button's other icons.
+    const confirmedIconSize = { xs: 10, sm: 12, md: 14, lg: 16 }[size]
     const inner = (
       <>
         {loading && (
-          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          // A single rotating arc (2026-09-27), not the old faint-ring +
+          // quarter-arc combo — same `animate-spin` mechanic, ~75% of the
+          // circle's circumference (r=10).
+          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="47.1 62.8" />
           </svg>
         )}
+        {confirmed && confirmedIcon && <CheckIcon size={confirmedIconSize} className="ikon-tegnet" aria-hidden="true" />}
         {children}
       </>
     )
@@ -678,25 +722,43 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** `default`: neutral text-secondary at rest, gray-alpha-100 + text-primary
    *  on hover/focus. `error`: same rest state, error-light/-text ONLY on
    *  hover/focus — for a destructive row action that shouldn't shout red at
-   *  rest. `tertiary`/`quaternary`: SAME hover/focus as default, but the rest
+   *  rest. `tertiary`/`disabled`: SAME hover/focus as default, but the rest
    *  color is already dimmed one/two steps — for a low-weight secondary
    *  action in a row/list that shouldn't compete with the content. */
-  tone?: 'default' | 'error' | 'tertiary' | 'quaternary'
+  tone?: 'default' | 'error' | 'tertiary' | 'disabled'
+  /** Thin, subtle border around the button (`--frv-border`, 1px). Default false. */
+  border?: boolean
 }
 
-const ICON_BTN_TONE: Record<NonNullable<IconButtonProps['tone']>, string> = {
-  default:    'text-[var(--frv-text-secondary)] hover:bg-[var(--frv-gray-alpha-100)] hover:text-[var(--frv-text-primary)] focus-visible:bg-[var(--frv-gray-alpha-100)] focus-visible:text-[var(--frv-text-primary)]',
-  error:      'text-[var(--frv-text-secondary)] hover:bg-[var(--frv-error-light)] hover:text-[var(--frv-error-text)] focus-visible:bg-[var(--frv-error-light)] focus-visible:text-[var(--frv-error-text)]',
-  tertiary:   'text-[var(--frv-text-tertiary)] hover:bg-[var(--frv-gray-alpha-100)] hover:text-[var(--frv-text-primary)] focus-visible:bg-[var(--frv-gray-alpha-100)] focus-visible:text-[var(--frv-text-primary)]',
-  quaternary: 'text-[var(--frv-text-quaternary)] hover:bg-[var(--frv-gray-alpha-100)] hover:text-[var(--frv-text-primary)] focus-visible:bg-[var(--frv-gray-alpha-100)] focus-visible:text-[var(--frv-text-primary)]',
+// Text color lives on the OUTER button element (plain hover:/focus-visible:) —
+// a call site that overrides via `className` (tailwind-merge) can still lock
+// the icon color to e.g. a toast's own foreground color.
+const ICON_BTN_TEXT: Record<NonNullable<IconButtonProps['tone']>, string> = {
+  default:  'text-[var(--frv-text-secondary)] hover:text-[var(--frv-text-primary)] focus-visible:text-[var(--frv-text-primary)]',
+  error:    'text-[var(--frv-text-secondary)] hover:text-[var(--frv-error-text)] focus-visible:text-[var(--frv-error-text)]',
+  tertiary: 'text-[var(--frv-text-tertiary)] hover:text-[var(--frv-text-primary)] focus-visible:text-[var(--frv-text-primary)]',
+  disabled: 'text-[var(--frv-text-disabled)] hover:text-[var(--frv-text-primary)] focus-visible:text-[var(--frv-text-primary)]',
+}
+
+// The hover/focus SURFACE is painted on the inner `group-hover`/`group-focus-
+// visible` square (2026-09-27: "the hover surface should be the same size at
+// every size/tone") — a FIXED 32px inner element, independent of the outer
+// button's own 44×44 hit area.
+const ICON_BTN_BG: Record<NonNullable<IconButtonProps['tone']>, string> = {
+  default:  'group-hover:bg-[var(--frv-gray-alpha-100)] group-focus-visible:bg-[var(--frv-gray-alpha-100)]',
+  error:    'group-hover:bg-[var(--frv-error-light)] group-focus-visible:bg-[var(--frv-error-light)]',
+  tertiary: 'group-hover:bg-[var(--frv-gray-alpha-100)] group-focus-visible:bg-[var(--frv-gray-alpha-100)]',
+  disabled: 'group-hover:bg-[var(--frv-gray-alpha-100)] group-focus-visible:bg-[var(--frv-gray-alpha-100)]',
 }
 
 /* IconButton
    Icon-only button with a GUARANTEED 44×44px hit area (WCAG 2.5.5 / Apple
    HIG), no matter how small the icon inside is (12–20px). `aria-label` is
-   mandatory (type-enforced) because the button never has visible text. */
+   mandatory (type-enforced) because the button never has visible text.
+   `border` (2026-09-26): opt-in thin border, default false — unchanged
+   appearance for every existing call site. */
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, style, children, disabled, disabledReason, title, tone = 'default', ...props }, ref) => {
+  ({ className, style, children, disabled, disabledReason, title, tone = 'default', border = false, ...props }, ref) => {
     const autoId = useId()
     const showReason = !!disabled && !!disabledReason
     const reasonId = showReason ? `icon-btn-reason-${autoId}` : undefined
@@ -706,15 +768,13 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         disabled={disabled}
         title={showReason ? disabledReason : title}
         aria-describedby={reasonId}
-        className={cx(
-          'inline-flex items-center justify-center shrink-0 rounded-[var(--frv-radius-sm)] transition-colors',
-          ICON_BTN_TONE[tone],
-          className
-        )}
+        className={cx('group inline-flex items-center justify-center shrink-0 transition-colors', ICON_BTN_TEXT[tone], className)}
         style={{ width: 44, height: 44, ...style }}
         {...props}
       >
-        {children}
+        <span className={cx('inline-flex items-center justify-center w-8 h-8 rounded-[var(--frv-radius-sm)] transition-colors', ICON_BTN_BG[tone], border && 'border border-(color:--frv-border)')}>
+          {children}
+        </span>
         {showReason && <span id={reasonId} className="sr-only">{disabledReason}</span>}
       </button>
     )
@@ -801,17 +861,21 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /* Card
-   Wave 3 (2026-09-10): bg `--frv-surface`, border via
-   `box-shadow: var(--frv-shadow-border)` (NOT a Tailwind `border` class — a
-   box-shadow border doesn't take up layout space, so content doesn't shift
-   1px when a border is added/removed), radius-md, no drop shadow at rest.
-   `style` is merged AFTER these defaults, so a call site that sets its own
-   `style={{ background: ... }}` still wins. */
+   Wave 3 (2026-09-10): bg `--frv-surface`, border via `box-shadow` (NOT a
+   Tailwind `border` class — a box-shadow border doesn't take up layout
+   space, so content doesn't shift 1px when a border is added/removed),
+   radius-md. 2026-09-27: the border-only shadow (`--frv-shadow-border`) was
+   swapped for `--frv-shadow-card` — the same border PLUS a soft, barely-
+   there shadow at `--frv-shadow-xs` strength (composed once in the token
+   layer) — deliberately kept weaker than a full `shadow-sm` since Card is
+   used in tight lists (dashboard, finance, card-in-card). `style` is merged
+   AFTER these defaults, so a call site's own `style={{ background: ... }}`
+   still wins. */
 export function Card({ className, children, tone = 'default', style, ...props }: CardProps) {
   return (
     <div
       className={cx(
-        'rounded-[var(--frv-radius-md)] p-6 shadow-(--frv-shadow-border)',
+        'rounded-[var(--frv-radius-md)] p-6 shadow-(--frv-shadow-card)',
         tone === 'hero' ? 'bg-[image:var(--frv-gradient-hero)]' : 'bg-(color:--frv-surface)',
         className,
       )}
@@ -829,11 +893,6 @@ export type BadgeHue = 'gray' | 'blue' | 'purple' | 'amber' | 'red' | 'pink' | '
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeHue | 'inverted' | 'accent' | Priority | 'default'
-  /** `low` (default): bg hue-100, text hue-900 — calibrated for AA on 12–14px
-   *  text. `high`: solid bg hue-700 + white text (amber/inverted: black) —
-   *  holds only ~3:1 (graphics level), so use it on ICONS or large labels
-   *  only, never on small text alone. */
-  contrast?: 'low' | 'high'
   size?: 'sm' | 'md' | 'lg'
   /** Leading icon, same color as the text. One icon only, no suffix slot. */
   icon?: IconComponent
@@ -842,13 +901,20 @@ interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 /* Badge (wave 3, 2026-09-10)
    Small pill (radius full) for ONE short state word — priority, status or a
    neutral category. Ten color variants (eight scale hues + inverted +
-   accent), two contrast levels, three sizes.
+   accent), three sizes.
 
    The priority domain (`akutt`/`hoy`/`middels`/`lav`) and `default` are
    ALIASES over the color scale, not separate color families — akutt→red,
    hoy→amber, middels→gray, lav→teal, default→gray — kept explicit so none of
    the existing `variant="akutt"`-style call sites need to change as the
-   system grows the pure hue variants. */
+   system grows the pure hue variants.
+
+   The solid `contrast="high"` variant (solid hue-700/800 fill) was REMOVED
+   2026-09-28: zero uses in production code (grep-confirmed before removal).
+   Every variant now reads bg hue-100 / text hue-900 — calibrated for AA on
+   12-14px text — with no second contrast level. Build a new, named surface
+   if a real need for a solid fill ever appears; don't reintroduce this one
+   speculatively. */
 const BADGE_PRIORITY_ALIAS: Record<string, BadgeHue> = { akutt: 'red', hoy: 'amber', middels: 'gray', lav: 'teal', default: 'gray' }
 const BADGE_HUES: readonly BadgeHue[] = ['gray', 'blue', 'purple', 'amber', 'red', 'pink', 'green', 'teal']
 
@@ -857,32 +923,11 @@ function badgeResolveHue(variant: string): BadgeHue {
   return BADGE_PRIORITY_ALIAS[variant] ?? 'gray'
 }
 
-/* Solid surface per color family, measured 2026-09-12 (a sweep found white on
- * teal/green/gray-700 measuring 3.0-3.2:1). White text only holds 4.5:1 on
- * blue/purple-700 and red/purple/pink-800; amber, teal, green and gray need
- * dark text. The semantic families reuse the `-solid`/`-fg` tokens (same
- * surface as Button warning/error and StatCard); the rest use step 800 with
- * whichever foreground measures best in BOTH themes. */
-const BADGE_SOLID: Record<BadgeHue, { background: string; color: string }> = {
-  gray:   { background: 'var(--frv-gray-800)', color: 'var(--frv-warning-fg)' },
-  blue:   { background: 'var(--frv-accent-strong)', color: 'var(--frv-accent-fg)' },
-  purple: { background: 'var(--frv-purple-800)', color: 'var(--frv-accent-fg)' },
-  amber:  { background: 'var(--frv-warning-solid)', color: 'var(--frv-warning-fg)' },
-  red:    { background: 'var(--frv-error-solid)', color: 'var(--frv-error-fg)' },
-  pink:   { background: 'var(--frv-pink-800)', color: 'var(--frv-accent-fg)' },
-  green:  { background: 'var(--frv-green-800)', color: 'var(--frv-warning-fg)' },
-  teal:   { background: 'var(--frv-success-solid)', color: 'var(--frv-success-fg)' },
-}
-
-function badgeStyle(variant: string, contrast: 'low' | 'high'): { background: string; color: string } {
+function badgeStyle(variant: string): { background: string; color: string } {
   if (variant === 'inverted') return { background: 'var(--frv-gray-1000)', color: 'var(--frv-bg)' }
-  if (variant === 'accent') {
-    return contrast === 'high'
-      ? { background: 'var(--frv-accent-strong)', color: 'var(--frv-accent-fg)' }
-      : { background: 'var(--frv-accent-light)', color: 'var(--frv-accent-text)' }
-  }
+  if (variant === 'accent') return { background: 'var(--frv-accent-light)', color: 'var(--frv-accent-text)' }
   const hue = badgeResolveHue(variant)
-  return contrast === 'high' ? BADGE_SOLID[hue] : { background: `var(--frv-${hue}-100)`, color: `var(--frv-${hue}-900)` }
+  return { background: `var(--frv-${hue}-100)`, color: `var(--frv-${hue}-900)` }
 }
 
 const BADGE_SIZE_CLASS = { sm: 'h-5 px-1.5 gap-1 type-button-12', md: 'h-6 px-2 gap-1 type-button-12', lg: 'h-7 px-2.5 gap-1.5 type-button-14' }
@@ -894,8 +939,8 @@ const BADGE_ICON_SIZE = { sm: 12, md: 12, lg: 14 }
  *  rendering bug rather than a state). The text span still truncates with an
  *  ellipsis via `max-w-full truncate` if it's unusually long — the pill
  *  shrinks/clips before it ever breaks onto a second line. */
-export function Badge({ variant = 'default', contrast = 'low', size = 'md', icon: Icon, className, children, ...props }: BadgeProps) {
-  const style = badgeStyle(variant, contrast)
+export function Badge({ variant = 'default', size = 'md', icon: Icon, className, children, ...props }: BadgeProps) {
+  const style = badgeStyle(variant)
   return (
     <span
       className={cx('inline-flex items-center max-w-full whitespace-nowrap shrink-0 rounded-[var(--frv-radius-full)] bg-(color:--badge-bg) text-(color:--badge-fg)', BADGE_SIZE_CLASS[size], className)}
@@ -922,7 +967,9 @@ export interface AvatarProps {
   className?: string
 }
 
-const AVATAR_SIZE_TYPE: Record<AvatarSize, string> = { 16: 'type-label-12', 24: 'type-label-12', 32: 'type-label-13', 48: 'type-label-13', 64: 'type-label-13' }
+// 2026-09-28: the three smallest sizes read `type-label-12` (13px clipped two
+// initials at 16px); 48/64 keep `type-label-13`.
+const AVATAR_SIZE_TYPE: Record<AvatarSize, string> = { 16: 'type-label-12', 24: 'type-label-12', 32: 'type-label-12', 48: 'type-label-13', 64: 'type-label-13' }
 const AVATAR_SIZE_DIM: Record<AvatarSize, string> = { 16: 'w-4 h-4', 24: 'w-6 h-6', 32: 'w-8 h-8', 48: 'w-12 h-12', 64: 'w-16 h-16' }
 
 function avatarInitials(name: string): string {
@@ -930,6 +977,13 @@ function avatarInitials(name: string): string {
   if (parts.length === 0) return ''
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
   return (parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)).toUpperCase()
+}
+
+// 16px shows a SINGLE initial (2026-09-29): two letters at 12px/600 clip the
+// corners of a 16px circle. `title`/`aria-label` still carry the full name.
+function avatarInitialsFor(name: string, size: AvatarSize): string {
+  const all = avatarInitials(name)
+  return size === 16 && !name.startsWith('+') ? all.charAt(0) : all
 }
 
 /* Avatar / AvatarGroup
@@ -963,7 +1017,7 @@ const AVATAR_TONER = [
 ] as const
 function avatarToneForNavn(navn: string): string { let h = 0; for (const c of navn.trim().toLowerCase()) h = (h * 31 + c.charCodeAt(0)) >>> 0; return AVATAR_TONER[h % AVATAR_TONER.length]! }
 
-export function Avatar({ src, name, size = 32, title, tone = 'noytral', className }: AvatarProps & { tone?: 'noytral' | 'farget' }) {
+export function Avatar({ src, name, size = 32, title, tone = 'default', className }: AvatarProps & { tone?: 'default' | 'accent' }) {
   const [failed, setFailed] = useState(false)
   const showImage = !!src && !failed
   return (
@@ -971,13 +1025,15 @@ export function Avatar({ src, name, size = 32, title, tone = 'noytral', classNam
       role="img"
       aria-label={title ?? name}
       title={title ?? name}
-      className={cx('inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden select-none', tone === 'farget' ? avatarToneForNavn(name) : 'bg-(color:--frv-gray-200) text-(color:--frv-text-secondary)', AVATAR_SIZE_TYPE[size], AVATAR_SIZE_DIM[size], className)}
+      className={cx('inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden select-none font-semibold', tone === 'accent' ? avatarToneForNavn(name) : 'bg-(color:--frv-gray-200) text-(color:--frv-text-secondary)', AVATAR_SIZE_TYPE[size], AVATAR_SIZE_DIM[size], className)}
     >
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element -- plain avatar thumbnail, no next/image optimization needed for a tiny icon-sized image.
         <img src={src} alt="" onError={() => setFailed(true)} className="w-full h-full object-cover" />
       ) : (
-        <span aria-hidden="true">{avatarInitials(name)}</span>
+        // `whitespace-nowrap` + `tracking-tighter` (three smallest sizes): keeps
+        // two-letter initials ("KN") on one line inside a 16-32px circle.
+        <span aria-hidden="true" className={cx('whitespace-nowrap', size <= 32 && 'tracking-tighter')}>{avatarInitialsFor(name, size)}</span>
       )}
     </span>
   )
@@ -1107,7 +1163,7 @@ export function Separator({ orientation = 'horizontal', label, className }: Sepa
     return (
       <div role="separator" aria-orientation="horizontal" className={cx('flex items-center gap-[var(--frv-space-3)]', className)}>
         <span className="flex-1 h-px" style={{ background: 'var(--frv-border)' }} />
-        <span className="type-label-12 shrink-0" style={{ color: 'var(--frv-text-secondary)' }}>{label}</span>
+        <span className="type-label-13 shrink-0" style={{ color: 'var(--frv-text-secondary)' }}>{label}</span>
         <span className="flex-1 h-px" style={{ background: 'var(--frv-border)' }} />
       </div>
     )
@@ -1201,11 +1257,11 @@ export type TypeVariant =
   | 'copy-24' | 'copy-20' | 'copy-18' | 'copy-16' | 'copy-14' | 'copy-13'
   | 'copy-14-mono' | 'copy-13-mono'
 
-export type TextTone = 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'accent' | 'success' | 'warning' | 'error' | 'inherit'
+export type TextTone = 'primary' | 'secondary' | 'tertiary' | 'disabled' | 'accent' | 'success' | 'warning' | 'error' | 'inherit'
 
 const TEXT_TONE_VAR: Record<Exclude<TextTone, 'inherit'>, string> = {
   primary: 'var(--frv-text-primary)', secondary: 'var(--frv-text-secondary)', tertiary: 'var(--frv-text-tertiary)',
-  quaternary: 'var(--frv-text-quaternary)', accent: 'var(--frv-accent-text)', success: 'var(--frv-success-text)',
+  disabled: 'var(--frv-text-disabled)', accent: 'var(--frv-accent-text)', success: 'var(--frv-success-text)',
   warning: 'var(--frv-warning-text)', error: 'var(--frv-error-text)',
 }
 
@@ -1260,13 +1316,19 @@ export const Heading = forwardRef<HTMLHeadingElement, HeadingProps>(function Hea
  *  `danger`. */
 export type CalloutTone = 'default' | 'secondary' | 'success' | 'warning' | 'error' | 'accent'
 
+// 2026-09-26 founder ruling: the four colored tones lost their own filled/
+// bordered surface — they now share the NEUTRAL surface/border of
+// `default`/`secondary` (see CALLOUT_TONE_CLASS below) and carry the tone
+// ONLY on the icon (and on `label`/body via `textColor="tone"`, an explicit
+// opt-in). `default`/`secondary` are unchanged — they were already neutral.
+// `text` still drives the icon color (unchanged contract).
 const CALLOUT_TONE_RECIPE: Record<CalloutTone, { light: string; border: string; text: string }> = {
   default:   { light: 'var(--frv-gray-alpha-100)', border: 'var(--frv-gray-alpha-400)', text: 'var(--frv-text-secondary)' },
   secondary: { light: 'var(--frv-gray-100)', border: 'var(--frv-gray-400)', text: 'var(--frv-gray-900)' },
-  accent:    { light: 'var(--frv-accent-light)', border: 'var(--frv-accent-border)', text: 'var(--frv-accent-text)' },
-  success:   { light: 'var(--frv-success-light)', border: 'var(--frv-success-border)', text: 'var(--frv-success-text)' },
-  warning:   { light: 'var(--frv-warning-light)', border: 'var(--frv-warning-border)', text: 'var(--frv-warning-text)' },
-  error:     { light: 'var(--frv-error-light)', border: 'var(--frv-error-border)', text: 'var(--frv-error-text)' },
+  accent:    { light: 'var(--frv-surface)', border: 'var(--frv-border)', text: 'var(--frv-accent-text)' },
+  success:   { light: 'var(--frv-surface)', border: 'var(--frv-border)', text: 'var(--frv-success-text)' },
+  warning:   { light: 'var(--frv-surface)', border: 'var(--frv-border)', text: 'var(--frv-warning-text)' },
+  error:     { light: 'var(--frv-surface)', border: 'var(--frv-border)', text: 'var(--frv-error-text)' },
 }
 
 /** Exported for the rare places the content must be something other than a
@@ -1292,22 +1354,22 @@ export const CALLOUT_TONE_STYLE: Record<CalloutTone, { className: string; style:
 const CALLOUT_TONE_CLASS: Record<CalloutTone, { fillBg: string; border: string; text: string }> = {
   default:   { fillBg: 'bg-(color:--frv-gray-alpha-100)', border: 'border-(color:--frv-gray-alpha-400)', text: 'text-(color:--frv-text-secondary)' },
   secondary: { fillBg: 'bg-(color:--frv-gray-100)', border: 'border-(color:--frv-gray-400)', text: 'text-(color:--frv-gray-900)' },
-  accent:    { fillBg: 'bg-(color:--frv-accent-light)', border: 'border-(color:--frv-accent-border)', text: 'text-(color:--frv-accent-text)' },
-  success:   { fillBg: 'bg-(color:--frv-success-light)', border: 'border-(color:--frv-success-border)', text: 'text-(color:--frv-success-text)' },
-  warning:   { fillBg: 'bg-(color:--frv-warning-light)', border: 'border-(color:--frv-warning-border)', text: 'text-(color:--frv-warning-text)' },
-  error:     { fillBg: 'bg-(color:--frv-error-light)', border: 'border-(color:--frv-error-border)', text: 'text-(color:--frv-error-text)' },
+  accent:    { fillBg: 'bg-(color:--frv-surface)', border: 'border-(color:--frv-border)', text: 'text-(color:--frv-accent-text)' },
+  success:   { fillBg: 'bg-(color:--frv-surface)', border: 'border-(color:--frv-border)', text: 'text-(color:--frv-success-text)' },
+  warning:   { fillBg: 'bg-(color:--frv-surface)', border: 'border-(color:--frv-border)', text: 'text-(color:--frv-warning-text)' },
+  error:     { fillBg: 'bg-(color:--frv-surface)', border: 'border-(color:--frv-border)', text: 'text-(color:--frv-error-text)' },
 }
 
 /* Callout
    The shared visual separation for "this belongs here, but it isn't the
    step/row itself" (`default`/`secondary`) or a tip/info/success/warning/
-   error notice (the colored tones). `fill` (default true) preserves the
-   always-filled look; `fill={false}` is a lighter variant — bg
-   `--frv-surface` + colored border + colored icon/label, body text stays
-   `text-primary` — for a notice that differs by BORDER, not a colored fill.
-   `size` follows the tone unless set explicitly. */
+   error notice (the colored tones). `fill` now only affects `default`/
+   `secondary` (their own neutral surfaces) — since the 2026-09-26 ruling the
+   four colored tones always render `--frv-surface` + a subtle
+   `--frv-border`, "color on the icon only", regardless of `fill`. `size`
+   follows the tone unless set explicitly. */
 export function Callout({
-  children, tone = 'default', fill = true, size, icon: Icon, label, action, className, style, role,
+  children, tone = 'default', fill = true, size, icon: Icon, label, action, textSize, textColor = 'default', className, style, role,
 }: {
   children: ReactNode
   tone?: CalloutTone
@@ -1315,10 +1377,14 @@ export function Callout({
   size?: 'small' | 'medium'
   /** Leading icon on the left edge. `null` hides it explicitly. */
   icon?: IconComponent | null
-  /** Short title line (1-2 words) in the tone's text color, above the content. */
+  /** Short title line (1-2 words), above the content. Neutral text-primary color unless `textColor="tone"`. */
   label?: ReactNode
   /** ONE CTA (typically a small `Button`), shown below the content. */
   action?: ReactNode
+  /** Body text size. `copy-14` (default) is the structural card's own size; `copy-13` is the tighter notice size the colored tones are often shown at. */
+  textSize?: 'copy-13' | 'copy-14'
+  /** Body text color. `default` (unchanged): no color set, inherits from context. `secondary`: neutral `--frv-text-secondary` regardless of tone. `tone`: the tone's OWN text color (same as the icon) on both body text and `label` — for a colored confirmation/warning where the copy itself should carry the tone (otherwise `label` stays neutral, see above). */
+  textColor?: 'default' | 'secondary' | 'tone'
   className?: string
   style?: CSSProperties
   /** E.g. "alert" for an error/warning Callout that must be announced to screen readers. */
@@ -1327,7 +1393,15 @@ export function Callout({
   const toneClass = CALLOUT_TONE_CLASS[tone]
   const resolvedSize: 'small' | 'medium' = size ?? (tone === 'default' || tone === 'secondary' ? 'medium' : 'small')
   const sizeClass = resolvedSize === 'small' ? 'rounded-[var(--frv-radius-sm)] px-3 py-2.5' : 'rounded-[var(--frv-radius-md)] p-4'
-  const containerClass = cx(sizeClass, 'type-copy-14 border', toneClass.border, fill ? toneClass.fillBg : 'bg-(color:--frv-surface)')
+  const containerClass = cx(
+    sizeClass,
+    `type-${textSize ?? 'copy-14'}`,
+    'border',
+    toneClass.border,
+    fill ? toneClass.fillBg : 'bg-(color:--frv-surface)',
+    textColor === 'tone' && toneClass.text,
+    textColor === 'secondary' && 'text-(color:--frv-text-secondary)',
+  )
   const hasExtras = !!Icon || !!label || !!action
 
   // type-copy-14 on the OUTERMOST div in both branches (the same element
@@ -1353,7 +1427,11 @@ export function Callout({
       <div className="flex items-start gap-2.5">
         {Icon && <Icon size={16} className={cx('shrink-0 mt-0.5', toneClass.text)} />}
         <div className="min-w-0 flex-1">
-          {label && <p className={cx('type-label-14-strong mb-1', toneClass.text)}>{label}</p>}
+          {/* Neutral title color (2026-09-26 ruling: "color on the icon
+              only") — `textColor="tone"` gives the title the tone color back
+              for the rare call site that wants an explicitly colored
+              confirmation/warning in the text itself. */}
+          {label && <p className={cx('type-label-14-strong mb-1', textColor === 'tone' ? toneClass.text : 'text-(color:--frv-text-primary)')}>{label}</p>}
           {children}
           {action && <div className="mt-2.5">{action}</div>}
         </div>
@@ -1397,14 +1475,14 @@ export function InlineNote({
  *  box, for an error that should take more than one line (login,
  *  registration); `inline` (default) is unchanged plain text. */
 export function FormError({
-  children, className, style, id, as = 'p', size = 'copy-13', variant = 'inline',
+  children, className, style, id, as = 'p', size = 'label-13', variant = 'inline',
 }: {
   children: ReactNode
   className?: string
   style?: CSSProperties
   id?: string
   as?: 'p' | 'span'
-  size?: 'copy-13' | 'label-12' | 'label-13' | 'label-14'
+  size?: 'copy-13' | 'copy-14' | 'label-12' | 'label-13' | 'label-14'
   variant?: 'inline' | 'boxed'
 }) {
   const Tag = as
@@ -1536,6 +1614,24 @@ function StatCardSparkline({ data, color }: { data: number[]; color: string }) {
   )
 }
 
+/* Value size (design round 4, 2026-09-29): the value is always
+ * `type-heading-32` and never wraps when it contains digits. The card sets
+ * `data-stat-verdi` to the value's length tier (<=5, <=9, <=13, <=18 chars or
+ * "lang"); @container rules in frivio-tokens.css step it down (24 -> 20 -> 16,
+ * never 14) only when the CARD is too narrow for that tier's longest value.
+ * Thresholds are measured, not estimated (Geist 600 tabular-nums). Tailwind
+ * variants such as `@min-[Xrem]:type-heading-32` do NOT work on `.type-*`
+ * (plain classes, not @utility) — that is why this is data-attribute CSS.
+ * <=2 chars and a ReactNode without a known length always stay at 32. */
+function statCardTier(length: number | null): string | undefined {
+  if (length == null || length <= 2) return undefined
+  if (length <= 5) return '5'
+  if (length <= 9) return '9'
+  if (length <= 13) return '13'
+  if (length <= 18) return '18'
+  return 'lang'
+}
+
 /** StatCard — shared KPI card. Wave 3: same material as Card (bg surface,
  *  box-shadow border, radius-md, no drop shadow at rest). `tone="hero"` uses
  *  `--frv-gradient-hero` for the one highlighted metric on a surface;
@@ -1549,14 +1645,25 @@ function StatCardSparkline({ data, color }: { data: number[]; color: string }) {
  *  (success/error) when set, otherwise a neutral default — the sparkline
  *  shows DIRECTION, not a data-analysis tool (see `StatCardSparkline`).
  *  Deliberately STATIC (no measuring, no client-only requirement) since
- *  StatCard is used from Server Components with no client boundary. */
+ *  StatCard is used from Server Components with no client boundary.
+ *
+ *  Value defaults to `type-heading-32` (round 4, 2026-09-29 — was 24) and
+ *  steps down via `statCardTier` + `@container` rules keyed to
+ *  BOTH the card's own width and the value's length, never length alone. A
+ *  value containing a digit never wraps — not even a dash-range like
+ *  "651 000–893 000 kr", which used to be allowed to break at the dash.
+ *  Below `sm` the card shows the VALUE first (large), then icon+label, then
+ *  sub/trend — flipped purely visually with `flex-col-reverse`; the DOM
+ *  order (label markup before the value paragraph) is unchanged from desktop. */
 export function StatCard({
-  icon: Icon, label, labelColor, value, valueStyle, sub, subStyle, sparkline, endring, tone = 'default', className, children,
+  icon: Icon, label, labelColor, value, valueTextLength, valueStyle, sub, subStyle, sparkline, endring, tone = 'default', className, children,
 }: {
   icon?: IconComponent
   label: string
   labelColor?: string
   value: ReactNode
+  /** The length `value` WOULD have as text, for the size cascade above — only when `value` is a `ReactNode` StatCard can't measure itself (e.g. `NumberTicker`). */
+  valueTextLength?: number
   valueStyle?: CSSProperties
   sub?: ReactNode
   subStyle?: CSSProperties
@@ -1571,49 +1678,49 @@ export function StatCard({
   children?: ReactNode
 }) {
   const isError = tone === 'error' || tone === 'danger'
-  const cardClass =
-    tone === 'hero' ? 'bg-[image:var(--frv-gradient-hero)] shadow-(--frv-shadow-border)'
-    : isError ? 'bg-(color:--frv-error-light) shadow-[0_0_0_1px_var(--frv-error-border)]'
-    : 'bg-(color:--frv-surface) shadow-(--frv-shadow-border)'
-  const resolvedLabelColor = labelColor ?? 'var(--frv-text-secondary)'
+  // 2026-09-25 correction: EVERY tone shares the same calm surface now —
+  // only `hero` differs visually. `error`/`danger` used to paint a flat
+  // error-tinted card; the warning is now carried by the VALUE/label/icon
+  // color alone (`resolvedLabelColor`/`effektivValueStyle` below).
+  const cardClass = tone === 'hero' ? 'bg-[image:var(--frv-gradient-hero)] shadow-(--frv-shadow-border)' : 'bg-(color:--frv-surface) shadow-(--frv-shadow-border)'
+  const resolvedLabelColor = labelColor ?? (isError ? 'var(--frv-error-text)' : 'var(--frv-text-secondary)')
+  const effectiveValueStyle = valueStyle ?? (isError ? { color: 'var(--frv-error-text)' } : undefined)
   const trendColor = endring?.god === true ? 'var(--frv-success-text)' : endring?.god === false ? 'var(--frv-error-text)' : 'var(--frv-text-tertiary)'
   const trendClass =
     endring?.god === true ? 'text-(color:--frv-success-text) bg-(color:--frv-success-light)'
     : endring?.god === false ? 'text-(color:--frv-error-text) bg-(color:--frv-error-light)'
     : 'text-(color:--frv-text-tertiary) bg-(color:--frv-gray-alpha-100)'
 
-  /* Value size step-down: a long formatted value (e.g. a range like
-     "651 000–893 000 kr") could wrap across two lines in a narrow card.
-     `whitespace-nowrap` prevents the wrap outright; the font size steps down
-     in two stages so a longer value still fits on ONE line instead of just
-     being clipped. Only for STRING/NUMBER values — a `ReactNode` value
-     (e.g. a `Badge`) has no text length to measure and keeps 24. */
   const valueText = typeof value === 'string' || typeof value === 'number' ? String(value) : null
-  const valueSizeClass =
-    // Terskler målt på mobil, der kortet ALLTID står i 2 kolonner (~120 px innenfor
-    // padding): «kr 1 240 500» (12 tegn) klippet på 20 px, «651 000–893 000 kr»
-    // (18 tegn) på 16 px (mobilsveip docs 19. sep 2026). Intervaller får bryte
-    // ved tankestreken (se whitespace under).
-    valueText == null ? 'type-heading-24'
-    : valueText.length > 18 ? 'type-heading-14'
-    : valueText.length > 13 ? 'type-heading-16'
-    : valueText.length > 9 ? 'type-heading-20'
-    : 'type-heading-24'
+  const tier = statCardTier(valueTextLength ?? valueText?.length ?? null)
+  const hasDigit = typeof value === 'string' && /\d/.test(value)
 
   return (
-    <div className={cx('relative rounded-[var(--frv-radius-md)] p-5 @container', cardClass, className)}>
-      <div
-        className="flex items-center gap-2 mb-3 text-(color:--statcard-label-color)"
-        style={{ '--statcard-label-color': resolvedLabelColor } as CSSProperties}
-      >
-        {Icon && <Icon size={14} />}
-        <span className="type-label-13">{label}</span>
+    <div className={cx('relative h-full rounded-[var(--frv-radius-md)] p-5 max-sm:p-4 @container', cardClass, className)}>
+      {/* Below sm: value first (flex-col-reverse flips the VISUAL order only —
+          DOM order is unchanged, label markup still comes first). From sm up:
+          no flex here, plain block stacking shows the DOM order as-is (label
+          over value, same as before round 4). */}
+      <div className="max-sm:flex max-sm:flex-col-reverse max-sm:gap-2">
+        <div
+          className="flex items-center gap-2 mb-3 max-sm:mb-0 min-w-0 text-(color:--statcard-label-color)"
+          style={{ '--statcard-label-color': resolvedLabelColor } as CSSProperties}
+        >
+          {Icon && <Icon size={14} className="shrink-0" />}
+          <span className="type-label-13 min-w-0 break-words">{label}</span>
+        </div>
+        {/* A value WITH digits never wraps — not even a dash-range (design
+            round 4, 2026-09-29). Only a pure-text value with no digits may
+            wrap, max 2 lines. */}
+        <p data-stat-verdi={tier ?? ''} className={cx('type-heading-32', 'tabular-nums', typeof value === 'string' && !hasDigit ? 'whitespace-normal text-balance' : 'whitespace-nowrap')} style={effectiveValueStyle}>{value}</p>
       </div>
-      <p data-stat-verdi={valueSizeClass.replace('type-heading-', '')} className={cx(valueSizeClass, 'tabular-nums', typeof value === 'string' && (!/\d/.test(value) || value.includes('–')) ? 'whitespace-normal text-balance' : 'whitespace-nowrap')} style={valueStyle}>{value}</p>
-      {sub && <p className="type-label-12 mt-2 text-(color:--frv-text-tertiary)" style={subStyle}>{sub}</p>}
+      {sub && <p className="type-label-13 mt-2 text-(color:--frv-text-tertiary)" style={subStyle}>{sub}</p>}
       {endring && (
+        // `whitespace-nowrap` (2026-09-28): without it, the pill wrapped
+        // across lines inside `rounded-full` when the card sat at half width
+        // on mobile — a flat circle became a tall, odd oval.
         <span
-          className={cx('inline-flex items-center gap-1 type-label-12 mt-2 px-1.5 py-0.5 rounded-[var(--frv-radius-full)] tabular-nums', trendClass)}
+          className={cx('inline-flex items-center gap-1 type-label-12 mt-2 px-1.5 py-0.5 rounded-[var(--frv-radius-full)] tabular-nums whitespace-nowrap', trendClass)}
         >
           <span aria-hidden="true">{STATCARD_ENDRING_SYMBOL[endring.retning]}</span>
           {endring.verdi}
@@ -1626,24 +1733,31 @@ export function StatCard({
 }
 
 const STATCARD_ROW_COLS: Record<2 | 3 | 4, string> = {
-  2: 'grid-cols-2',
-  3: 'grid-cols-2 sm:grid-cols-3',
-  4: 'grid-cols-2 sm:grid-cols-4',
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-3',
+  4: 'sm:grid-cols-4',
 }
 
-/** StatCardRad — the mobile ROW for several `StatCard`s, IN the primitive
- *  rather than hand-rolled per page (a page-level grid drifts: one page ends
- *  up `grid-cols-1 md:grid-cols-3`, another `flex flex-col sm:flex-row`,
- *  each with a different mobile outcome). Mobile is ALWAYS 2 columns —
- *  KPIs never stack into a single column on a phone; `kolonner` only
- *  controls the column count from `sm` up. */
-export function StatCardRad({ children, kolonner = 3, className }: {
+/** StatCardRad — the ROW for several `StatCard`s, IN the primitive rather than
+ *  hand-rolled per page. Below `sm` it is ONE column (the card then puts label
+ *  and value on one line, so it stays ~64 px tall): two columns made labels
+ *  wrap («Estimated / total»), gave uneven heights and a lone half card on odd
+ *  counts. `kompaktMobil`: two columns on mobile — ONLY for short labels + short
+ *  numbers without sub/sparkline/endring; an odd last card spans both columns.
+ *  `kolonner` controls the column count from `sm` up. */
+export function StatCardRad({ children, kolonner = 3, kompaktMobil = false, className }: {
   children: ReactNode
-  /** Columns from `sm`. Mobile is always 2. @default 3 */
+  /** Columns from `sm`. Below `sm`: 1 (2 with `kompaktMobil`). @default 3 */
   kolonner?: 2 | 3 | 4
+  /** Two columns below `sm` — short labels + short numbers only. */
+  kompaktMobil?: boolean
   className?: string
 }) {
-  return <div className={cx('grid gap-4', STATCARD_ROW_COLS[kolonner], className)}>{children}</div>
+  return (
+    <div className={cx('grid items-stretch gap-4 max-sm:gap-3', kompaktMobil ? 'grid-cols-2 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2' : 'grid-cols-1', STATCARD_ROW_COLS[kolonner], className)}>
+      {children}
+    </div>
+  )
 }
 
 export interface SkeletonProps {
@@ -2140,7 +2254,12 @@ export function Tooltip({ content, maxWidth = '36ch', side = 'top', delay = 200,
       <span aria-hidden className={cx('absolute bg-(color:--frv-text-primary) w-1.5 h-1.5 rotate-45', TOOLTIP_ARROW_STYLE[side])} />
     </>
   )
-  const panelClass = 'w-max whitespace-normal bg-(color:--frv-text-primary) text-(color:--frv-bg) rounded-(--frv-radius-sm) shadow-(--frv-shadow-tooltip) py-(--frv-space-1) px-(--frv-space-2) max-w-(--tooltip-max-w)'
+  // Padding: --frv-floating-pad-y/-x (2026-09-28 ruling: "Popover is nice! It
+  // should be the reference for the ones with too little padding") — Tooltip/
+  // Begrep have no inner row of their own (unlike Popover's own rows, which
+  // carry their own px-3 py-2), so they need this larger, named pair for the
+  // same felt air.
+  const panelClass = 'w-max whitespace-normal bg-(color:--frv-text-primary) text-(color:--frv-bg) rounded-(--frv-radius-sm) shadow-(--frv-shadow-tooltip) py-(--frv-floating-pad-y) px-(--frv-floating-pad-x) max-w-(--tooltip-max-w)'
 
   return (
     <span ref={wrapRef} className={cx('relative inline-flex', className)}>
@@ -2335,7 +2454,7 @@ const FIELD_INNER_PAD_END: Record<FieldSize, string> = { sm: 'pr-2', md: 'pr-2.5
  *  wrapper: an inherited color always loses to an element selector, and
  *  `input,textarea,select{color:...}` in the token file is exactly that. */
 export function fieldTextColor(disabled?: boolean) {
-  return disabled ? 'text-[var(--frv-text-quaternary)]' : 'text-[var(--frv-text-primary)]'
+  return disabled ? 'text-[var(--frv-text-disabled)]' : 'text-[var(--frv-text-primary)]'
 }
 
 /** Shared field border/surface/hover/focus — bg-surface, translucent border
@@ -2359,7 +2478,7 @@ export function fieldChrome({ error, disabled, focusVariant = 'self' }: { error?
   )
 }
 
-const FIELD_PLACEHOLDER = 'placeholder:text-[var(--frv-text-quaternary)]'
+const FIELD_PLACEHOLDER = 'placeholder:text-[var(--frv-text-disabled)]'
 const FIELD_SEARCH_CANCEL_FIX = '[&::-webkit-search-cancel-button]:appearance-none'
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix'> {
@@ -2454,8 +2573,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               </label>
             )}
           </div>
-          {hint && <p id={hintId} className="type-label-12 text-[var(--frv-text-tertiary)]">{hint}</p>}
-          {error && <FormError id={errorId} size="label-12">{error}</FormError>}
+          {hint && <p id={hintId} className="type-label-13 text-[var(--frv-text-tertiary)]">{hint}</p>}
+          {error && <FormError id={errorId} size="label-13">{error}</FormError>}
         </div>
       )
     }
@@ -2529,8 +2648,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <div className={cx('flex flex-col gap-1.5 min-w-0', hasSlot && className)}>
         {label && <label htmlFor={fieldId} className="type-label-13-strong text-[var(--frv-text-primary)]">{label}</label>}
         {field}
-        {hint && <p id={hintId} className="type-label-12 text-[var(--frv-text-tertiary)]">{hint}</p>}
-        {error && <FormError id={errorId} size="label-12">{error}</FormError>}
+        {hint && <p id={hintId} className="type-label-13 text-[var(--frv-text-tertiary)]">{hint}</p>}
+        {error && <FormError id={errorId} size="label-13">{error}</FormError>}
       </div>
     )
   }
@@ -2566,8 +2685,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           className={cx('w-full min-h-24 resize-none', FIELD_PAD[size], TEXTAREA_PAD_Y[size], FIELD_TEXT[size], fieldTextColor(disabled), fieldChrome({ error: !!error, disabled, focusVariant: 'self' }), FIELD_PLACEHOLDER, className)}
           {...props}
         />
-        {hint && <p id={hintId} className="type-label-12 text-[var(--frv-text-tertiary)]">{hint}</p>}
-        {error && <FormError id={errorId} size="label-12">{error}</FormError>}
+        {hint && <p id={hintId} className="type-label-13 text-[var(--frv-text-tertiary)]">{hint}</p>}
+        {error && <FormError id={errorId} size="label-13">{error}</FormError>}
       </div>
     )
   }
@@ -2589,28 +2708,55 @@ interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'siz
  *  Without `label`/`error` only the field container (inline-flex) is
  *  returned, so an existing inline call site doesn't gain a block wrapper. */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, children, label, error, id, size = 'md', disabled, ...props }, ref) => {
+  ({ className, children, label, error, id, size = 'md', disabled, onChange, ...props }, ref) => {
     const autoId = useId()
     const fieldId = id ?? autoId
     const errorId = `${fieldId}-error`
+    /* The selected text is drawn in its own truncating layer (2026-09-29):
+       WebKit/Safari ignores `text-overflow` on a native <select>, so a label
+       that didn't fit was cut mid-glyph on iPhone. The <select> stays the
+       control (keyboard, screen reader, native picker); only the visible text
+       moves to the layer, and only after mount. */
+    const innerRef = useRef<HTMLSelectElement | null>(null)
+    const [selectedText, setSelectedText] = useState<string | null>(null)
+    const setRef = useCallback((el: HTMLSelectElement | null) => {
+      innerRef.current = el
+      if (typeof ref === 'function') ref(el)
+      else if (ref) ref.current = el
+    }, [ref])
+    const controlledValue = props.value
+    useLayoutEffect(() => {
+      const text = innerRef.current?.selectedOptions[0]?.text ?? null
+      setSelectedText(prev => (prev === text ? prev : text))
+    }, [controlledValue, children])
     const field = (
       <div className={cx('relative inline-flex min-w-0', className)}>
         <select
-          ref={ref}
+          ref={setRef}
           id={fieldId}
+          onChange={e => { setSelectedText(e.target.selectedOptions[0]?.text ?? null); onChange?.(e) }}
           disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           className={cx(
-            'appearance-none w-full', disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+            'appearance-none w-full truncate', disabled ? 'cursor-not-allowed' : 'cursor-pointer',
             FIELD_HEIGHT[size], FIELD_PAD_L[size], SELECT_CHEVRON_PAD_R[size], FIELD_TEXT[size],
-            fieldTextColor(disabled), fieldChrome({ error: !!error, disabled, focusVariant: 'self' }),
+            selectedText != null ? 'text-transparent' : fieldTextColor(disabled), fieldChrome({ error: !!error, disabled, focusVariant: 'self' }),
+            // Spectrum-lab expression (2026-09-26): a light lift over the flat
+            // border, plus a hover surface — only on the trigger, `fieldChrome`
+            // itself is untouched.
+            !disabled && 'shadow-[var(--frv-shadow-xs)] hover:bg-[var(--frv-gray-alpha-100)]',
             '[&>option]:bg-[var(--frv-surface)] [&>option]:text-[var(--frv-text-primary)]',
           )}
           {...props}
         >
           {children}
         </select>
+        {selectedText != null && (
+          <span aria-hidden="true" className={cx('pointer-events-none absolute inset-0 flex items-center min-w-0', FIELD_PAD_L[size], SELECT_CHEVRON_PAD_R[size])}>
+            <span className={cx('truncate', FIELD_TEXT[size], fieldTextColor(disabled))}>{selectedText}</span>
+          </span>
+        )}
         <ChevronDownIcon size={14} className={cx('pointer-events-none absolute top-1/2 -translate-y-1/2', SELECT_CHEVRON_RIGHT[size])} style={{ color: 'var(--frv-text-secondary)' }} />
       </div>
     )
@@ -2621,13 +2767,58 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       <div className="flex flex-col gap-1.5 min-w-0">
         {label && <label htmlFor={fieldId} className="type-label-13-strong text-[var(--frv-text-primary)]">{label}</label>}
         {field}
-        {error && <FormError id={errorId} size="label-12">{error}</FormError>}
+        {error && <FormError id={errorId} size="label-13">{error}</FormError>}
       </div>
     )
   }
 )
 
 Select.displayName = 'Select'
+
+export interface TittelTekstProps {
+  /** The title itself. Always weight 500, darkest text color — never smaller than `tekst`. */
+  tittel: ReactNode
+  /** The support text under/beside the title. Omit for a title alone. */
+  tekst?: ReactNode
+  /** `14` (default): 14px/14px pair. `13` (tight): 13px/13px for denser rows/steps. */
+  storrelse?: '14' | '13'
+  /** Clips the TITLE with an ellipsis instead of wrapping. */
+  truncate?: boolean
+  /** Outer element. `label` when clicking the text should trigger an associated control (Switch) — set `htmlFor` then. */
+  as?: 'div' | 'span' | 'label'
+  htmlFor?: string
+  id?: string
+  /** `id` on the TEXT span itself — for `aria-describedby` from an outside control (Checkbox/Radio). */
+  tekstId?: string
+  /** Gap between title and text. Default `mt-0.5` (tight pairs). Set `mt-2` for looser pairs. */
+  gap?: string
+  className?: string
+}
+
+const TITTEL_TEKST_KLASSER: Record<'14' | '13', { tittel: string; tekst: string }> = {
+  '14': { tittel: 'type-label-14-strong', tekst: 'type-copy-14' },
+  '13': { tittel: 'type-label-13-strong', tekst: 'type-label-13' },
+}
+
+/* TittelTekst
+   The ONE source for a "title + compact support text" pair (28. sep 2026
+   design revision): founder found the title in several compact composite
+   components (Checkbox/Radio, Switch, AgentSteps' step title) reading
+   SMALLER than the support text next to/under it, because each component
+   had picked its own class pair independently. `storrelse="14"` (default,
+   Checkbox/Radio/Switch) or `"13"` (tight rows/steps, AgentSteps). Rendered
+   with no hooks — server-safe. */
+export function TittelTekst({ tittel, tekst, storrelse = '14', truncate, as = 'div', htmlFor, id, tekstId, gap = 'mt-0.5', className }: TittelTekstProps) {
+  const As = as as ElementType
+  const klasser = TITTEL_TEKST_KLASSER[storrelse]
+  const containerProps = as === 'label' ? { htmlFor, id } : { id }
+  return (
+    <As {...containerProps} className={cx('block min-w-0', className)}>
+      <span className={cx(klasser.tittel, 'block text-(color:--frv-text-primary)', truncate && 'truncate')}>{tittel}</span>
+      {tekst != null && <span id={tekstId} className={cx(klasser.tekst, 'block text-(color:--frv-text-secondary)', gap)}>{tekst}</span>}
+    </As>
+  )
+}
 
 interface CheckboxProps {
   checked: boolean
@@ -2645,6 +2836,12 @@ interface CheckboxProps {
    *  overrides `checked` when both are set — the caller decides what a click
    *  here should do (typically: check everything). */
   indeterminate?: boolean
+  /** `square` (default): a choice that's PART OF a form or a table row
+   *  selection — multiple boxes can be checked at once. `round`: a
+   *  COMPLETED-TASK checkmark on a task row (2026-09-26) — never use `round`
+   *  where several boxes must be able to stay checked at once in a form or
+   *  table, it reads as a radio button there. */
+  shape?: 'square' | 'round'
   className?: string
 }
 
@@ -2654,7 +2851,7 @@ interface CheckboxProps {
    as `Switch`/`Radio`. The whole button (box + text) is one click target,
    44px tall below `lg`. Monochrome (wave 3): checked box is
    `--frv-text-primary` with the check in `--frv-bg` — no longer accent blue. */
-export function Checkbox({ checked, onChange, disabled, label, description, ariaLabel, size = 'md', indeterminate, className }: CheckboxProps) {
+export function Checkbox({ checked, onChange, disabled, label, description, ariaLabel, size = 'md', indeterminate, shape = 'square', className }: CheckboxProps) {
   const id = useId()
   const descId = description ? `${id}-desc` : undefined
   const box = size === 'sm' ? 16 : 20
@@ -2676,7 +2873,8 @@ export function Checkbox({ checked, onChange, disabled, label, description, aria
       <span
         aria-hidden
         className={cx(
-          'shrink-0 flex items-center justify-center rounded-[4px] transition-colors duration-150 motion-reduce:transition-none border',
+          'shrink-0 flex items-center justify-center transition-colors duration-150 motion-reduce:transition-none border',
+          shape === 'round' ? 'rounded-full' : 'rounded-[4px]',
           box === 16 ? 'w-4 h-4' : 'w-5 h-5',
           filled ? 'border-(color:--frv-text-primary) bg-(color:--frv-text-primary)' : 'border-(color:--frv-border-3) bg-transparent',
         )}
@@ -2684,11 +2882,13 @@ export function Checkbox({ checked, onChange, disabled, label, description, aria
         {indeterminate ? <MinusIcon size={iconSize} className="text-(color:--frv-bg)" /> : (checked && <CheckIcon size={iconSize} className="text-(color:--frv-bg)" />)}
       </span>
       {(label || description) && (
-        <span className="min-w-0">
-          {/* With a description: label-14-strong (500) — the label should stand apart from the explanation below. Without: 400 is enough. */}
-          {label && <span className={cx(description ? 'type-label-14-strong' : 'type-label-14', 'block text-(color:--frv-text-primary)')}>{label}</span>}
-          {description && <span id={descId} className="type-copy-13 block mt-0.5 text-(color:--frv-text-secondary)">{description}</span>}
-        </span>
+        description ? (
+          <TittelTekst as="span" tittel={label} tekst={description} tekstId={descId} className="min-w-0" />
+        ) : (
+          <span className="min-w-0">
+            <span className="type-label-14 block text-(color:--frv-text-primary)">{label}</span>
+          </span>
+        )
       )}
     </button>
   )
@@ -2784,11 +2984,14 @@ export const Radio = forwardRef<HTMLButtonElement, RadioProps>(function Radio(
         {circle}
         {Icon && <Icon size={18} className={cx('shrink-0 mt-0.5', checked ? 'text-(color:--frv-accent-text)' : 'text-(color:--frv-text-tertiary)')} />}
         <span className="min-w-0 flex-1">
+          {/* Badge sits INLINE next to the title, so `TittelTekst` (which stacks
+              title/text) doesn't fit as a wrapper here — classes still come
+              from the same `TITTEL_TEKST_KLASSER` pair the wrapped version uses. */}
           <span className="flex items-center gap-1.5 flex-wrap">
             {label && <span className="type-label-14-strong text-(color:--frv-text-primary)">{label}</span>}
             {badge != null && (typeof badge === 'string' ? <Badge variant="accent" size="sm">{badge}</Badge> : badge)}
           </span>
-          {description && <span id={descId} className="type-copy-13 block mt-0.5 text-(color:--frv-text-secondary)">{description}</span>}
+          {description && <span id={descId} className="type-copy-14 block mt-0.5 text-(color:--frv-text-secondary)">{description}</span>}
         </span>
       </button>
     )
@@ -2810,11 +3013,13 @@ export const Radio = forwardRef<HTMLButtonElement, RadioProps>(function Radio(
     >
       {circle}
       {(label || description) && (
-        <span className="min-w-0">
-          {/* With a description: label-14-strong (500) — the label should stand apart from the explanation below. Without: 400 is enough. */}
-          {label && <span className={cx(description ? 'type-label-14-strong' : 'type-label-14', 'block text-(color:--frv-text-primary)')}>{label}</span>}
-          {description && <span id={descId} className="type-copy-13 block mt-0.5 text-(color:--frv-text-secondary)">{description}</span>}
-        </span>
+        description ? (
+          <TittelTekst as="span" tittel={label} tekst={description} tekstId={descId} className="min-w-0" />
+        ) : (
+          <span className="min-w-0">
+            <span className="type-label-14 block text-(color:--frv-text-primary)">{label}</span>
+          </span>
+        )
       )}
     </button>
   )
@@ -2914,8 +3119,9 @@ export function Switch({ checked, onChange, disabled, label, description, classN
   return (
     <div className={cx('flex items-start justify-between gap-4', className)}>
       <div className={cx('min-w-0', disabled && 'opacity-40')}>
-        <label htmlFor={id} className={cx('type-heading-14 block', !disabled && 'cursor-pointer')}>{label}</label>
-        {description && <p id={descId} className="type-copy-13 mt-0.5 text-(color:--frv-text-secondary)">{description}</p>}
+        {/* Title + support text via the shared `TittelTekst` (matches
+            Checkbox/Radio) — no longer a standalone `type-heading-14` label. */}
+        <TittelTekst as="label" htmlFor={id} tittel={label} tekst={description} tekstId={descId} className={!disabled ? 'cursor-pointer' : undefined} />
       </div>
       <button
         id={id}
@@ -2925,7 +3131,10 @@ export function Switch({ checked, onChange, disabled, label, description, classN
         aria-describedby={descId}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={cx('shrink-0 inline-flex items-center min-h-11 lg:min-h-0 lg:h-5', 'disabled:cursor-not-allowed disabled:opacity-40', !disabled && 'cursor-pointer')}
+        // `px-[2px] -mx-[2px] lg:px-0 lg:mx-0`: the track is 36px (w-9) — padding
+        // + negative margin grows the button's OWN hit area to 40px without
+        // widening the track itself, same technique as Checkbox's label-less width.
+        className={cx('shrink-0 inline-flex items-center min-h-11 lg:min-h-0 lg:h-5 px-[2px] -mx-[2px] lg:px-0 lg:mx-0', 'disabled:cursor-not-allowed disabled:opacity-40', !disabled && 'cursor-pointer')}
       >
         <span aria-hidden className={cx('block w-9 h-5 rounded-[var(--frv-radius-full)] p-0.5 transition-colors duration-150 motion-reduce:transition-none', checked ? 'bg-(color:--frv-text-primary)' : 'bg-(color:--frv-gray-alpha-300)')}>
           <span className={cx('block w-4 h-4 rounded-[var(--frv-radius-full)] transition-transform duration-150 motion-reduce:transition-none bg-(color:--frv-surface) shadow-(--frv-shadow-xs)', checked ? 'translate-x-4' : 'translate-x-0')} />
@@ -2986,37 +3195,64 @@ SearchInput.displayName = 'SearchInput'
    Slots: `leading` (checkbox/date/icon), `title` (main text), `secondary`
    (short facts inline after the title — an array renders joined with "·"),
    `subtitle` (the exception: longer text, own line, `line-clamp-2`), `meta`
-   (chips next to the title), `value` (right-aligned, tabular figures,
-   never shrinks/wraps), `trailing` (actions/chevron), `details` + `expanded`
+   (chips/non-text content next to the title), `merkelapper` (status/state
+   chips as DATA, see below), `value`/`valueSmal` (right-aligned, tabular
+   figures, never shrinks/wraps), `trailing` (actions/menu), `pil` (ListRow
+   draws its own chevron, wide container only), `details` + `expanded`
    (accordion content, rendered as a SIBLING below the row, never nested).
 
    Layout reacts to the ROW's own container width (`@container`, ≥28rem is
    "wide"), not the viewport — a row in a narrow column on a wide screen
-   behaves like it would on a phone. `trailing` wraps to its own line if the
-   title group (which asks for at least 15rem) doesn't fit alongside it.
+   behaves like it would on a phone. `trailing`/`pil` wrap to their own line
+   if the title group (which asks for at least 15rem) doesn't fit alongside.
 
    `href` renders a plain `<a>` (mutually exclusive with `onClick` — a row is
    either a NAVIGATION or an ACTION, never both, and the type enforces it).
 
-   Wave 3 (2026-09-10, founder: "the main text should read heavier than
-   supporting text"): title is `.type-heading-14` (600), `secondary` is
-   `type-label-13` (previously `copy-13`) — matches `value`'s weight. Hover
-   surface is `--frv-gray-alpha-100` (was `--frv-surface-2`).
-
    `status`/`done` (2026-09-12): a status icon reads faster than a plain text
    badge for lists where STATUS is the primary signal. `status` draws a 20px
    tone tile (same idiom as `IconTile`) in the `leading` slot WHEN `leading`
-   isn't set explicitly — set both yourself (unusual, e.g. a checkbox
-   TOGETHER with a status color) by composing `leading` with the exported
-   `ListRowStatusIcon`. `done` strikes the title through in tertiary color —
-   for a checked-off ROW, not a checked form field. Both are new, optional,
-   additive slots; the other six stay unchanged. */
+   isn't set explicitly. `done` strikes the title through in tertiary color —
+   for a checked-off ROW, not a checked form field.
+
+   MOBILE ANATOMY, round 5 (2026-09-29 design revision): narrow (< `@md`) is
+   now EXACTLY two lines, never three, never scrolling. Line 1 is the title
+   alone, always `truncate` (never `line-clamp-2`). Line 2 — only when there
+   is something to show — starts on the icon's left edge: at most ONE colored
+   pill (the one `merkelapper` entry with `varsel: true`, e.g. a "TG3" or
+   "overdue" state), then the rest of the chips as plain muted text joined
+   with `secondary`, then an optional `meta` (non-text, e.g. an Avatar), then
+   `valueSmal ?? value` right-aligned. WHY `merkelapper` IS DATA, NOT MARKUP:
+   call sites used to hand ListRow finished `<Badge>` nodes in `meta`, so the
+   row could only keep or drop a whole node — it couldn't read a tone/text
+   back out of one to decide pill-vs-text per width. `merkelapper` entries
+   (`{ tekst, tone, ikon, varsel, spinner }`) let the wide container draw ALL
+   of them as `Badge size="sm"` (pixel-identical to hand-rolled `meta`
+   badges) while the narrow container picks the one pill itself. */
 export type ListRowStatusTone = 'success' | 'warning' | 'error' | 'accent' | 'gray'
 
 export interface ListRowStatus {
   tone: ListRowStatusTone
   /** Omitted: a plain dot in the tone's color (same fallback idiom as `StatusDot`). */
   icon?: IconComponent
+}
+
+/** A status/state chip as DATA rather than a finished Badge node — see the
+ *  "MOBILE ANATOMY" section above. `varsel: true` marks the one chip that
+ *  should become the narrow container's single visible pill (set on at most
+ *  one entry per row); `spinner: true` draws an animated icon (same idiom as
+ *  `ListRowStatus`'s `aktiv`). */
+export type Merkelapp = {
+  tekst: string
+  tone?: BadgeHue | 'inverted' | 'accent' | Priority | 'default'
+  ikon?: IconComponent
+  varsel?: boolean
+  spinner?: boolean
+  /** Optional own node for the wide container (e.g. a pill wrapped for a
+   *  glossary tooltip) — used INSTEAD of the auto-generated Badge there,
+   *  without affecting the narrow container (which still reads `tekst`/
+   *  `tone`/`varsel` as data). */
+  wideNode?: ReactNode
 }
 
 const LISTROW_STATUS_TO_ICON_TILE: Record<ListRowStatusTone, IconTileTone> = {
@@ -3040,19 +3276,48 @@ export function ListRowStatusIcon({ status }: { status: ListRowStatus }) {
   return <IconTile icon={status.icon ?? ListRowStatusDot} tone={LISTROW_STATUS_TO_ICON_TILE[status.tone]} size="sm" />
 }
 
+// Spinning variant of an arbitrary icon component, cached per-icon in a
+// module-level WeakMap so the SAME icon always gets the SAME component
+// identity across renders (a fresh function per render would make React
+// remount the icon every time).
+const listRowSpinIconCache = new WeakMap<IconComponent, IconComponent>()
+function listRowSpinIconFor(Icon: IconComponent): IconComponent {
+  const cached = listRowSpinIconCache.get(Icon)
+  if (cached) return cached
+  function Spinning({ className, ...rest }: { size?: number; className?: string; style?: CSSProperties }) {
+    return <Icon {...rest} className={cx(className, 'animate-spin')} />
+  }
+  listRowSpinIconCache.set(Icon, Spinning as unknown as IconComponent)
+  return Spinning as unknown as IconComponent
+}
+
+function listRowMerkelappBadge(m: Merkelapp, key: number | string) {
+  return (
+    <Badge key={key} variant={m.tone ?? 'default'} size="sm" icon={m.spinner ? listRowSpinIconFor(m.ikon ?? LoaderIcon) : m.ikon}>
+      {m.tekst}
+    </Badge>
+  )
+}
+
 type ListRowSlots = {
   leading?: ReactNode
   title: ReactNode
-  /** Short facts INLINE after the title, muted, ellipsis. An array renders joined with "·" (null/false/'' filtered out). */
+  /** Short facts INLINE after the title, muted, ellipsis. An array renders joined with "·" (null/false/'' filtered out). Narrow: folded into the line-2 muted text together with `merkelapper`. */
   secondary?: ReactNode | ReactNode[]
   /** The exception, not the default: longer text, own line, `line-clamp-2`. */
   subtitle?: ReactNode
-  /** Chips (Badge) next to the title. Two visible recommended max. */
+  /** Chips (Badge) next to the title, OR non-text content (Avatar, …) that `merkelapper` doesn't cover. Narrow: shown right before `value`. */
   meta?: ReactNode
+  /** Status/state chips as DATA — see the section comment above. Wide: all drawn as `Badge size="sm"` in the `meta` position. Narrow: only the one `varsel` entry becomes a pill, the rest fold to plain text. */
+  merkelapper?: Merkelapp[]
   /** Right-aligned value (amount/date/count), tabular figures, never shrinks/wraps. */
   value?: ReactNode
-  /** Actions/chevron, outermost right. */
+  /** Shorter `value` for the narrow container (e.g. an abbreviated range). Falls back to `value` when omitted; the wide container always uses `value`. */
+  valueSmal?: ReactNode
+  /** Actions/menu, outermost right. Shown on both widths — narrow centers it against the two lines. A plain right-chevron belongs in `pil`, not here. */
   trailing?: ReactNode
+  /** ListRow draws its own right-chevron, WIDE CONTAINER ONLY — narrow has no chevron, the whole row is the tap target. */
+  pil?: boolean
   /** Accordion detail, sibling below the row, only when `expanded`. */
   details?: ReactNode
   expanded?: boolean
@@ -3065,81 +3330,130 @@ type ListRowSlots = {
 
 export type ListRowProps = ListRowSlots & ({ href: string; onClick?: never } | { href?: undefined; onClick?: () => void })
 
-function listRowJoinSecondary(secondary: ReactNode | ReactNode[] | undefined): ReactNode {
-  if (secondary == null) return null
-  const items = Array.isArray(secondary) ? secondary : [secondary]
+function listRowJoinMed(items: (ReactNode | null | undefined | false)[]): ReactNode {
   const visible = items.filter(item => item != null && item !== false && item !== '')
   if (visible.length === 0) return null
   if (visible.length === 1) return visible[0]
   return visible.map((item, i) => <span key={i}>{i > 0 && <span aria-hidden className="mx-[var(--frv-space-1-5)]">·</span>}{item}</span>)
 }
 
+function listRowJoinSecondary(secondary: ReactNode | ReactNode[] | undefined): ReactNode {
+  if (secondary == null) return null
+  return listRowJoinMed(Array.isArray(secondary) ? secondary : [secondary])
+}
+
 export function ListRow(props: ListRowProps) {
-  const { leading, title, secondary, subtitle, meta, value, trailing, details, expanded, status, done, className, href, onClick } = props
+  const { leading, title, secondary, subtitle, meta, merkelapper, value, valueSmal, trailing, pil, details, expanded, status, done, className, href, onClick } = props
   const secondaryContent = listRowJoinSecondary(secondary)
+  const merkelapperListe = merkelapper ?? []
+  // Narrow: the FIRST `varsel` entry becomes the row's one pill, the rest
+  // fold into plain text together with `secondary`.
+  const pilleMerkelapp = merkelapperListe.find(m => m.varsel) ?? null
+  const tekstMerkelapper = merkelapperListe.filter(m => m !== pilleMerkelapp)
+  const smalTekst = listRowJoinMed([...tekstMerkelapper.map(m => m.tekst), secondaryContent])
+  const smalValue = valueSmal ?? value
+  // Wide: ALL merkelapper draw as Badge in the `meta` position, before any
+  // hand-supplied `meta` content — pixel-identical to a hand-rolled `meta`.
+  const metaBred = merkelapperListe.length || meta != null
+    ? <>{merkelapperListe.map((m, i) => m.wideNode != null ? <Fragment key={i}>{m.wideNode}</Fragment> : listRowMerkelappBadge(m, i))}{meta}</>
+    : null
+  // Only title + value (no pill/text/meta): value sits on line 1 next to the
+  // title, never alone on a line 2 (correction 2026-09-28, restored round 5).
+  const valueOnLine1 = smalValue != null && pilleMerkelapp == null && smalTekst == null && meta == null
+  const harLinje2 = !valueOnLine1 && (pilleMerkelapp != null || smalTekst != null || meta != null || smalValue != null)
   // `status` fills `leading` ONLY when the call site hasn't set one itself.
   const leadingNode = leading ?? (status ? <ListRowStatusIcon status={status} /> : null)
+  // Narrow branch: exactly one title line tall (`h-5` = 20px, the line height of
+  // `type-heading-14`) inside an `items-start` row, so the icon centers on the
+  // title's ONLY line (title is always `truncate`, never two lines, round 5).
+  const leadingSmall = leadingNode != null ? <div className="shrink-0 flex items-center h-5">{leadingNode}</div> : null
   const titleColorClass = done ? 'text-(color:--frv-text-tertiary)' : 'text-(color:--frv-text-primary)'
 
-  // Nested-interactive guard: when the row is clickable AND has buttons in
-  // `trailing`, the whole row can't be `role="button"` (a button inside a
-  // button) — the TITLE becomes the button instead, mouse clicks on the row
-  // still work.
-  const nested = !!onClick && trailing != null
+  // Nested-interactive guard: when the row is clickable AND has `trailing`/
+  // `pil`, the whole row can't be `role="button"` (interactive content in
+  // `leading`/`meta` — a checkbox, a glossary-term button — would end up
+  // nested inside a button) — the TITLE becomes the button instead, mouse
+  // clicks on the row still work. `pil` itself is never interactive, but
+  // signals the same "this row may carry interactive content" risk a
+  // hand-rolled chevron in `trailing` used to.
+  const nested = !!onClick && (trailing != null || !!pil)
   const titleEl = (classes: string) => nested ? (
     <button type="button" onClick={e => { e.stopPropagation(); onClick?.() }} aria-expanded={details != null ? (expanded ?? false) : undefined}
-      className={cx(classes, done && 'line-through', 'text-left bg-transparent border-0 p-0 cursor-pointer', titleColorClass)}>{title}</button>
+      className={cx('max-w-full', classes, done && 'line-through', 'text-left bg-transparent border-0 p-0 cursor-pointer', titleColorClass)}>{title}</button>
   ) : (
     <span className={cx(classes, done && 'line-through', titleColorClass)}>{title}</span>
   )
 
   const titleBlock = (
-    <div className="min-w-0 flex-1">
-      <div className="hidden @md:flex items-center gap-[var(--frv-space-2)] min-w-0">
-        <div className="flex items-baseline min-w-0 flex-1">
-          {titleEl('type-heading-14 truncate shrink-0 max-w-[60%]')}
-          {secondaryContent != null && <span className="type-label-13 truncate min-w-[6rem] flex-1 ml-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{secondaryContent}</span>}
+    <>
+      {/* Wide container (≥ @md, 28rem): title · secondary, meta, value — one
+          line, no wrap. Unchanged by the mobile rounds (round 5: desktop is
+          never touched). `leading` lives INSIDE each branch (wide vs.
+          narrow, below) — CSS hides one branch, so only one is ever shown. */}
+      <div className="hidden @md:flex items-center gap-[var(--frv-space-3)] min-w-0">
+        {leadingNode != null && <div className="shrink-0 flex items-center">{leadingNode}</div>}
+        <div className="flex items-center gap-[var(--frv-space-2)] min-w-0 flex-1">
+          <div className="flex items-baseline min-w-0 flex-1">
+            {titleEl('type-heading-14 truncate shrink-0 max-w-[60%]')}
+            {secondaryContent != null && <span className="type-label-13 truncate min-w-[6rem] flex-1 ml-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{secondaryContent}</span>}
+          </div>
+          {metaBred != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{metaBred}</span>}
+          {value != null && <span className="type-label-13 tabular-nums shrink-0 text-right text-(color:--frv-text-primary)">{value}</span>}
         </div>
-        {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{meta}</span>}
-        {value != null && <span className="type-label-13 tabular-nums shrink-0 text-right text-(color:--frv-text-primary)">{value}</span>}
       </div>
-      {/* Tittelen får hele linje 1 (line-clamp-2, aldri truncate) — value/meta
-          flytter til linje 2, høyrestilt. `overflow-x-auto` er beholdt som
-          sikkerhetsnett; kildens `.rad-fade`/`RadFade`-kant-hint (CSS `:has()`
-          + en liten klientøy som setter data-scroll-start/-end) er droppet
-          for portabilitet, samme begrunnelse som `.tabs-fade` over.
-          Rekkefølge `meta`→`secondary`→`value` (reordered 2026-09-23, was
-          `secondary`→`meta`→`value`): a long fact line could otherwise push a
-          status badge out of view before the row's own scroll hint existed
-          to save it — same priority as the wide container above, where
-          `meta` never shrinks and `secondary` truncates first. */}
+      {/* Narrow container (< @md) — MOBILE ANATOMY ROUND 5, see the section
+          comment above. EXACTLY two lines, no wrap/scroll. Line 2 is a
+          SIBLING row to line 1 (starts on the leading's left edge, never
+          indented under the title). */}
       <div className="flex @md:hidden flex-col gap-1 min-w-0">
-        <div className="min-w-0">{titleEl('type-heading-14 line-clamp-2')}</div>
-        {(secondaryContent != null || meta != null || value != null) && (
-          <div className="flex items-center gap-x-[var(--frv-space-2)] overflow-x-auto whitespace-nowrap min-w-0">
-            {meta != null && <span className="shrink-0 flex items-center gap-[var(--frv-space-2)] text-(color:--frv-text-secondary)">{meta}</span>}
-            {secondaryContent != null && <span className="type-label-13 shrink-0 text-(color:--frv-text-secondary)">{secondaryContent}</span>}
-            {value != null && <span className="type-label-13 tabular-nums shrink-0 ml-auto text-right text-(color:--frv-text-primary)">{value}</span>}
+        <div className="flex items-start gap-[var(--frv-space-3)] min-w-0">
+          {leadingSmall}
+          <div className="min-w-0 flex-1">{titleEl('type-heading-14 truncate block')}</div>
+          {valueOnLine1 && <span className="type-label-13-strong tabular-nums shrink-0 text-right text-(color:--frv-text-primary)">{smalValue}</span>}
+        </div>
+        {harLinje2 && (
+          <div className="flex items-center gap-[var(--frv-space-2)] min-w-0">
+            <div className="flex items-center gap-[var(--frv-space-2)] min-w-0 flex-1">
+              {pilleMerkelapp && listRowMerkelappBadge(pilleMerkelapp, 'pille')}
+              {smalTekst != null && <span className="type-label-13 truncate min-w-0 text-(color:--frv-text-secondary)">{smalTekst}</span>}
+            </div>
+            {meta != null && <span className="shrink-0 flex items-center">{meta}</span>}
+            {smalValue != null && <span className="type-label-13-strong tabular-nums shrink-0 text-right text-(color:--frv-text-primary)">{smalValue}</span>}
           </div>
         )}
       </div>
-      {subtitle != null && <div className="type-copy-13 line-clamp-2 mt-0.5 text-(color:--frv-text-secondary)">{subtitle}</div>}
-    </div>
+      {subtitle != null && <div className="type-copy-14 line-clamp-2 mt-0.5 text-(color:--frv-text-secondary)">{subtitle}</div>}
+    </>
   )
 
   const content = (
     <>
-      <div className="flex items-center gap-[var(--frv-space-3)] min-w-0 flex-1 basis-[min(100%,15rem)]">
-        {leadingNode != null && <div className="shrink-0 flex items-center">{leadingNode}</div>}
+      {/* `basis-15rem`/`11rem` reserves room for the title group so `trailing`
+          wraps to its own line BEFORE badges/value get squeezed invisible.
+          Only rows with `subtitle`/`meta`/`value`/`merkelapper` need the
+          reservation — a lone title (`basis-0`) shouldn't force `trailing`
+          to wrap unnecessarily. Unchanged on desktop (`@md:flex-nowrap`, no
+          wrapping possible there). */}
+      <div className={cx('min-w-0 flex-1', (subtitle != null || meta != null || value != null || merkelapperListe.length > 0) ? 'basis-[min(100%,15rem)] @max-[22.5rem]:basis-[min(100%,11rem)]' : 'basis-0')}>
         {titleBlock}
       </div>
-      {trailing != null && <div className="shrink-0 flex flex-wrap items-center justify-end gap-[var(--frv-space-2)] ml-auto">{trailing}</div>}
+      {/* Round 5: `pil` and `trailing` are separate. `pil` is `hidden` below
+          @md (CSS `gap` skips `display:none` children, so no stray gap) and
+          carries its own `ml-auto` when there's no `trailing`. `trailing`
+          keeps the outer row's `items-center`, so on narrow it centers
+          naturally against the whole two-line stack. */}
+      {trailing != null && (
+        <div className="shrink-0 flex flex-wrap items-center justify-end gap-[var(--frv-space-2)] ml-auto">{trailing}</div>
+      )}
+      {pil && (
+        <ChevronRightIcon size={14} className={cx('hidden @md:block shrink-0 text-(color:--frv-text-disabled)', trailing == null && 'ml-auto')} />
+      )}
     </>
   )
 
   const rowClassName = cx(
-    '@container flex flex-wrap @md:flex-nowrap items-center justify-between gap-x-[var(--frv-space-3)] gap-y-[var(--frv-space-2)] p-[var(--frv-space-3)]',
-    (href || onClick) && 'cursor-pointer transition-colors hover:bg-[var(--frv-gray-alpha-100)]',
+    '@container flex flex-wrap @md:flex-nowrap items-center justify-between gap-x-[var(--frv-space-3)] gap-y-[var(--frv-space-2)] p-[var(--frv-space-3)] max-sm:py-[var(--frv-space-2)]',
+    (href || onClick) && 'min-h-10 cursor-pointer transition-colors hover:bg-[var(--frv-gray-alpha-100)]',
     className,
   )
 
@@ -3275,7 +3589,7 @@ export function Table<T>({
       {minBredde && (
         <p
           className={cx(
-            'sm:hidden type-label-12 flex items-center gap-1 px-3 py-1.5 border-b',
+            'sm:hidden type-label-13 flex items-center gap-1 px-3 py-1.5 border-b',
             isPrint ? 'text-(color:--frv-print-text-muted) border-(color:--frv-print-border)' : 'text-(color:--frv-text-tertiary) border-(color:--frv-border)',
           )}
         >
@@ -3327,7 +3641,7 @@ export function Table<T>({
           <div role={semanticTable ? 'rowgroup' : undefined} className={cx('divide-y', isPrint ? 'divide-[var(--frv-print-border-subtle)]' : 'divide-[var(--frv-border)]')}>
             {rader.length === 0 ? (
               <div role={semanticTable ? 'row' : undefined} className="grid grid-cols-(--table-grid-cols)">
-                <div role={semanticTable ? 'cell' : undefined} className={cx('py-8 text-center type-copy-13 col-span-full', isPrint ? 'text-(color:--frv-print-text-secondary)' : 'text-(color:--frv-text-tertiary)')}>
+                <div role={semanticTable ? 'cell' : undefined} className={cx('py-8 text-center type-copy-14 col-span-full', isPrint ? 'text-(color:--frv-print-text-secondary)' : 'text-(color:--frv-text-tertiary)')}>
                   {tomTekst}
                 </div>
               </div>
@@ -3424,9 +3738,14 @@ export function Dokument({ actions, children, maxBredde = '210mm', aksent, minHe
       style={{ '--dokument-min-h': minHeight } as CSSProperties}
     >
       {actions}
+      {/* Variant A ("Brevark", 2026-09-28 design revision, founder pick over
+          two other sketches — "reads as default Claude design" was the
+          complaint about the previous rounded-card + shadow sheet): a thin
+          `--frv-print-border` on SCREEN, removed at print (`print:border-0`)
+          — flat paper, not a "card". `aksent` (accent top line) is unchanged. */}
       <div
         className={cx(
-          'frv-dokument-ark type-copy-14 doc-sheet max-w-(--dokument-max-w) mx-auto rounded-[14px] shadow-(--frv-print-shadow) px-16 py-14 bg-(color:--frv-print-paper) text-(color:--frv-print-text)',
+          'frv-dokument-ark type-copy-14 doc-sheet max-w-(--dokument-max-w) mx-auto border border-(color:--frv-print-border) print:border-0 px-16 py-14 bg-(color:--frv-print-paper) text-(color:--frv-print-text)',
           aksent && 'border-t-[3px] border-t-(color:--dokument-aksent)',
           sideskiftEtter && 'break-after-page',
           className,
@@ -3442,21 +3761,35 @@ export function Dokument({ actions, children, maxBredde = '210mm', aksent, minHe
   )
 }
 
-export function DokumentHode({ orgNavn, tittel, undertittel, meta }: {
-  /** Org/building name, shown as a small uppercase eyebrow. */
+/** Variant A ("Brevark", 2026-09-28): a letterhead with the sender on the
+ *  left and date/ref/org number on the right, over a strong divider, the
+ *  title below as its own line — replacing the previous uppercase eyebrow +
+ *  large title + meta stacked in one column. */
+export function DokumentHode({ orgNavn, adresse, mottakerLinje, tittel, undertittel, meta, className }: {
+  /** Org/building name, top left of the letterhead. */
   orgNavn: string
+  /** Sender address, shown under `orgNavn` — a physical return address. Omitted: only `orgNavn` shows. */
+  adresse?: string
+  /** Recipient line for a letter to a GROUP, e.g. "To the unit owners of …" — for one named recipient with their own postal address, use `DokumentMottaker` instead. Shown right above the title. */
+  mottakerLinje?: ReactNode
   tittel: string
   undertittel?: ReactNode
-  /** Meta row — date/version/org number. Free content, typically "·"-joined. */
+  /** Right-aligned meta block beside the sender — date/ref/org number. Free content, typically "·"-joined. */
   meta?: ReactNode
+  className?: string
 }) {
   return (
-    <div className="mb-8">
-      <p className="type-label-12-strong uppercase tracking-[0.1em] text-(color:--frv-print-text-muted) m-0">{orgNavn}</p>
-      <h1 className="type-heading-24 text-(color:--frv-print-text-strong) mt-3 mx-0 mb-0">{tittel}</h1>
+    <div className={cx('mb-8', className)}>
+      <div className="flex flex-wrap justify-between gap-x-8 gap-y-3 pb-5 border-b border-(color:--frv-print-text-strong)">
+        <div className="min-w-0">
+          <p className="type-heading-16 text-(color:--frv-print-text-strong) m-0">{orgNavn}</p>
+          {adresse && <p className="type-label-13 text-(color:--frv-print-text-secondary) mt-1 mx-0 mb-0">{adresse}</p>}
+        </div>
+        {meta && <p className="type-label-13 text-(color:--frv-print-text-secondary) text-right m-0">{meta}</p>}
+      </div>
+      {mottakerLinje && <p className="type-copy-14 text-(color:--frv-print-text-strong) mt-6 mx-0 mb-0">{mottakerLinje}</p>}
+      <h1 className={cx('type-heading-20 text-(color:--frv-print-text-strong) mx-0 mb-0', mottakerLinje ? 'mt-5' : 'mt-6')}>{tittel}</h1>
       {undertittel && <p className="type-copy-14 text-(color:--frv-print-text-secondary) mt-1.5 mx-0 mb-0">{undertittel}</p>}
-      {meta && <p className="type-label-12 text-(color:--frv-print-text-muted) mt-2.5 mx-0 mb-0">{meta}</p>}
-      <div className="border-b border-(color:--frv-print-border) mt-6" />
     </div>
   )
 }
@@ -3475,7 +3808,7 @@ export function DokumentMottaker({ navn, adresselinjer, att, className }: {
 }) {
   return (
     <div className={cx('mb-8', className)}>
-      {att && <p className="type-label-12 text-(color:--frv-print-text-muted) mt-0 mx-0 mb-0.5">Att: {att}</p>}
+      {att && <p className="type-label-13 text-(color:--frv-print-text-muted) mt-0 mx-0 mb-0.5">Att: {att}</p>}
       <p className="type-copy-14 text-(color:--frv-print-text-strong) m-0"><strong>{navn}</strong></p>
       {adresselinjer?.map((linje, i) => (
         <p key={i} className="type-copy-14 text-(color:--frv-print-text-secondary) m-0">{linje}</p>
@@ -3489,11 +3822,22 @@ export function DokumentMottaker({ navn, adresselinjer, att, className }: {
  *  section must never be split across a page break. `sideskiftFoer`:
  *  `break-before: page` on the section — force a page break RIGHT BEFORE it
  *  (e.g. to start an appendix on its own page). Same role as `sideskiftEtter`
- *  on `Dokument` above, just "before" and at section level. */
-export function DokumentSeksjon({ tittel, children, sideskiftFoer, className }: { tittel?: string; children: ReactNode; sideskiftFoer?: boolean; className?: string }) {
+ *  on `Dokument` above, just "before" and at section level.
+ *
+ *  `stil` (Variant A, 2026-09-28): `standard` (default, unchanged) is an
+ *  underlined `heading-16` title — for reports and table-heavy sections that
+ *  need a clear break. `brev`: a smaller `heading-14` title with no line,
+ *  tighter spacing — for running letter text (e.g. "Item 2 · title" in a
+ *  meeting notice), where an underline per heading would break up the
+ *  reading flow a letter/protocol actually has. */
+export function DokumentSeksjon({ tittel, children, sideskiftFoer, stil = 'standard', className }: { tittel?: string; children: ReactNode; sideskiftFoer?: boolean; stil?: 'standard' | 'brev'; className?: string }) {
   return (
-    <div className={cx('mb-6 break-inside-avoid', sideskiftFoer && 'break-before-page', className)}>
-      {tittel && <h2 className="type-heading-16 text-(color:--frv-print-text-strong) mt-0 mx-0 mb-3 pb-2 border-b border-(color:--frv-print-border)">{tittel}</h2>}
+    <div className={cx('mb-6 break-inside-avoid', stil === 'brev' && 'mb-7', sideskiftFoer && 'break-before-page', className)}>
+      {tittel && (
+        stil === 'brev'
+          ? <h2 className="type-heading-14 text-(color:--frv-print-text-strong) mt-0 mx-0 mb-1.5">{tittel}</h2>
+          : <h2 className="type-heading-16 text-(color:--frv-print-text-strong) mt-0 mx-0 mb-3 pb-2 border-b border-(color:--frv-print-border)">{tittel}</h2>
+      )}
       {children}
     </div>
   )
@@ -3501,11 +3845,28 @@ export function DokumentSeksjon({ tittel, children, sideskiftFoer, className }: 
 
 export interface DokumentNokkelverdiItem { label: string; verdi: ReactNode }
 
-export function DokumentNokkelverdi({ items, minColBredde = '10rem', className }: {
+/** `visning="rutenett"` (default, unchanged): label-over-value in a
+ *  multi-column grid. `"linjer"` (Variant A): one row per field, label left
+ *  at a fixed width, value right — for a short list of few, differently
+ *  sized fields (meeting data in a notice). */
+export function DokumentNokkelverdi({ items, minColBredde = '10rem', visning = 'rutenett', className }: {
   items: DokumentNokkelverdiItem[]
   minColBredde?: string
+  visning?: 'rutenett' | 'linjer'
   className?: string
 }) {
+  if (visning === 'linjer') {
+    return (
+      <dl className={cx('flex flex-col gap-1', className)}>
+        {items.map((it, i) => (
+          <div key={i} className="flex flex-col sm:flex-row sm:gap-3">
+            <dt className="type-label-14-strong sm:w-28 shrink-0 text-(color:--frv-print-text-strong)">{it.label}</dt>
+            <dd className="type-copy-14 min-w-0 text-(color:--frv-print-text) m-0">{it.verdi}</dd>
+          </div>
+        ))}
+      </dl>
+    )
+  }
   return (
     <div
       className={cx('grid grid-cols-(--dokument-nv-cols) gap-x-6 gap-y-3', className)}
@@ -3531,21 +3892,40 @@ export function DokumentTabell<T>(props: Omit<TableProps<T>, 'variant'>) {
  *  recommendation, etc. — content that should stand apart from running text
  *  without being a whole `DokumentSeksjon`. `break-inside: avoid`, same
  *  reason as the section: must never be split across a page break. */
-export function DokumentMerknad({ tittel, children, tone = 'default', className }: {
+export function DokumentMerknad({ tittel, children, tone = 'default', fremhevet, margstrek, className }: {
   /** Omit to render only `children` — e.g. a payment-info box with no
    *  heading of its own (today's pattern in invoice/dunning letters). */
   tittel?: string
   children: ReactNode
-  /** `viktig` adds a left accent border (`--frv-print-accent`, decor only —
-   *  see the token's warning comment) for content that should stand out more
-   *  than a plain payment-info box, e.g. a fund recommendation. `advarsel`
-   *  switches the WHOLE box to `--frv-print-status-danger-*` (bg/border/text)
-   *  for content that needs immediate action, e.g. urgent findings in a
-   *  condition report — not just something that should stand out a little. */
-  tone?: 'default' | 'viktig' | 'advarsel'
+  /** `warning` switches the WHOLE box to `--frv-print-status-danger-*`
+   *  (bg/border/text) for content that needs immediate action, e.g. urgent
+   *  findings in a condition report. */
+  tone?: 'default' | 'warning'
+  /** Left accent border (`--frv-print-accent`, decor only — see the token's
+   *  warning comment) for content that should stand out more than a plain
+   *  payment-info box, e.g. a fund recommendation, without switching the
+   *  whole box to a tone. Own prop, not a tone value: priority/emphasis is
+   *  not a colour tone. */
+  fremhevet?: boolean
+  /** Variant A (2026-09-28): a motion-to-resolve rendered as a plain black
+   *  margin line instead of a bounded box — the way a meeting notice
+   *  actually renders a draft resolution (no background, no border, no
+   *  rounding). A separate switch rather than repurposing `fremhevet`:
+   *  `fremhevet` keeps its boxed look elsewhere (a fund recommendation —
+   *  content that needs a bounded box, not running text). `tone`/`fremhevet`
+   *  have no effect when this is set. */
+  margstrek?: boolean
   className?: string
 }) {
-  const advarsel = tone === 'advarsel'
+  if (margstrek) {
+    return (
+      <div className={cx('type-copy-14 border-l-2 border-l-(color:--frv-print-text-strong) pl-4 break-inside-avoid', className)}>
+        {tittel && <p className="type-label-13-strong text-(color:--frv-print-text-strong) mt-0 mx-0 mb-1">{tittel}</p>}
+        <div className="text-(color:--frv-print-text-strong)">{children}</div>
+      </div>
+    )
+  }
+  const advarsel = tone === 'warning'
   return (
     <div
       className={cx(
@@ -3553,7 +3933,7 @@ export function DokumentMerknad({ tittel, children, tone = 'default', className 
         advarsel
           ? 'bg-(color:--frv-print-status-danger-bg) border-(color:--frv-print-status-danger-border) text-(color:--frv-print-status-danger-text)'
           : 'bg-(color:--frv-print-surface) border-(color:--frv-print-border) text-(color:--frv-print-text)',
-        tone === 'viktig' && 'border-l-[3px] border-l-(color:--frv-print-accent)',
+        fremhevet && 'border-l-[3px] border-l-(color:--frv-print-accent)',
         className,
       )}
     >
@@ -3609,7 +3989,7 @@ export function DokumentSignatur({ felter = ['Sted og dato', 'Underskrift'], cla
       {felter.map((felt, i) => (
         <div key={i} className="border-t border-t-(color:--frv-print-text-muted) pt-2">
           <div className="h-9" aria-hidden="true" />
-          <p className="type-label-12 text-(color:--frv-print-text-secondary) m-0">{felt}</p>
+          <p className="type-label-13 text-(color:--frv-print-text-secondary) m-0">{felt}</p>
         </div>
       ))}
     </div>
@@ -3624,8 +4004,8 @@ export function DokumentFot({ orgNavn, generertDato, className }: {
 }) {
   return (
     <div className={cx('flex items-center justify-between flex-wrap gap-2 mt-10 pt-4 border-t border-(color:--frv-print-border)', className)}>
-      <span className="type-label-12 text-(color:--frv-print-text-faint)">{orgNavn}</span>
-      <span className="type-label-12 text-(color:--frv-print-text-faint)">Generated by Frivio {generertDato}</span>
+      <span className="type-label-13 text-(color:--frv-print-text-faint)">{orgNavn}</span>
+      <span className="type-label-13 text-(color:--frv-print-text-faint)">Generated by Frivio {generertDato}</span>
     </div>
   )
 }
@@ -3650,6 +4030,26 @@ export function Field({ label, mono = false, valueStyle, className, children }: 
           label, so "Email" looks the same in read and edit mode (typography hierarchy, 2026-09-13). */}
       <span className="type-label-13-strong flex items-center gap-1 text-(color:--frv-text-primary)">{label}</span>
       <div className={cx(mono ? 'type-label-14-mono' : 'type-label-14', 'text-(color:--frv-text-primary)')} style={valueStyle}>{children}</div>
+    </div>
+  )
+}
+
+/** FieldRad — row/grid for several `Field`s side by side. Owns the column gap
+ *  (32px) and row gap (16px) so no call site picks its own (2026-09-28: a
+ *  first pass added a wider gap to two call sites but missed the rest, which
+ *  stayed on the previous, tighter gap — the air now lives in the primitive
+ *  instead). `kolonner` omitted: fields flow (`flex-wrap`) at their natural
+ *  width. `kolonner={2}`: fixed two-column grid. `stablePaMobil`: one column
+ *  below 640px (for fields with long values, e.g. an email address). */
+export function FieldRad({ kolonner, stablePaMobil = false, className, children }: {
+  kolonner?: 2
+  stablePaMobil?: boolean
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <div className={cx('gap-x-(--frv-space-8) gap-y-(--frv-space-4)', kolonner === 2 ? cx('grid', stablePaMobil ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2') : 'flex flex-wrap', className)}>
+      {children}
     </div>
   )
 }
@@ -3707,26 +4107,50 @@ function paginationPageList(side: number, antall: number): (number | 'ellipse')[
  *  `shape="square"`; the current page is `variant="secondary"` +
  *  `aria-current="page"`. More than 7 pages: always first, last, current and
  *  its neighbours, the rest collapsed into "…" per gap. Renders nothing at
- *  0-1 pages. Prop names (`side`, `antall`) mirror the source exactly. */
+ *  0-1 pages. Prop names (`side`, `antall`) mirror the source exactly.
+ *
+ *  Mobile row (2026-09-28: "with many pages on mobile everything must be on
+ *  one line") — APPLIES TO EVERY VARIANT, not just the many-pages case:
+ *  below `sm`, "‹ 3 / 12 ›" replaces the full page-number row (two
+ *  `shape="square"` icon buttons + one tabular-nums text anchor), NEVER the
+ *  number row. This is two entirely separate, complete markup trees swapped
+ *  by CSS (same pattern as `Table`'s own mobile row) — not the forbidden
+ *  "hide button text below a breakpoint" pattern, since the full row simply
+ *  can't fit on one line under ~360px content width either way. */
 export function Pagination({ side, antall, onChange, ariaLabel = 'Page navigation', className }: PaginationProps) {
   if (antall <= 1) return null
   const pages = paginationPageList(side, antall)
 
   return (
-    <nav aria-label={ariaLabel} className={cx('flex flex-wrap items-center gap-[var(--frv-space-1)]', className)}>
-      <Button variant="tertiary" size="sm" aria-label="Previous page" disabled={side <= 1} onClick={() => onChange(side - 1)}>
-        <ChevronLeftIcon size={14} /> Previous
-      </Button>
-      {pages.map((s, i) => s === 'ellipse' ? (
-        <span key={`ellipse-${i}`} aria-hidden="true" className="type-label-13 px-1" style={{ color: 'var(--frv-text-tertiary)' }}>…</span>
-      ) : (
-        <Button key={s} variant={s === side ? 'secondary' : 'tertiary'} size="sm" shape="square" aria-label={`Page ${s}`} aria-current={s === side ? 'page' : undefined} onClick={() => onChange(s)}>
-          {s}
+    <nav aria-label={ariaLabel} className={cx('flex items-center gap-[var(--frv-space-1)]', className)}>
+      {/* Mobile — "‹ 3 / 12 ›", always ONE line. */}
+      <div className="flex sm:hidden items-center gap-[var(--frv-space-1)]">
+        <Button variant="tertiary" size="sm" shape="square" aria-label="Previous page" disabled={side <= 1} onClick={() => onChange(side - 1)}>
+          <ChevronLeftIcon size={14} />
         </Button>
-      ))}
-      <Button variant="tertiary" size="sm" aria-label="Next page" disabled={side >= antall} onClick={() => onChange(side + 1)}>
-        Next <ChevronRightIcon size={14} />
-      </Button>
+        <span className="type-label-13 tabular-nums px-1 text-(color:--frv-text-secondary)">{side} / {antall}</span>
+        <Button variant="tertiary" size="sm" shape="square" aria-label="Next page" disabled={side >= antall} onClick={() => onChange(side + 1)}>
+          <ChevronRightIcon size={14} />
+        </Button>
+      </div>
+      {/* Desktop — full page-number row (unchanged), `flex-wrap` kept as a last
+          resort against overflow if the window is stretched narrow without
+          actually being below `sm`. */}
+      <div className="hidden sm:flex flex-wrap items-center gap-[var(--frv-space-1)]">
+        <Button variant="tertiary" size="sm" aria-label="Previous page" disabled={side <= 1} onClick={() => onChange(side - 1)}>
+          <ChevronLeftIcon size={14} /> Previous
+        </Button>
+        {pages.map((s, i) => s === 'ellipse' ? (
+          <span key={`ellipse-${i}`} aria-hidden="true" className="type-label-13 px-1" style={{ color: 'var(--frv-text-tertiary)' }}>…</span>
+        ) : (
+          <Button key={s} variant={s === side ? 'secondary' : 'tertiary'} size="sm" shape="square" aria-label={`Page ${s}`} aria-current={s === side ? 'page' : undefined} onClick={() => onChange(s)}>
+            {s}
+          </Button>
+        ))}
+        <Button variant="tertiary" size="sm" aria-label="Next page" disabled={side >= antall} onClick={() => onChange(side + 1)}>
+          Next <ChevronRightIcon size={14} />
+        </Button>
+      </div>
     </nav>
   )
 }
@@ -3794,26 +4218,35 @@ export function LoadBar({ value, max, tone = 'default', label, verdi, className 
  *  `ariaLabel` is required: `role="progressbar"` with no accessible name
  *  announces "progressbar, 75%" without saying 75% of WHAT. Prop names
  *  (`verdi`, `hoyde`) mirror the source exactly. */
-export function Progress({ verdi, hoyde = 6, tone = 'accent', className, ariaLabel }: {
+export function Progress({ verdi, hoyde = 6, tone = 'accent', visVerdi = false, className, ariaLabel }: {
   /** 0-100. Clamped to the range. */
   verdi: number
   /** Track height in px. Default 6. */
   hoyde?: number
   tone?: LoadBarTone
+  /** Shows the percentage (tabular-nums) to the right of the track (2026-09-26). Default false — unchanged appearance for existing call sites that already print the number themselves. */
+  visVerdi?: boolean
   className?: string
   /** Accessible name — WHAT this is progress IN. Required. */
   ariaLabel: string
 }) {
   const share = Math.min(100, Math.max(0, verdi))
-  return (
+  const track = (
     <div
-      className={cx('rounded-full overflow-hidden bg-(color:--frv-gray-alpha-200) h-(--progress-h)', className)}
+      className={cx('rounded-full overflow-hidden h-(--progress-h) bg-(color:--frv-gray-alpha-200)', visVerdi ? 'flex-1' : className)}
       style={{ '--progress-h': `${hoyde}px` } as CSSProperties}
       role="progressbar" aria-label={ariaLabel} aria-valuenow={Math.round(share)} aria-valuemin={0} aria-valuemax={100}>
       <div
         className="h-full rounded-full transition-[width] duration-300 w-(--progress-w) bg-(color:--progress-color)"
         style={{ '--progress-w': `${share}%`, '--progress-color': LOADBAR_TONE_COLOR[tone] } as CSSProperties}
       />
+    </div>
+  )
+  if (!visVerdi) return track
+  return (
+    <div className={cx('flex items-center gap-3', className)}>
+      {track}
+      <span className="type-label-13 tabular-nums shrink-0 text-(color:--frv-text-tertiary)">{Math.round(share)}%</span>
     </div>
   )
 }
@@ -3891,7 +4324,7 @@ export function StepCard({ icon: Icon, steg, title, description, tone = 'neutral
             the card's full width in a wide row — lines over ~90 characters are
             harder to read than the ~65-character readability standard for
             running text. */}
-        <p className="type-copy-13 mt-1 max-w-[65ch] text-(color:--frv-text-tertiary)">{description}</p>
+        <p className="type-copy-14 mt-1 max-w-[65ch] text-(color:--frv-text-tertiary)">{description}</p>
       </div>
     </div>
   )
@@ -4244,19 +4677,19 @@ export function PillTabs({
           first render), so the real pill is measured. Clipped to zero width
           so it can't stretch the nearest scroll container sideways. */}
       <div ref={measureRef} aria-hidden className="absolute left-0 top-0 flex items-center invisible pointer-events-none w-0 overflow-hidden whitespace-nowrap [&>*]:shrink-0">
-        {label && <span className="type-label-12 mr-1">{label}</span>}
+        {label && <span className="type-label-13 mr-1">{label}</span>}
         {tabs.map(t => <span key={t.key} className={pillClass(false)}>{pillLabel(t.label, false)}</span>)}
         <OverflowMenu items={[{ label: 'measure', onClick: () => {} }]} />
       </div>
 
-      {label && <span className="type-label-12 mr-1 shrink-0" style={{ color: 'var(--frv-text-tertiary)' }}>{label}</span>}
+      {label && <span className="type-label-13 mr-1 shrink-0" style={{ color: 'var(--frv-text-tertiary)' }}>{label}</span>}
       <div className={trackClass}>{shown.map(renderPill)}</div>
       {hidden.length > 0 && (
         <OverflowMenu
           ariaLabel={`${hidden.length} more`}
           // Shows the COUNT of hidden tabs ("+2") instead of a bare ellipsis —
           // an ellipsis alone doesn't say how MUCH is hidden.
-          triggerContent={<span className="type-label-12 tabular-nums" aria-hidden>+{hidden.length}</span>}
+          triggerContent={<span className="type-label-13 tabular-nums" aria-hidden>+{hidden.length}</span>}
           items={hidden.map(t => ({ label: t.label, onClick: () => { if (t.href) window.location.href = t.href; else onSelect?.(t.key) } }))}
         />
       )}
@@ -4283,28 +4716,35 @@ export function PillTabs({
    was rebuilt into a single trigger + anchored panel with its OWN year row
    (see that section below) and no longer uses `YearSelector` at all — the
    contract here is back to plain `number`, unchanged for ordinary callers. */
-export function YearSelector({ year, onChange, max, className }: {
+// 2026-09-28: `sm` added — the default (`md`) dominated next to other `sm`
+// controls in a header row. `sm` uses the shared `toolbar-kontroll-h-sm`
+// dimension (44px touch / 32px desktop) and smaller year text/arrows; `md`
+// (unchanged) is 44px touch / 40px desktop — same frame Button/Dropdown md use.
+export function YearSelector({ year, onChange, max, size = 'md', className }: {
   year: number
   onChange: (year: number) => void
   /** Disable the "next year" button at this value (e.g. the current year, for history that doesn't exist yet). No limit: always possible to go forward. */
   max?: number
-  /** Extra classes on the outer frame — e.g. to override the height to match a `Toolbar`'s 40px contract (`lg:h-10`) when used inside one. */
+  size?: 'sm' | 'md'
   className?: string
 }) {
   const atMax = max !== undefined && year >= max
-  const arrowClass = 'inline-flex items-center justify-center shrink-0 rounded-[var(--frv-radius-sm)] transition-colors w-11 h-11 lg:w-8 lg:h-8 text-[var(--frv-text-secondary)] hover:bg-[var(--frv-gray-alpha-100)] hover:text-[var(--frv-text-primary)] disabled:pointer-events-none'
+  const arrowDim = size === 'sm' ? 'w-11 h-11 lg:w-8 lg:h-8' : 'w-11 h-11 lg:w-10 lg:h-10'
+  const arrowIcon = size === 'sm' ? 12 : 14
+  const arrowClass = cx('inline-flex items-center justify-center shrink-0 rounded-[var(--frv-radius-sm)] transition-colors text-[var(--frv-text-secondary)] hover:bg-[var(--frv-gray-alpha-100)] hover:text-[var(--frv-text-primary)] disabled:pointer-events-none', arrowDim)
 
   return (
     <div
       className={cx(
-        'inline-flex items-center h-11 lg:h-8 rounded-[var(--frv-radius-sm)] bg-[var(--frv-surface)] border border-[var(--frv-gray-alpha-400)] shrink-0',
+        'inline-flex items-center rounded-[var(--frv-radius-sm)] bg-[var(--frv-surface)] border border-[var(--frv-gray-alpha-400)] shrink-0',
+        size === 'sm' ? 'h-11 lg:h-8' : 'h-11 lg:h-10',
         className,
       )}
     >
       <button type="button" onClick={() => onChange(year - 1)} aria-label="Previous year" className={arrowClass}>
-        <ChevronLeftIcon size={14} />
+        <ChevronLeftIcon size={arrowIcon} />
       </button>
-      <span className="type-label-14 tabular-nums text-center px-1 text-(color:--frv-text-primary)">
+      <span className={cx('tabular-nums text-center px-1 text-(color:--frv-text-primary)', size === 'sm' ? 'type-label-13' : 'type-label-14')}>
         {year}
       </span>
       <button
@@ -4314,7 +4754,7 @@ export function YearSelector({ year, onChange, max, className }: {
         aria-label="Next year"
         className={cx(arrowClass, atMax && 'opacity-40')}
       >
-        <ChevronRightIcon size={14} />
+        <ChevronRightIcon size={arrowIcon} />
       </button>
     </div>
   )
@@ -4623,13 +5063,13 @@ export function SectionHeader({ title, eyebrow, description, icon: Icon, action,
   return (
     <div className={cx('flex flex-wrap items-center justify-between gap-2', className)}>
       <div className="min-w-0">
-        {eyebrow && <p className="type-label-12 uppercase tracking-wide mb-1" style={{ color: 'var(--frv-text-tertiary)' }}>{eyebrow}</p>}
+        {eyebrow && <p className="type-overline mb-1" style={{ color: 'var(--frv-text-tertiary)' }}>{eyebrow}</p>}
         <div className="flex items-center gap-2 min-w-0">
           {Icon && <Icon size={16} className="shrink-0" style={{ color: 'var(--frv-accent)' }} />}
           <h2 className="type-heading-16" style={{ color: 'var(--frv-text-primary)' }}>{title}</h2>
         </div>
         {/* max-w-[65ch] — same readability rule as StepCard's description. */}
-        {description && <p className="type-copy-13 mt-1 max-w-[65ch]" style={{ color: 'var(--frv-text-secondary)' }}>{description}</p>}
+        {description && <p className="type-copy-14 mt-1 max-w-[65ch]" style={{ color: 'var(--frv-text-secondary)' }}>{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
@@ -4957,8 +5397,8 @@ export function SidePanel({ open, onClose, title, eyebrow, description, children
         <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-(color:--frv-border)">
           <div className="min-w-0">
             {eyebrow && <p className="type-overline mb-1 text-(color:--frv-text-tertiary)">{eyebrow}</p>}
-            <h2 id={titleId} className="type-heading-16 text-(color:--frv-text-primary)">{title}</h2>
-            {description && <p className="type-copy-13 mt-1 max-w-[65ch] text-(color:--frv-text-secondary)">{description}</p>}
+            <h2 id={titleId} className="type-heading-20 text-(color:--frv-text-primary)">{title}</h2>
+            {description && <p className="type-copy-14 mt-1 max-w-[65ch] text-(color:--frv-text-secondary)">{description}</p>}
           </div>
           <button onClick={onClose} aria-label={lukkeetikett} className="shrink-0 -mr-2 -mt-2 w-11 h-11 flex items-center justify-center rounded-[var(--frv-radius-sm)] transition-colors hover:bg-[var(--frv-surface-2)] text-(color:--frv-text-tertiary)">
             <CloseIcon size={14} />
@@ -5105,7 +5545,7 @@ export function OverflowMenu({ items, sections, ariaLabel = 'More actions', trig
           {groups.map((section, si) => (
             <div key={si}>
               {si > 0 && <div role="separator" className="h-px my-(--frv-space-1) bg-(color:--frv-border)" />}
-              {section.title && <p className="type-label-12 px-3 pt-1.5 pb-1 text-(color:--frv-text-secondary)">{section.title}</p>}
+              {section.title && <p className="type-label-13 px-3 pt-1.5 pb-1 text-(color:--frv-text-secondary)">{section.title}</p>}
               {section.items.map(item => {
                 const disabled = !!item.disabled
                 const selectIndex = disabled ? -1 : allSelectable.indexOf(item)
@@ -5165,12 +5605,20 @@ interface CollapsibleSectionProps {
   badge?: string | number
   /** `default`: section heading, chevron on the left (−90°→0°), muted title,
    *  a divider running out to the right — for hiding a group of rows/cards
-   *  under a heading ("Older checks", "History"). `ghost` (2026-09-12): a
-   *  tight row for a list of Q&A-style items — no border/card, only a
-   *  divider UNDER the row, title in primary color, chevron on the right
-   *  (0°→180°). Several in a row read as one list; content is text, a card
-   *  inside a ghost row is the wrong variant. */
-  variant?: 'default' | 'ghost'
+   *  under a heading ("Older checks", "History"), STACKED with other
+   *  sections — no frame of its own, since the dividers alone separate rows.
+   *  `kort` (2026-09-28): the SAME head as `default`, but framed like `Card`
+   *  (`--frv-shadow-card` + surface, radius-md, p-4) — for a section that
+   *  stands ALONE, with no other `CollapsibleSection` beside it and no
+   *  already-framing `Card` around it. `default`'s own prop default is
+   *  deliberately unchanged (some call sites are nested inside an
+   *  already-framed detail, where a new frame would double the border) —
+   *  set `kort` explicitly on a call site that actually stands alone.
+   *  `ghost` (2026-09-12): a tight row for a list of Q&A-style items — no
+   *  border/card, only a divider UNDER the row, title in primary color,
+   *  chevron on the right (0°→180°). Several in a row read as one list;
+   *  content is text, a card inside a ghost row is the wrong variant. */
+  variant?: 'default' | 'ghost' | 'kort'
   children: ReactNode
 }
 
@@ -5187,16 +5635,17 @@ const COLLAPSIBLE_CHEVRON_MOTION = 'shrink-0 motion-safe:transition-transform mo
 export function CollapsibleSection({ title, storageKey, defaultOpen = true, badge, variant = 'default', children }: CollapsibleSectionProps) {
   const { open, toggle } = useCollapsible(`section:${storageKey}`, defaultOpen)
   const ghost = variant === 'ghost'
+  const kort = variant === 'kort'
 
   return (
-    <div className={ghost ? 'border-b border-[var(--frv-border)]' : undefined}>
+    <div className={cx(ghost && 'border-b border-[var(--frv-border)]', kort && 'rounded-[var(--frv-radius-md)] shadow-(--frv-shadow-card) bg-(color:--frv-surface) p-4')}>
       <button
         type="button"
         onClick={toggle}
         aria-expanded={open}
         className={cx(
           'w-[calc(100%+0.75rem)] -mx-1.5 px-1.5 min-h-11 lg:min-h-0 flex items-center text-left rounded-[var(--frv-radius-sm)] hover:bg-[var(--frv-gray-alpha-100)] transition-colors group',
-          ghost ? 'gap-3 py-2.5' : 'gap-2.5 py-1.5 mb-3',
+          ghost ? 'gap-3 py-3' : 'gap-2.5 py-1.5',
         )}
       >
         {!ghost && (
@@ -5210,7 +5659,7 @@ export function CollapsibleSection({ title, storageKey, defaultOpen = true, badg
         >
           {title}
         </span>
-        {badge !== undefined && badge !== '' && <Badge variant="gray" contrast="low" size="sm">{badge}</Badge>}
+        {badge !== undefined && badge !== '' && <Badge variant="gray" size="sm">{badge}</Badge>}
         {ghost ? (
           <ChevronDownIcon size={16} className={cx(COLLAPSIBLE_CHEVRON_MOTION, 'text-[var(--frv-text-tertiary)] group-hover:text-[var(--frv-text-secondary)]', open ? 'rotate-180' : 'rotate-0')} />
         ) : (
@@ -5220,9 +5669,11 @@ export function CollapsibleSection({ title, storageKey, defaultOpen = true, badg
 
       <div className="collapsible-rows" data-open={open}>
         <div className="collapsible-inner">
-          {/* The ghost content's bottom air lives on a child, not on
-              `.collapsible-inner` — padding there would stay as height while the row is 0fr. */}
-          {ghost ? <div className="pb-3">{children}</div> : children}
+          {/* The gap between head and content lives on a child, not on
+              `.collapsible-inner` (padding there would stay as height while
+              the row is 0fr) and not as `mb-3` on the head — a head `mb-3`
+              stayed even while CLOSED (2026-09-28 fix). */}
+          {ghost ? <div className="pb-3">{children}</div> : <div className="pt-3">{children}</div>}
         </div>
       </div>
     </div>
@@ -5715,7 +6166,7 @@ export function BygningsdelKort({
                 meta={t.status ? <Badge variant="default">{t.status}</Badge> : undefined}
                 value={t.dueDate ? `Due ${t.dueDate}` : undefined}
                 href={t.href}
-                trailing={<ChevronRightIcon size={14} style={{ color: 'var(--frv-text-quaternary)' }} />}
+                trailing={<ChevronRightIcon size={14} style={{ color: 'var(--frv-text-disabled)' }} />}
               />
             )))}
 
@@ -5727,7 +6178,7 @@ export function BygningsdelKort({
                   secondary={[h.utfortAv ? `By ${h.utfortAv}` : null, h.materiale ? `Material: ${h.materiale}` : null].filter((x): x is string => x != null)}
                   value={h.kunAar ? h.dato.slice(0, 4) : h.dato}
                   href={h.href ?? undefined}
-                  trailing={h.href ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-quaternary)' }} /> : undefined}
+                  trailing={h.href ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-disabled)' }} /> : undefined}
                 />
               ))) : <span className="type-copy-13" style={{ color: 'var(--frv-text-tertiary)' }}>No history on record yet.</span>
             )}
@@ -5756,7 +6207,7 @@ export function BygningsdelKort({
                       title={f.title}
                       secondary={[f.supplierName, f.utfortDato].filter(Boolean)}
                       href={f.docUrl ?? undefined}
-                      trailing={f.docUrl ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-quaternary)' }} /> : undefined}
+                      trailing={f.docUrl ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-disabled)' }} /> : undefined}
                     />
                   )))
                   : <span className="type-copy-13" style={{ color: 'var(--frv-text-tertiary)' }}>No FDV documents for this part.</span>}
@@ -5825,7 +6276,7 @@ export function BygningsdelKort({
                   secondary={secondary}
                   value={h.kunAar ? h.dato.slice(0, 4) : h.dato}
                   href={h.href ?? undefined}
-                  trailing={h.href ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-quaternary)' }} /> : undefined}
+                  trailing={h.href ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-disabled)' }} /> : undefined}
                 />
               )
             }))}
@@ -5856,7 +6307,7 @@ export function BygningsdelKort({
                 title={f.title}
                 secondary={[f.supplierName, f.utfortDato].filter(Boolean)}
                 href={f.docUrl ?? undefined}
-                trailing={f.docUrl ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-quaternary)' }} /> : undefined}
+                trailing={f.docUrl ? <ChevronRightIcon size={14} style={{ color: 'var(--frv-text-disabled)' }} /> : undefined}
               />
             )))}
           </div>
@@ -5952,7 +6403,8 @@ export function Begrep({ term, explanation, children, className }: BegrepProps) 
         role="tooltip"
         panelRef={el => { panelRef.current = el }}
         onAnchorOutOfView={close}
-        className="type-label-13 pop-in w-max max-w-[280px] bg-(color:--frv-text-primary) text-(color:--frv-bg) rounded-(--frv-radius-sm) shadow-(--frv-shadow-tooltip) py-(--frv-space-1) px-(--frv-space-2)"
+        // Padding: --frv-floating-pad-y/-x (2026-09-28 ruling), same as Tooltip above.
+        className="type-label-13 pop-in w-max max-w-[280px] bg-(color:--frv-text-primary) text-(color:--frv-bg) rounded-(--frv-radius-sm) shadow-(--frv-shadow-tooltip) py-(--frv-floating-pad-y) px-(--frv-floating-pad-x)"
       >
         <strong className="font-medium">{term}</strong> · {explanation}
       </FloatingLayer>
@@ -6003,6 +6455,90 @@ export function ActionBar({ children, label, className }: { children: ReactNode;
   )
 }
 
+/** ToolbarMer — the "…" overflow trigger behind a narrow `Toolbar`'s `sok`/
+ *  `meny` (2026-09-28: "what doesn't fit on one line must go behind a '…'
+ *  button — search first, then any secondary actions"). A `Button
+ *  shape="square"` trigger + a small floating panel (same `useFloatingPosition`
+ *  + `createPortal` mechanism as `Dropdown`/`OverflowMenu` above — this kit
+ *  has no shared `Popover`, see the header note). `aktiv` draws a dot on the
+ *  trigger so a hidden search term/filter is never forgotten. Content must be
+ *  search, buttons, links or a native `<select>` — a floating dropdown INSIDE
+ *  this panel would close the outer layer on its first click in its own
+ *  panel. Only meant for `Toolbar` — not otherwise exported for reuse. */
+export function ToolbarMer({ sok, meny, aktiv = false, className }: {
+  sok?: ReactNode
+  meny?: ReactNode
+  /** Dot on "…" when something behind it is in use (a search term, a selected filter). */
+  aktiv?: boolean
+  className?: string
+}) {
+  const montert = useMontert()
+  const [open, setOpen] = useState(false)
+  const knappRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const navn = sok && meny ? 'Search and more options' : sok ? 'Search' : 'More options'
+
+  const pos = useFloatingPosition(knappRef, {
+    open, panelRef, side: 'bottom', align: 'end', offset: 6,
+    onAnchorOutOfView: () => setOpen(false),
+  })
+
+  useKlikkUtenfor([knappRef, panelRef], () => setOpen(false), open)
+
+  useEffect(() => {
+    if (!open) return
+    const t = setTimeout(() => {
+      panelRef.current?.querySelector<HTMLElement>('input:not([type=hidden]), select, button, a[href]')?.focus()
+    }, 0)
+    return () => clearTimeout(t)
+  }, [open])
+
+  return (
+    <div className={cx('relative inline-flex shrink-0', className)}>
+      <Button
+        ref={knappRef}
+        variant="secondary"
+        size="md"
+        shape="square"
+        aria-label={aktiv ? `${navn} (in use)` : navn}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen(o => !o)}
+      >
+        <span className="relative inline-flex">
+          <MoreIcon size={18} />
+          {aktiv && <span aria-hidden className="absolute -top-0.5 -right-1 w-1.5 h-1.5 rounded-(--frv-radius-full) bg-(color:--frv-accent)" />}
+        </span>
+      </Button>
+      {open && montert && createPortal(
+        <div
+          ref={el => { panelRef.current = el }}
+          role="dialog"
+          aria-label={navn}
+          className={cx(
+            'fixed z-50 w-[288px] rounded-[var(--frv-radius-md)] overflow-hidden bg-(color:--frv-surface) shadow-(--frv-shadow-menu) top-(--toolbarmer-top) left-(--toolbarmer-left)',
+            pos ? 'visible' : 'invisible',
+          )}
+          style={{ '--toolbarmer-top': `${pos?.top ?? 0}px`, '--toolbarmer-left': `${pos?.left ?? 0}px` } as CSSProperties}
+        >
+          <div className="flex flex-col gap-(--frv-space-2) p-(--frv-space-2)">
+            {sok && <div className="[&>*]:w-full">{sok}</div>}
+            {meny && (
+              <div
+                className="flex flex-col gap-(--frv-space-2) [&>*]:w-full [&>*]:max-w-none [&>*]:justify-start"
+                onClick={e => { if ((e.target as HTMLElement).closest('button, a[href]')) setOpen(false) }}
+              >
+                {meny}
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </div>
+  )
+}
+
 /** Toolbar — one toolbar over a list or table, with ONE height. Found
  *  `SearchInput` (40px), `PillTabs` (32px) and buttons (40px) set side by
  *  side with page-specific flex classes, so the heights and mobile wrap
@@ -6010,12 +6546,60 @@ export function ActionBar({ children, label, className }: { children: ReactNode;
  *  desktop (`SearchInput`, `Button` md, a field-style `Dropdown`, `PillTabs
  *  size="md"`), `end` sits on the right. Under 640px the row wraps cleanly:
  *  `children` keep their own wrap, `end` drops to its own line via
- *  `ml-auto`. */
-export function Toolbar({ children, end, className }: { children?: ReactNode; end?: ReactNode; className?: string }) {
+ *  `ml-auto`.
+ *
+ *  `enLinje` (2026-09-28: "everything MUST be on one line on mobile") —
+ *  OPT-IN, not a new default: plain wrapping (above) is the deliberate,
+ *  founder-accepted answer for a Toolbar with free-text search. `enLinje` is
+ *  for the OTHER, narrower pattern — one due-date filter next to ONE type/
+ *  building dropdown — where the content is narrow enough that SHRINKING
+ *  (not wrapping) is the right answer: `flex-nowrap` forces `children` and
+ *  `end` onto ONE row and lets them shrink toward each other instead of
+ *  breaking to their own lines.
+ *
+ *  `sok`/`meny` — OVERFLOW ("…") ON NARROW WIDTH (2026-09-28): when either is
+ *  set, Toolbar becomes a `@container` and switches behavior on its OWN
+ *  width (not the viewport — the same toolbar in a side panel behaves like
+ *  it would on mobile): at `@xl` (≥36rem) everything sits on one row — search
+ *  first, then `children`, then `meny`/`end` right-aligned. Below `@xl`: ONE
+ *  line, never wrapped — `children`/`end` shrink (same contract as
+ *  `enLinje`), and `sok`/`meny` move behind a `ToolbarMer` ("…", floating
+ *  panel). Without `children`, search stays inline (it IS the row then), and
+ *  only `meny` goes behind "…". `merAktiv` puts a dot on "…" so a hidden
+ *  search term/filter isn't forgotten. */
+export function Toolbar({ children, end, sok, meny, merAktiv = false, enLinje = false, className }: {
+  children?: ReactNode
+  end?: ReactNode
+  /** Search field. Inline on a wide surface; behind "…" below 36rem when the row also has filters. */
+  sok?: ReactNode
+  /** Actions/secondary filters. Inline right-aligned on a wide surface; behind "…" below 36rem. */
+  meny?: ReactNode
+  /** Dot on "…" when something hidden behind it is in use. */
+  merAktiv?: boolean
+  enLinje?: boolean
+  className?: string
+}) {
+  if (sok || meny) {
+    const harFiltre = Children.toArray(children).length > 0
+    const sokBakMer = !!sok && harFiltre
+    return (
+      <div data-ui="toolbar" className={cx('@container mb-4', className)}>
+        <div className="flex items-center gap-2 flex-nowrap @xl:flex-wrap min-w-0">
+          {sok && <div className={cx('min-w-0', sokBakMer ? '@max-xl:hidden @xl:w-56 @xl:shrink-0' : 'flex-1 @xl:min-w-50')}>{sok}</div>}
+          {harFiltre && (
+            <div className="flex items-center gap-2 min-w-0 flex-auto flex-nowrap @xl:flex-1 @xl:flex-wrap @max-xl:overflow-x-auto @max-xl:[scrollbar-width:none] @max-xl:[&::-webkit-scrollbar]:hidden">{children}</div>
+          )}
+          {meny && <div className="@max-xl:hidden flex items-center gap-2 ml-auto flex-wrap min-w-0">{meny}</div>}
+          {end && <div className={cx('flex items-center gap-2 min-w-0 flex-nowrap', !meny && 'ml-auto')}>{end}</div>}
+          {(meny || sokBakMer) && <ToolbarMer className="@xl:hidden ml-auto" sok={sokBakMer ? sok : undefined} meny={meny} aktiv={merAktiv} />}
+        </div>
+      </div>
+    )
+  }
   return (
-    <div data-ui="toolbar" className={cx('flex flex-wrap items-center gap-2 mb-4', className)}>
-      <div className="flex flex-wrap items-center gap-2 min-w-[16rem] flex-1">{children}</div>
-      {end && <div className="flex flex-wrap items-center gap-2 shrink-0 ml-auto">{end}</div>}
+    <div data-ui="toolbar" className={cx('flex items-center gap-2 mb-4', enLinje ? 'flex-nowrap min-w-0' : 'flex-wrap', className)}>
+      <div className={cx('flex items-center gap-2 min-w-0', enLinje ? 'flex-auto flex-nowrap' : 'flex-1 flex-wrap min-w-[16rem]')}>{children}</div>
+      {end && <div className={cx('flex items-center gap-2 ml-auto min-w-0', enLinje ? 'flex-nowrap' : 'flex-wrap')}>{end}</div>}
     </div>
   )
 }
@@ -6086,21 +6670,32 @@ export function PageHeader({
         {children && <div className="mt-3 max-w-[65ch]">{children}</div>}
       </div>
       {(context || action) && (
-        /* NOT `shrink-0`: on a narrow viewport the title has ALREADY wrapped to
-           its own line (its `min-w-[16rem]` leaves no room beside it), so this
-           block stands alone on its own row. `shrink-0` refused to let it
-           shrink below its OWN unwrapped content width (a period switcher +
-           every action button on one line) — the result was an element that
-           stuck out past the screen edge, uncropped by any `body` scroll, just
-           silently clipped by the layout's `overflow-x-hidden`, instead of
-           falling back to its OWN `flex-wrap`. Without `shrink-0` the block
-           shrinks down toward its widest SINGLE child, and its own `flex-wrap`
-           actually gets to break the period switcher/buttons across lines, as
-           intended. Doesn't change layouts where content+action share one row
-           on wider screens — there's room enough there that nothing shrinks. */
-        <div className="flex flex-wrap items-center gap-2">
-          {context}
-          {action}
+        /* `flex-nowrap` (2026-09-28: "the context switcher and the primary
+           button MUST stay on one line — even at 375px"). This row stands
+           alone at narrow widths (see the width note above) with enough room
+           for context+action to share the line — but `flex-wrap` breaks by
+           each item's HYPOTHETICAL (unwrapped) width, BEFORE shrinking
+           applies, so a long context label and a text button still ended up
+           on separate lines even when the button alone would have fit beside
+           a shorter label. `flex-nowrap` forces them onto ONE line and lets
+           shrinking do its job instead. */
+        <div data-ui="pageheader-actions" className="flex flex-nowrap items-center gap-2 min-w-0">
+          {/* CONTEXT SHRINKS, ACTION NEVER DOES (2026-09-28: fixed a −30 to
+              −90px overlap on mobile). With both children `min-w-0`, flex
+              distributed the shortfall proportionally to content width, so
+              the action box (a wide button) was assigned less than its own
+              unshrinkable width and floated out over the context switcher.
+              Now: `context` sits in a `min-w-0` box that forces a dropdown-
+              style trigger to the box's full width so its OWN label truncates
+              instead of painting over its neighbor; `action` sits in a
+              `min-w-min` box — it can shrink down to its widest SINGLE
+              button (several buttons wrap internally instead), never below. */}
+          {context && (
+            <div data-ui="pageheader-context" className="flex min-w-0 *:min-w-0 [&_[aria-haspopup=listbox]]:w-full">
+              {context}
+            </div>
+          )}
+          {action && <div className="flex flex-wrap items-center justify-end gap-2 min-w-min">{action}</div>}
         </div>
       )}
     </div>
@@ -6113,12 +6708,26 @@ export function PageHeader({
       Dropdown, DataTable.
    ══════════════════════════════════════════════════════════════════════════ */
 
-/** OtpInput — the one-time-code field. A dedicated component, not an
- *  `Input` variant, because the BEHAVIOUR (typography changes with CONTENT,
- *  not with a variant prop) is unique to this one field: normal field size
- *  until it has content, then jumps to large, tracked digits (22px/0.35em/
- *  mono). Uses the shared `.frv-focus-glow` class (same gray field glow as
- *  `Input`) — the global accent ring is for buttons/links, not fields. */
+/** OtpInput (2026-09-28: boxes, replacing a single field whose typography
+ *  used to jump to large tracked digits once it had content) — ONE digit per
+ *  box (6 or 8, see `lengde`).
+ *
+ *  ONE real `<input>`, many VISUAL boxes: the boxes are NOT 6-8 separate
+ *  `<input>` elements. The real field is still a single, invisible
+ *  (`opacity-0`) text field layered OVER the row of boxes (`absolute
+ *  inset-0`) — the boxes underneath are pure display (`aria-hidden`,
+ *  `pointer-events-none`) reading `verdi[i]`. This is deliberate: focus flow,
+ *  paste-the-whole-code and backspace-goes-back are all NATIVE behaviours on
+ *  ONE text field rather than something hand-rolled per box (where such
+ *  implementations usually introduce bugs — focus jumping, paste hitting only
+ *  one box). The box at the next free position gets a visible border when
+ *  the field has focus — the field's own focus ring, translated to which box
+ *  it "sits in", not a separate marker.
+ *
+ *  Fixed box width (`w-11 sm:w-12`, "almost square" with `h-12 sm:h-[52px]`),
+ *  no `flex-1` — a flex item without explicit `grow` keeps the browser
+ *  default (`flex: 0 1 auto`): it never grows past its set width but CAN
+ *  shrink, so 8 boxes + gaps still fit at 375px without horizontal scroll. */
 export function OtpInput({
   verdi, onChange, lengde = 6, feil, className, ...props
 }: {
@@ -6130,29 +6739,40 @@ export function OtpInput({
   feil?: boolean
   className?: string
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'className'>) {
-  const filled = verdi.length > 0
+  const [focused, setFocused] = useState(false)
+  const activeIndex = Math.min(verdi.length, lengde - 1)
   return (
-    <input
-      type="text"
-      inputMode="numeric"
-      autoComplete="one-time-code"
-      required
-      value={verdi}
-      onChange={e => onChange(e.target.value.replace(/\D/g, '').slice(0, lengde))}
-      placeholder="Enter the code"
-      className={cx(
-        'w-full py-[13px] px-3.5 text-center outline-none transition-colors frv-focus-glow',
-        'bg-[var(--frv-gray-alpha-100)] rounded-[var(--frv-radius-sm)] text-[var(--frv-text-primary)]',
-        'placeholder:text-[var(--frv-text-tertiary)]',
-        // `font-mono`/22px/600/tracked is ONLY for actually-typed digits — an
-        // empty field (placeholder only) stays sans, label-16, so the
-        // placeholder text itself is never rendered in mono.
-        filled ? 'font-mono text-[22px] font-semibold tracking-[0.35em]' : 'font-sans text-[16px] font-normal tracking-normal',
-        feil ? 'border border-[var(--frv-error)] focus:border-[var(--frv-error)]' : 'border border-[var(--frv-border)] focus:border-[var(--frv-border-3)]',
-        className,
-      )}
-      {...props}
-    />
+    <div className={cx('relative flex gap-1', className)}>
+      <input
+        type="text"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        required
+        value={verdi}
+        onChange={e => onChange(e.target.value.replace(/\D/g, '').slice(0, lengde))}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder="Enter the code"
+        // Invisible, but still the REAL field (focus/caret/autofill/paste/
+        // keyboard all go through this one element) — see the header note on
+        // why this isn't 6-8 separate fields.
+        className="absolute inset-0 w-full h-full opacity-0 cursor-text"
+        {...props}
+      />
+      {Array.from({ length: lengde }).map((_, i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className={cx(
+            'pointer-events-none w-11 sm:w-12 min-w-0 flex items-center justify-center h-12 sm:h-[52px] rounded-[var(--frv-radius-sm)] border font-mono text-[18px] sm:text-[20px] font-semibold transition-colors',
+            'bg-[var(--frv-gray-alpha-100)] text-[var(--frv-text-primary)]',
+            feil ? 'border-[var(--frv-error)]' : focused && i === activeIndex ? 'border-[var(--frv-gray-alpha-600)]' : 'border-[var(--frv-border)]',
+          )}
+        >
+          {verdi[i] ?? ''}
+        </span>
+      ))}
+    </div>
   )
 }
 
@@ -6307,7 +6927,7 @@ export function StegForm({ steps, aktivIndex, onStegChange, onFullfor, fullforLa
     <div className={cx('flex flex-col gap-5 min-w-0', className)}>
       <div className="flex flex-col items-center gap-2">
         <StepIndicator antall={antall} aktiv={aktivIndex} variant="piller" onStegKlikk={i => { if (kanGaTilSteg(steps, aktivIndex, i)) onStegChange(i) }} />
-        <p aria-live="polite" className="type-label-12 text-center" style={{ color: 'var(--frv-text-tertiary)' }}>
+        <p aria-live="polite" className="type-label-13 text-center" style={{ color: 'var(--frv-text-tertiary)' }}>
           Step {aktivIndex + 1} of {antall} · {steg.title}
           {steg.description && <> — {steg.description}</>}
         </p>
@@ -6543,8 +7163,8 @@ export function FeatureIntro({
   // call with only one unread item left — "looks like it does today".
   const enkelTittel = nyheter ? current.tittel : tittel
   const enkelInnhold = nyheter
-    ? <Text variant="copy-13" tone="secondary">{current.beskrivelse}</Text>
-    : (children ?? (beskrivelse ? <Text variant="copy-13" tone="secondary">{beskrivelse}</Text> : null))
+    ? <Text variant="copy-14" tone="secondary">{current.beskrivelse}</Text>
+    : (children ?? (beskrivelse ? <Text variant="copy-14" tone="secondary">{beskrivelse}</Text> : null))
 
   /** "Got it" — dismisses ONLY the item shown now, never the rest of the
    *  list. If it's the only one left (classic single call, or the last in the
@@ -6589,7 +7209,7 @@ export function FeatureIntro({
           </div>
           <Text variant="heading-14" tone="primary" className="mb-1" truncate>{current.tittel}</Text>
           <div className="mb-3">
-            <Text variant="copy-13" tone="secondary">{current.beskrivelse}</Text>
+            <Text variant="copy-14" tone="secondary">{current.beskrivelse}</Text>
           </div>
         </>
       ) : (
@@ -6812,7 +7432,7 @@ export function FeatureTour({
             <Text variant="label-12" tone="tertiary">{stepIndex + 1} of {unseen.length}</Text>
           </div>
           <Text variant="heading-14" tone="primary" className="mb-1">{current.tittel}</Text>
-          <div className="mb-3"><Text variant="copy-13" tone="secondary">{current.beskrivelse}</Text></div>
+          <div className="mb-3"><Text variant="copy-14" tone="secondary">{current.beskrivelse}</Text></div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button variant="secondary" size="sm" onClick={next}>{stepIndex + 1 >= unseen.length ? 'Done' : 'Next'}</Button>
             {stepIndex + 1 < unseen.length && <Button variant="tertiary" size="sm" onClick={skipRest}>Skip rest</Button>}
@@ -6877,8 +7497,8 @@ export function ErrorState({
 
   const detailsNode = details && (
     <details className={cx('w-full', compact ? 'mt-2' : 'mt-4 max-w-md text-left')}>
-      <summary className="type-label-12 cursor-pointer select-none text-(color:--frv-text-tertiary)">Technical details</summary>
-      <pre className="type-copy-13-mono mt-2 p-3 whitespace-pre-wrap break-words rounded-[var(--frv-radius-sm)] bg-(color:--frv-gray-alpha-100) text-(color:--frv-text-secondary)">{details}</pre>
+      <summary className="type-label-13 cursor-pointer select-none text-(color:--frv-text-tertiary)">Technical details</summary>
+      <pre className="type-copy-14-mono mt-2 p-3 whitespace-pre-wrap break-words rounded-[var(--frv-radius-sm)] bg-(color:--frv-gray-alpha-100) text-(color:--frv-text-secondary)">{details}</pre>
     </details>
   )
 
@@ -6890,7 +7510,7 @@ export function ErrorState({
         </span>
         <div className="min-w-0 flex-1">
           <p className="type-heading-14">{title}</p>
-          {message && <p className="type-copy-13 text-(color:--frv-text-secondary)">{message}</p>}
+          {message && <p className="type-copy-14 text-(color:--frv-text-secondary)">{message}</p>}
           {detailsNode}
         </div>
         {retryButton && <div className="ml-auto">{retryButton}</div>}
@@ -7016,7 +7636,7 @@ const holdGetReducedMotionServer = () => false
  *  `variant="error"` (a solid filled button) — the destructive button
  *  shouldn't shout at rest, and the fill needs a tint (`--frv-error-light`)
  *  visible against a card surface where the text still holds AA contrast
- *  from empty to full. The fill is the shared `.fill-x` class (`--hold-ms` =
+ *  from empty to full. The fill is the shared `.hold-fyll` class (`--hold-ms` =
  *  hold duration) — no own keyframes here.
  *
  *  `prefers-reduced-motion`: the fill can't just be turned off — it IS the
@@ -7122,7 +7742,7 @@ export function HoldToConfirm({
         onContextMenu={e => e.preventDefault()}
       >
         {phase === 'holding' && (
-          <span aria-hidden className="fill-x absolute inset-0 pointer-events-none bg-(color:--frv-error-light)" style={{ '--hold-ms': `${holdMs}ms` } as CSSProperties} />
+          <span aria-hidden className="hold-fyll absolute inset-0 pointer-events-none bg-(color:--frv-error-light)" style={{ '--hold-ms': `${holdMs}ms` } as CSSProperties} />
         )}
         <span className="relative inline-flex items-center gap-1.5">{children}</span>
       </Button>
@@ -7297,17 +7917,20 @@ export function Dropdown({
   const optionId = (i: number) => `${baseId}-opt-${i}`
 
   const optionClass = (active: boolean) => cx(
-    'w-full flex items-center justify-between gap-2 h-9 px-3 rounded-[var(--frv-radius-sm)] text-left type-label-14 transition-colors',
-    active && 'bg-[var(--frv-gray-alpha-100)]',
+    'w-full flex items-center justify-between gap-2 min-h-10 px-3 rounded-[var(--frv-radius-sm)] text-left type-label-14 transition-colors',
+    // Spectrum expression (2026-09-26): the highlighted row gets an
+    // accent-colored surface, not a neutral gray.
+    active && 'bg-[var(--frv-accent-light)]',
   )
 
   const renderOption = (item: DropdownItem, i: number) => {
     const isSelected = item.id === selectedId
     const isActive = i === activeIndex
+    const activeTextClass = isActive ? 'text-(color:--frv-accent-text)' : 'text-(color:--frv-text-primary)'
     const content = (
       <>
-        <span className="truncate text-(color:--frv-text-primary)">{item.label}</span>
-        {isSelected && <CheckIcon size={14} className="shrink-0 text-(color:--frv-text-primary)" />}
+        <span className={cx('truncate', activeTextClass)}>{item.label}</span>
+        {isSelected && <CheckIcon size={14} className={cx('shrink-0', activeTextClass)} />}
       </>
     )
     const sharedProps = {
@@ -7342,7 +7965,9 @@ export function Dropdown({
           'rounded-[var(--frv-radius-sm)] type-button-14 transition-colors disabled:opacity-40 disabled:cursor-not-allowed',
           variant === 'nav'
             ? 'bg-transparent text-[var(--frv-text-primary)] hover:bg-[var(--frv-gray-alpha-100)]'
-            : 'text-[var(--frv-text-primary)] bg-[var(--frv-surface)] border border-[var(--frv-gray-alpha-400)] hover:border-[var(--frv-gray-alpha-500)] hover:bg-[var(--frv-gray-alpha-100)]',
+            // shadow-[var(--frv-shadow-xs)] (Spectrum expression, 2026-09-26): a
+            // light lift over the flat border, same token Select now also uses.
+            : 'text-[var(--frv-text-primary)] bg-[var(--frv-surface)] border border-[var(--frv-gray-alpha-400)] shadow-[var(--frv-shadow-xs)] hover:border-[var(--frv-gray-alpha-500)] hover:bg-[var(--frv-gray-alpha-100)]',
           fill && 'w-full',
         )}
       >
@@ -7370,7 +7995,7 @@ export function Dropdown({
             '--dropdown-left': `${pos?.left ?? 0}px`,
           } as CSSProperties}
         >
-          {groupLabel && <p className="px-3 pt-2.5 pb-1 type-label-12 text-(color:--frv-text-tertiary)">{groupLabel}</p>}
+          {groupLabel && <p className="px-3 pt-2.5 pb-1 type-label-13 text-(color:--frv-text-tertiary)">{groupLabel}</p>}
           <div className="max-h-[280px] overflow-y-auto">{items.map((item, i) => renderOption(item, i))}</div>
           {footer}
         </div>,
@@ -8023,7 +8648,7 @@ export function AgentPlan({
     >
       <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-(color:--frv-border)">
         <h3 id={headingId} className="type-heading-14">{title}</h3>
-        <span className="type-label-12-mono tabular-nums shrink-0 text-(color:--frv-text-tertiary)">
+        <span className="type-label-13-mono tabular-nums shrink-0 text-(color:--frv-text-tertiary)">
           {antallValgt}/{steps.length} steps
         </span>
       </div>
@@ -8041,7 +8666,7 @@ export function AgentPlan({
               className="w-full px-1.5 py-1.5 rounded-[var(--frv-radius-sm)] hover:bg-[var(--frv-gray-alpha-100)]"
               label={
                 <span>
-                  <span className="type-label-12-mono mr-1.5 text-(color:--frv-text-tertiary)">
+                  <span className="type-label-13-mono mr-1.5 text-(color:--frv-text-tertiary)">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   {step.tittel}
@@ -8094,7 +8719,7 @@ export function ThinkingDots({ label = 'Thinking', className }: { label?: string
           <span key={i} className="thinking-dot inline-block w-1.5 h-1.5 rounded-full bg-current" style={agentStagger(i)} />
         ))}
       </span>
-      <span className="type-copy-13">{label}</span>
+      <span className="type-copy-14">{label}</span>
     </div>
   )
 }
@@ -8138,13 +8763,13 @@ function AgentStepRow({ step, last }: { step: AgentStep; last: boolean }) {
             {step.tittel}
           </span>
           {AGENT_STEP_STATUS_LABEL[step.status] && (
-            <span className={cx('type-label-12-mono uppercase shrink-0', step.status === 'feilet' ? 'text-(color:--frv-error-text)' : 'text-(color:--frv-text-tertiary)')}>
+            <span className={cx('type-label-13-mono uppercase shrink-0', step.status === 'feilet' ? 'text-(color:--frv-error-text)' : 'text-(color:--frv-text-tertiary)')}>
               {AGENT_STEP_STATUS_LABEL[step.status]}
             </span>
           )}
         </div>
         {step.detalj && (
-          <p className={cx('type-copy-13 mt-1', step.status === 'feilet' ? 'text-(color:--frv-error-text)' : 'text-(color:--frv-text-secondary)')}>
+          <p className={cx('type-copy-14 mt-1', step.status === 'feilet' ? 'text-(color:--frv-error-text)' : 'text-(color:--frv-text-secondary)')}>
             {step.detalj}
           </p>
         )}
@@ -8214,7 +8839,7 @@ export function ReasoningTrace({ steps, status = 'ferdig', defaultOpen = false, 
         className="group inline-flex items-center gap-2 rounded-[var(--frv-radius-sm)] py-1 transition-colors duration-150 hover:text-[var(--frv-text-primary)] text-(color:--frv-text-secondary)"
       >
         <SparklesIcon size={14} className={status === 'tenker' ? 'motion-safe:animate-pulse' : undefined} />
-        <span className="type-label-12">{status === 'tenker' ? 'Thinking…' : 'How the assistant reasoned'}</span>
+        <span className="type-label-13">{status === 'tenker' ? 'Thinking…' : 'How the assistant reasoned'}</span>
         <ChevronDownIcon size={12} className={cx('text-(color:--frv-text-tertiary) transition-transform duration-200 ease-[ease]', open ? 'rotate-180' : 'rotate-0')} />
       </button>
 
@@ -8222,8 +8847,8 @@ export function ReasoningTrace({ steps, status = 'ferdig', defaultOpen = false, 
         <div className="collapsible-inner">
           <ol role="list" className="ml-[7px] mt-1 pl-4 pb-1 pt-1 space-y-2 border-l border-(color:--frv-border)">
             {steps.map((step, i) => (
-              <li key={step.id} className="type-copy-13-mono flex gap-2.5 text-(color:--frv-text-secondary)">
-                <span className="type-label-12-mono shrink-0 text-(color:--frv-text-tertiary)">{String(i + 1).padStart(2, '0')}</span>
+              <li key={step.id} className="type-copy-14-mono flex gap-2.5 text-(color:--frv-text-secondary)">
+                <span className="type-label-13-mono shrink-0 text-(color:--frv-text-tertiary)">{String(i + 1).padStart(2, '0')}</span>
                 <span>{step.content}</span>
               </li>
             ))}
@@ -8296,16 +8921,16 @@ export function ProposalCard({
           </span>
           <div className="min-w-0">
             <p className="type-label-13 text-(color:--frv-text-primary)">Approved</p>
-            {meta && <p className="type-label-12 truncate text-(color:--frv-text-tertiary)">{meta}</p>}
+            {meta && <p className="type-label-13 truncate text-(color:--frv-text-tertiary)">{meta}</p>}
           </div>
         </div>
       ) : (
         <>
           <Badge>Suggestion</Badge>
           <p className="type-heading-14">{title}</p>
-          <p className="type-copy-13 text-(color:--frv-text-secondary)">{description}</p>
-          {meta && <p className="type-label-12 text-(color:--frv-text-tertiary)">{meta}</p>}
-          {status === 'feilet' && error && <FormError size="label-12">{error}</FormError>}
+          <p className="type-copy-14 text-(color:--frv-text-secondary)">{description}</p>
+          {meta && <p className="type-label-13 text-(color:--frv-text-tertiary)">{meta}</p>}
+          {status === 'feilet' && error && <FormError size="label-13">{error}</FormError>}
           <div className="flex gap-2 pt-0.5">
             <Button size="sm" variant="tertiary" onClick={onReject} disabled={busy || avvist}>{rejectLabel}</Button>
             <Button size="sm" variant="primary" onClick={onApprove} loading={busy} disabled={avvist}>{approveLabel}</Button>
@@ -8621,7 +9246,7 @@ export function MultiSelect({
         >
           <CommandPrimitive.List className="max-h-[280px] overflow-y-auto p-1" label={ariaLabel}>
             {laster ? (
-              <div className="flex items-center gap-2 px-3 py-3 type-copy-13 text-(color:--frv-text-tertiary)">
+              <div className="flex items-center gap-2 px-3 py-3 type-copy-14 text-(color:--frv-text-tertiary)">
                 <Spinner size="xs" /> Searching…
               </div>
             ) : (
@@ -8637,7 +9262,7 @@ export function MultiSelect({
                   // no matches in that group).
                   <CommandPrimitive.Group key={g.heading || gi} className="px-1">
                     {g.heading && (
-                      <p className="px-2.5 pt-2 pb-1 type-label-12 text-(color:--frv-text-tertiary)">
+                      <p className="px-2.5 pt-2 pb-1 type-label-13 text-(color:--frv-text-tertiary)">
                         {g.heading}
                       </p>
                     )}
@@ -8664,7 +9289,7 @@ export function MultiSelect({
                               {valgt && <span className="sr-only">, selected</span>}
                             </span>
                             {opt.description && (
-                              <span className="block truncate type-label-12 text-(color:--frv-text-tertiary)">
+                              <span className="block truncate type-label-13 text-(color:--frv-text-tertiary)">
                                 {opt.description}
                               </span>
                             )}
@@ -8686,7 +9311,7 @@ export function MultiSelect({
                     <span className="text-(color:--frv-text-primary)">Create “{query.trim()}”</span>
                   </CommandPrimitive.Item>
                 )}
-                <CommandPrimitive.Empty className="px-2.5 py-3 type-copy-13 text-(color:--frv-text-tertiary)">
+                <CommandPrimitive.Empty className="px-2.5 py-3 type-copy-14 text-(color:--frv-text-tertiary)">
                   {tomTekst ?? 'No matches'}
                 </CommandPrimitive.Empty>
               </>

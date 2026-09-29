@@ -463,9 +463,12 @@ lag aldri en falsk `500` med `font-medium` på en `.type-label-*`-klasse — se
 i 176 filer på tidspunktet for beslutningen) — det som manglet var et eksplisitt
 500-steg for de tilfellene der en etikett ikke bare LESER, men NAVNGIR noe.
 
-**Unntak:** `ListRow`-tittel forblir `.type-heading-14` (600) — egen,
-tidligere founder-beslutning (bølge 3, 2026-09-10: «hovedtekst bør være
-tydeligere enn støttetekst»).
+**Unntak reversert 2026-09-26 (`regel/typografitrapp-2026-09-26`, R4):**
+`ListRow`-tittel (`.type-heading-14`) var 600 som eget unntak fra denne
+regelen (bølge 3, 2026-09-10: «hovedtekst bør være tydeligere enn
+støttetekst»). Founder reverserte unntaket i Spectrum-lab runde 5: en
+radtittel NAVNGIR raden, den er ingen tittel — `--type-heading-14` er nå 500
+i `app/globals.css`, ingen unntak fra tre-vekter-regelen lenger.
 
 **Reversert samme dag (SB6, founder-skjermbilde av «Startdato/Utløper/
 Avtalenummer/Fornyelse» på `/design/components/field`):** `Field` sin nøkkel
@@ -482,6 +485,84 @@ rettet samme dag (se komponentens egen kommentar), `Field` rettet i SB6-runden.
 
 **Dårlig → godt:** `className="type-label-14 font-medium"` (målte 400, ikke
 500 — se `regel/typografi-via-type-klasser`) → `className="type-label-14-strong"`.
+
+---
+
+## regel/typografitrapp-2026-09-26
+
+**Regel:** R1–R4 + R6 fra Spectrum-lab runde 5 (typografi, 25.–26. sep 2026),
+dømt av founder i to omganger — første forslag redefinerte `--type-copy-13`/
+`--type-label-12` sin PX-VERDI, som founder rettet: «klassene er navngitt
+etter størrelse (Geist-mønsteret) — en `label-12` som tegner 13px kan ikke
+håndheves». Den endelige, gjeldende oppskriften:
+
+- **R1 — tre lesetetthets-nivåer, som et KODEMOD av BRUKEN, ikke av
+  tokenverdien:** `.type-copy-13`/`.type-label-12` beholder sine EKTE
+  størrelser (13px/18lh og 12px/16px — urørt i `app/globals.css`). I stedet
+  flyttet kodemodet KALLSTEDENE: lesetekst/beskrivelser/hjelpsomme setninger
+  som sto i `copy-13` bruker nå `copy-14` (14px) — inkludert `<Text
+  variant="copy-13">` og `FormError` sin `copy-*`-vei. Metadata/hjelpetekst
+  som sto i `label-12` (metalinjer, hjelpetekst under felt, feilmelding under
+  felt) bruker nå `label-13` (13px) — inkludert `FormError` sin nye default
+  (`label-13`, var `copy-13`) og `Input`/`Textarea`/`Select` sin `hint`.
+  `label-12` selv står IGJEN, urørt, for ekte etiketter: piller/`Badge`
+  (som uansett bruker `button-12`, ikke `label-12`), tabellhoder (som bruker
+  `label-13-strong`), overline, tellere (`+N`, `{count}`, sidetall i en
+  omvisning) og korte figur-captions. Unntak holdt UTENFOR kodemodet:
+  `Callout` sin `textSize="copy-13"` (en bevisst, dokumentert tettere
+  notisstørrelse for `small`-tonene, ~26 kallsteder) — rørt IKKE, siden
+  tokenet fortsatt er ærlig 13px og komponenten allerede har sin egen,
+  begrunnede kommentar. Skjemafelt er allerede 16px under 640px bredde
+  (iOS Safari-zoom-regelen i `app/globals.css`) — ikke rørt.
+- **R2 — tre tekstfargenivåer, quaternary avviklet:** `primary` LESES,
+  `secondary` FORKLARER, `tertiary` kan HOPPES OVER. Mørkt tema sin
+  `--color-text-secondary` er nå et EGET Frivio-steg (`color-mix(in srgb,
+  var(--color-gray-1000) 25%, var(--color-gray-900))` ≈ `#b3b3b3`, opp fra
+  ren `gray-900` `#a0a0a0` — som lå bare 1,2:1 fra tertiary sin `#8f8f8f`).
+  Lyst tema er UENDRET (pinnet eksplisitt til `gray-900`). `quaternary` er
+  avviklet som tekstfarge-NAVN i hele repoet (var uansett alltid en ren
+  alias til tertiary) — ny `--color-text-disabled` for ekte deaktivert/
+  plassholder-tekst (samme verdi). `TextTone` (`Text.tsx`), `IconButton`,
+  `KopierKnapp` sin `tone`-type: `'quaternary'` → `'disabled'`. Kontrast
+  målt (`node scripts/kontrastmaal.mjs`): tertiary ≥4,5:1 i begge tema
+  (5,50:1 lyst, 6,12:1 mørkt mot surface).
+- **R3 — tittel-trapp bekreftet:** side 24→32 (`.type-page-title`), seksjon
+  `heading-20`, kort `heading-16`, rad `heading-14`. Ingen tokenendring —
+  trappen var allerede riktig.
+- **R4 — radtittel 600→500:** se `regel/tre-vekter-400-leser-500-navngir-
+  600-titler` over. Reverserer bølge 3-unntaket. Vekt er ikke en del av et
+  `.type-*`-klassenavn, så dette bryter ikke navn=størrelse-prinsippet R1
+  ble rettet etter.
+- **R6 — ett tone-vokabular, på engelsk:** norske tone-alias fjernet fra
+  `Avatar` (`noytral`→`default`, `farget`→`accent`) og `DokumentMerknad`
+  (`advarsel`→`tone="warning"`). `DokumentMerknad` sin `tone="viktig"` ble
+  IKKE oversatt til et engelsk tone-ord — den ble en egen `fremhevet`-boolean,
+  fordi den styrer en aksentkant (prioritet/fremheving), ikke en farge-tone.
+  Prinsippet: **prioritet får egen prop**, den er ikke en tone-verdi.
+  `DokumentEtikett` sin `akutt`/`hoy`/`middels`/`lav`/`noytral` er en egen,
+  bevisst norsk ALVORLIGHETS-skala (samme ord som `--color-*-hoy/-akutt/
+  -middels/-lav`-tokenene bruker i hele systemet) — IKKE del av dette
+  vokabularet, urørt.
+
+**Scope:** ~500 kallsteder (`type-copy-13`/`variant="copy-13"` → `copy-14`;
+`type-label-12`/`variant="label-12"` → `label-13` der metadata, urørt der
+etikett — se SYSTEM.md-endringsloggen 26.09.2026 for eksakte tall),
+`--color-text-secondary`/`-disabled` i `app/globals.css` (og den genererte
+`--frv-*`-speilingen), `Avatar`/`DokumentMerknad`/`IconButton`/`KopierKnapp`
+sine tone-propper og alle kallesteder.
+
+**Bevisst utelatt (venter på egen founder-beslutning):** R5 (mono kun for
+ID-er, beløp i vanlig skrift med tabular-nums) — se
+`arkiv/rapporter/SPECTRUM-LAB-2026-09-25-runde5-typografi.md`. `danger`/
+`error`- og `message`/`default`-synonymene i `ConfirmDialog`/`OverflowMenu`/
+`StatCard`/`ListRow`/`IconTile`/`Toast` er IKKE rørt av R6 — det er en
+allerede sporet, egen engelsk-til-engelsk-migrasjon (~30 kallesteder, se
+kommentarene i disse filene), ikke et norsk alias, og delvis eid av andre
+agenters leveranser.
+
+**Kilde:** `/design/lab/spectrum/runde-5` (gren `spectrum`), founder-dom
+26.09.2026 (to runder — andre runden rettet størrelses-navnene). `SKILL.md`
+lov 1–2, `regel/tre-vekter-400-leser-500-navngir-600-titler`.
 
 ---
 
@@ -511,6 +592,39 @@ own domain»; SYSTEM.md 2026-06-11 (violett-konsolidering, samme klasse feil).
 
 **Dårlig → godt:** `color: '#fac742'` skrevet direkte på en ny prioritetspille
 → `var(--color-middels)`.
+
+---
+
+## regel/neutral-light-er-dekorativt
+
+**Regel:** En tonet `-light`-flate (`--color-success-light`, `-warning-light`,
+`-error-light`, prioritets-variantene) betyr STATUS — den skal alltid leses
+som «dette har en tilstand». `--color-neutral-light` er det ENE, bevisste
+unntaket: en ren dekorativ tint (hover-flate, subtil fyllflate) UTEN
+statusbetydning, og skal IKKE behandles som mal for en ny «nøytral status».
+
+**Scope:** All bruk av `-light`-tint-tokens i `app/` og `components/`.
+
+**Hvorfor:** Spectrum-lab runde 6 (C3) testet om systemets tre statustoner
+(success/warning/error) var riktig antall ved å sammenligne mot shadcn/ui,
+som bare har ÉN reell tonet familie (destructive). Konklusjonen bekreftet at
+Frivios tre statustoner er riktige — men reiste spørsmålet om
+`--color-neutral-light` (en fjerde, fargeløs tint brukt til vanlig
+hover/fyll, ikke status) burde vært en «nøytral status»-tone. Founder-dommen:
+nei — den er et bevisst, dekorativt unntak, og skal navngis som det i stedet
+for å flyte fritt som en uklar femte kategori.
+
+**Unntak:** Ingen — `--color-neutral-light` ER selve unntaket denne regelen
+navngir.
+
+**Kilde:** Founder-dom 26. sep 2026, Spectrum-lab runde 6 (C3),
+`arkiv/rapporter/SPECTRUM-LAB-2026-09-26-dommer.md` og
+`arkiv/rapporter/SPECTRUM-LAB-2026-09-26-runde6-farger.md`.
+
+**Dårlig → godt:** Ny «nøytral»-status-pille bygget på
+`var(--color-neutral-light)` som om det var en fjerde statusfamilie →
+bruk `--color-middels` (den nøytrale, men ekte, statusrollen) i stedet, og la
+`neutral-light` forbli en ren hover-/fyll-tint.
 
 ---
 
@@ -2024,7 +2138,7 @@ siden brukeren nettopp klikket midt i det kortet. Samme prinsipp som
 `.pop-in` på godkjent-tilstanden: enhver tilstandsendring i et Kari-forslag
 skal ha en synlig, fysisk overgang, aldri et hardt kutt. `.dismiss-out` er en
 av de FIRE delte bevegelsene founder valgte fra Spectrum-sammenligningen
-(stagger-in, dismiss-out, fill-x, thinking-dot — se globals.css), og dette er
+(stagger-in, dismiss-out, hold-fyll, thinking-dot — se globals.css), og dette er
 det første reelle bruksstedet for den.
 
 **Unntak:** `prefers-reduced-motion` slår animasjonen av (samme globale
@@ -2970,23 +3084,21 @@ fra flatene denne leveransen eier.
 
 ## regel/docs-seksjonstitler-er-overline
 
-**Regel:** Enhver seksjonstittel på /design-sidene — sidemenyens gruppetitler (toppnivå:
-Kom i gang/Fundament/Komponenter, kategori: Handlinger/Skjema/Datavisning/Tilbakemelding/
-Navigasjon/Layout/Overlegg) OG fundament-sidenes egne underseksjoner (Materials' Elevation/
-Shapes/Kanter/Landing surface, Colors' Steg → rolle/Skalaer/…, Spacing' Trefflater,
-Typography sine gruppenavn Heading/Button/Label/Copy/Mono/Utility) — bruker SAMME stil:
-`.type-overline` (mono, caps, vekt 500 — allerede standardvekten, ingen ny
-`--type-overline-strong` trengtes). Nivåene i sidemenyen skilles KUN på farge, ikke
-størrelse eller font: toppnivå = `--color-text-primary`, kategori = `--color-text-secondary`.
-Fundament-sidenes seksjonstitler bruker samme klasse i `--color-text-primary`, med en
-valgfri beskrivelse under i `copy-13`/`--color-text-secondary` (se
-`app/design/components/DocsSectionTitle.tsx`).
+**OPPHEVET FOR SIDEINNHOLD 2026-09-28 — gjelder nå KUN sidemenyen.** Founder-korreksjon
+(docs-pilot runde 2): «seksjonstitler som "Tekst", "Aksent", "Knapp", "Tilstand" på Farger-siden
+drukner». `.type-overline` viste seg for svak til å bære et helt sidehierarki når en side i
+tillegg har UNDERseksjoner — se `regel/docs-seksjonshierarki` for gjeldende regel for
+fundamentsidenes og komponentdocenes sideinnhold. Denne regelen (og `.type-overline`) lever
+videre KUN for sidemenyens (`app/design/DocsShell.tsx`) gruppetitler — et annet nivå (chrome,
+ikke sideinnhold) — og for `SectionHeader` sin `eyebrow`-prop ute i appen.
 
-**Scope:** `app/design/**` — sidemenyen (`app/design/DocsShell.tsx`) og fundament-sidene
-(typography, materials, spacing, colors — motion/icons/voice har foreløpig ingen
-underseksjoner, men skal bruke samme mønster den dagen de får en). Gjelder ikke
-komponentdocs (`app/design/components/[slug]/**`, `app/design/components/demos/**) eller
-sider utenfor /design.
+**Regel (sidemenyen):** Sidemenyens gruppetitler (toppnivå: Kom i gang/Fundament/Komponenter,
+kategori: Handlinger/Skjema/Datavisning/Tilbakemelding/Navigasjon/Layout/Overlegg) bruker
+`.type-overline` (mono, caps, vekt 500). Nivåene skilles KUN på farge, ikke størrelse eller
+font: toppnivå = `--color-text-primary`, kategori = `--color-text-secondary`.
+
+**Scope:** `app/design/DocsShell.tsx` (sidemenyen) og `SectionHeader` sin `eyebrow`-prop.
+`DocsSectionTitle`/fundamentsidene er FLYTTET til `regel/docs-seksjonshierarki` — se der.
 
 **Hvorfor:** «kategorititlene [...] kommer for dårlig frem. Burde være hvit skrift i mørkt
 tema og noe annet i lyst som skiller dem fra lenkene [...] kanskje mono caps» → «kanskje bruk
@@ -4776,8 +4888,36 @@ primitivet, ikke av kallstedet.
 fast høyde over knapperaden (tom når knappen er aktiv), ikke inne i knapperaden.
 
 **Samme tilbakemelding, samme sted:** Tittelen i en veiviser er stegets ene budskap og skal være
-stor (heading 32 eller større på desktop). Innholdet i en fullskjerms veiviser er midtstilt i ruten
-(vannrett, og loddrett når innholdet er kort), ikke limt til toppen av et venstrejustert felt.
+stor (heading 32 eller større på desktop). Presisert 26. sep 2026, se `regel/veiviser-c2-oppsett`
+under: dette gjelder `utforming="sentrert"`/`"delt"` (midtstilt vannrett og loddrett når innholdet
+er kort). `utforming="stegliste"` er i stedet venstrejustert og toppforankret ved siden av
+steglisten — IKKE et unntak fra denne regelen, men et annet, senere founder-valg for akkurat den
+utformingen.
+
+## regel/veiviser-c2-oppsett
+
+**Kilde:** Founder, 26. sep 2026, om fire venstrejusterte skisser C1–C4 på
+`/design/components/veiviser` (skisser av `utforming="stegliste"`, bygget mot et midlertidig
+skisse-skall fordi den ekte `VeiviserBunnrad` alt hadde faste knappeplasser — se
+`regel/primaerhandling-staar-fast`): «C2 er fin den. Spørs om content bør litt høyere opp eneste.»
+C2 var Tilbake ytterst til venstre, «Gjør senere» + primærknapp gruppert sammen ytterst til høyre
+(konsekvent på alle bredder), med steglisten som sidekolonne på desktop — altså nøyaktig
+`VeiviserBunnrad` sitt eksisterende knappeoppsett, bare med venstrejustert innhold i stedet for
+midtstilt. Skjermbildet founder dømte viste titlen midt i ruten med mye luft over.
+
+**Regel:** I `Veiviser` sin `utforming="stegliste"`:
+1. **Handlingsraden** er Tilbake ytterst til venstre; «Gjør senere» og primærknappen (Neste/Fullfør)
+   gruppert sammen ytterst til høyre — på ALLE bredder, ingen egen mobil-gren som bryter
+   grupperingen. Dette er `VeiviserBunnrad.tsx` sitt eksisterende oppsett, uendret av dette valget.
+2. **Stegets innhold er venstrejustert og toppforankret**, ikke sentrert med `m-auto`. Den faste
+   `py-6 sm:py-10`-paddingen på innholdsraden ER toppavstanden — ingen egen token, ingen ny
+   vertikal sentrering som lar et kort steg drive nedover i ruten.
+
+**Eksempel:** `components/ui/Veiviser.tsx`, blokken for `utforming === 'stegliste'` — innholdet har
+`items-start` (ikke `items-center`) og ingen `m-auto`, mot `max-w-xl` i stedet for `max-w-md`
+(bredere fordi teksten ikke lenger skal ligge inntil en midtstilt smal kolonne). Utkast C på
+`/design/components/veiviser` viser resultatet direkte, siden C1–C4-skissene og skisse-skallet er
+fjernet etter at C2 ble foldet inn i primitiven.
 
 ## regel/ingen-tegnede-illustrasjoner
 
@@ -4810,3 +4950,665 @@ den forkastes; uten endringer lukkes den stille.
 
 **Eksempel:** `StyremoterClient` åpner malen lokalt (id `''`); `save()` oppretter ved første
 lagring og oppdaterer deretter; «Send til styret» lagrer først om nødvendig.
+
+## regel/oppgaverad-status
+
+**Kilde:** Spectrum-lab runde 4 (`arkiv/rapporter/SPECTRUM-LAB-2026-09-25-runde4-lister.md`)
+målte at ni av elleve lister bruker `ListRow`, men med SPREDT statusspråk — hver liste hadde sin
+egen håndrullede `dutyStatus()`/`STATUS_BADGE`-tabell (ord for ord like i
+`ComplianceDutiesPanel.tsx` og `AllBuildingsDutiesList.tsx`). Founder-dom 25. sep 2026: L1
+Vedlikeholdsplan («liker språket på Spectrum … men vi trenger å ha med all infoen i våre task
+rows + sidepanel»), L9 Styreplikter («Spectrum bedre, med all vår info»), L2 Å gjøre («vår er
+best, men i samme utforming som L1»), L6 Styremøter/L11 Aktivitet (Spectrum-skallet, se
+`regel/innfelt-skall-for-lister` under). Erstatter den åpne linja i `coverage-gaps.md`
+(«Listene er ikke like») for OPPGAVE-lister — registertabellene (Avtaler, Seksjoner, Leverandører
+m.fl.) er et eget spor, se samme fil.
+
+**Regel:** En liste som viser en tilstand (tiltak, plikt, gjøremål) tegner den med DENNE
+oppskriften, aldri en lokal `Badge variant={...}`-tabell:
+1. **Statusen utledes av eksisterende data** — aldri en ny databasekolonne eller en diktet
+   tilstand. Domenet (tiltak/plikt/gjøremål) beholder sin EGEN vokabular når den er presis
+   (f.eks. plikters «Om 12 d») — det som deles er FORMEN, ikke nødvendigvis ordene.
+2. Formen er `OppgaveStatusVisning` (`lib/oppgavestatus.ts`): `{ label, tone, aktiv? }`. `tone`
+   er én av `ListRowStatusTone` sine fem (success/warning/error/accent/gray).
+3. **Ikon i `leading`:** `ListRowStatusIcon`/`status`-proppen på `ListRow`, som nå støtter
+   `aktiv` — en spinnende brikke (ikke en stillestående tone) for en VENTETILSTAND («tilbud bedt
+   om», «venter på svar»). Bruk `aktiv` kun når raden faktisk venter på noen andre, aldri som
+   dekor.
+4. **Pille i `trailing`, rett før pilen — ALLTID, ikke bare ved avvik.** Presisert 25. sep 2026
+   samme dag, etter at founder så skjermbilder: «Vedlikeholdsplan-raden ser fortsatt ut som før …
+   Spectrums anatomi er ikke tatt i bruk.» Første versjon av denne regelen la pillen i `meta` og
+   viste den kun for avvik («Forfalt») — det var IKKE Spectrums anatomi, bare Spectrums ord på
+   den gamle radformen. Riktig anatomi: `OppgaveStatusBadge` (components/ui/, oversetter tonen
+   til riktig `Badge`-variant ett sted via `OPPGAVE_TONE_TIL_BADGE`) står i `trailing`, etter
+   kostnad/verdi og rett før chevronen — ÉN pille per rad, alltid, fordi raden bare har plass til
+   én status (lab-rapporten). `meta` er fri til resten av informasjonen (se punkt 6).
+5. Anskaffelsesspråket for TILTAK (`TILTAK_STATUS`) er seks tilstander: «Tilbud bedt om»,
+   «Tilbud mottatt», «Planlagt» (befaring avtalt), «Foreslått» (normaltilstanden — ingenting gjort
+   ennå, Spectrums «queued», tegnet med `SirkelStiplet`), «Utført», «Forfalt». Kun «Tilbud bedt
+   om» er `aktiv` (spinnende) — den ene tilstanden der styret venter på svar fra noen ANDRE.
+   Andre domener bruker sin egen, presise vokabular gjennom SAMME to komponenter: Styreplikter
+   («I rute» / «Snart frist» — fast pilletekst, ikke lenger «Om {n} d» — / «Forfalt» / «Utført»),
+   Å gjøre («Åpen» / «Forfalt» / «Fullført»).
+6. **Prioritet/type er IKKE statusikonet.** Statusikonet i `leading` bærer tiltakets/pliktens
+   FREMDRIFT — aldri prioritet (Akutt/Høy/Middels) eller klassifisering (Lovpålagt/Anbefaling).
+   De vises i stedet som en dempet, liten brikke i `meta` (`<Badge variant="default" size="sm">`)
+   — gruppeoverskriften (tidshorisont) bærer allerede fargekodingen for hvor mye det haster.
+7. **Sekundærhandlinger (avkrysning for flervalg, «marker utført»-knapp) er usynlige til raden
+   holdes over eller får fokus** (`opacity-0 group-hover:opacity-100 group-focus-within:opacity-100
+   focus-visible:opacity-100` på en wrapper — ALDRI direkte på en primitiv som `IconButton`, se
+   `stil-i-klasser-ikke-inline`/«kallsteder restyler ikke primitiver»; `ListRow` selv får
+   `className="group"`). Raden skal ikke åpne med to ikoner (sekundærhandling + statusikon) —
+   kun statusikonet er alltid synlig.
+
+**Vakt:** ingen egen lint-regel ennå (kandidat: tell `Badge variant={` rett ved siden av
+`ListRowStatusIcon`/`ListRow status=` i samme fil som et signal om en ny lokal statustabell) —
+notert i `coverage-gaps.md` til neste revisjon.
+
+## regel/innfelt-skall-for-lister
+
+**Kilde:** Founder-dom 25. sep 2026: Styremøter ↔ Spectrum Conversation List («Spectrums design
+er bedre, men med vår info med ferdig pille og utkast etc. + endret») og Aktivitet ↔ Spectrum
+Recent Activity («Spectrum bedre!»). Begge pekte på SAMME skall: en tonet `surface-2`-ramme rundt
+en `surface`-kortplate (Spectrums «double border» via `p-1.5` + `border`), ikke `Card` sin ene
+flate.
+
+**Regel:** En liste som skal ha Spectrums «innfelte» uttrykk bruker `InnfeltKort`
+(components/ui/) — IKKE en håndrullet `<div className="p-1.5 ...">`-kopi. `InnfeltKort` sin
+`header`-prop er valgfri: utelates når siden ALLEREDE har en tittel over listen
+(`PageHeader`/`Tabs`) — en gjentatt tittel inni kortet er navnevakt-materiale. Rader inni
+bruker `ListRow` som før; `tett` (ListRow-proppen, ikke en `className="py-2"`-overstyring — se
+`stil-i-klasser-ikke-inline`/«kallsteder restyrer ikke primitiver») gir en tettere rad der
+raden er ren visning uten handlingsknapper (i dag: Aktivitet). Innrulling: `.stagger-in`
+(globals.css) på hver rad, ett `--stagger-i` per indeks — ALDRI `motion/react` (se
+«Porter mønster, aldri bibliotek»).
+
+**Eksempel:** `AktivitetListe.tsx`, `StyremoterClient.tsx`.
+
+## regel/toolbar-kontroll-hoyde
+
+**Kilde:** Founder, Spectrum-lab runde 4 N5 (25. sep 2026): «knappehøyden må være lik på
+"neste 3 måneder" [FristVelger] og år [YearSelector/PeriodeVelger]».
+
+**Funn:** `Dropdown` (variant="field"), `PeriodeVelger` sin utløserknapp og `YearSelector` sin
+ramme kopierte hver sin versjon av samme høydeoppskrift (`min-h-11 lg:min-h-0 h-10`/`h-11 lg:h-10`)
+som egne Tailwind-klasser. Verdiene var identiske i praksis, men tre uavhengige kopier — akkurat
+mønsteret som senere DRIFTER (én rettes, de to andre ikke) uten at det synes før noen setter
+kontrollene ved siden av hverandre, slik founder gjorde.
+
+**Regel:** Kontroller som skal stå i en `Toolbar` eller ved siden av en `Button`/`Select` deler
+høyde-DEFINISJONEN, ikke bare verdien. `.toolbar-kontroll-h-md` (40px desktop / 44px berøring på
+mobil) og `.toolbar-kontroll-h-sm` (32px / 44px) i `globals.css` er den ene kilden — et nytt
+nedtrekk/en ny velger som skal stå i en Toolbar bruker en av disse, ikke en egen `h-*`/`min-h-*`-
+kombinasjon.
+
+**Rettet i:** `app/globals.css` (de to klassene), `components/ui/Dropdown.tsx`,
+`components/ui/PeriodeVelger.tsx`, `components/ui/YearSelector.tsx` — ren refaktor, samme
+pikselverdier som før.
+
+## regel/bevegelse-porteres-som-css
+
+**Kilde:** Founder-dom 25. sep 2026, Spectrum-runde 4 (`/design/lab/spectrum/runde-4#animasjon`):
+seks bevegelser tatt inn fra Spectrum UI (bjellesvai, angre-ring, tegnet hake, tekstbytte,
+glidende markør, fjærende bunnark) — «det founder velger, bygges senere i vårt system med ren
+CSS — ingen `motion` i produktet» (samme prinsipp som `porter-monster-aldri-bibliotek`, presisert
+her for BEVEGELSE spesifikt fordi Spectrum sine demoer er bygget med `framer-motion`/`motion`).
+
+**Regel:**
+1. **Ren CSS + minimal JS, aldri et animasjonsbibliotek.** Keyframes/transitions i
+   `app/globals.css`, styrt av en klasse eller CSS-variabel satt fra komponenten. JS er kun for å
+   AVGJØRE state (økte tallet? er draget over terskelen?) — aldri for selve bevegelsen.
+2. **Varighet og kurve følger EN av de faste tokenene**, aldri en frittstående verdi i en
+   komponentfil: `--duration-state`/`-popover`/`-modal` + `--ease-spring` for vanlige
+   tilstandsendringer; `--duration-spring` + `--ease-spring-bounce` (en ekte, dempet fjær —
+   Spectrum har én fjær PER komponent, vi har ÉN, brukt der et øyeblikk skal LESES som en fjær)
+   KUN for kvitteringer/svai/stabel-inn; `--duration-swing` er unntaket som bekrefter regelen —
+   én navngitt varighet for én navngitt bevegelse (bjellesvai) fordi 900ms ikke deles med noe
+   annet formål ennå. Trenger du en fjerde generisk varighet, legg den i `globals.css` og vis den
+   på `/design/motion` — ikke en lokal `duration-300` i komponentfilen.
+3. **`prefers-reduced-motion` er ikke valgfritt.** Hver ny klasse/keyframe får en reduced-motion-
+   fallback i SAMME leveranse (se samleguarden i globals.css) — dropp transform/animasjon, behold
+   et eventuelt fargebytte. Spectrum sine egne demo-komponenter (Command Search, vaul-skuffen)
+   leser IKKE `prefers-reduced-motion` — det er nettopp derfor MØNSTERET porteres og ikke koden.
+4. **Tekst på knapper er ALLTID synlig i normaltilstand — bevegelse skjuler aldri et navn.**
+   Spectrums Expandable Action Bar viser kun ikoner og folder ut etiketten ved hover; forkastet
+   for `ActionBar` (founder + hovedagent enige 25. sep: en bruker på 50+ på mobil har ingen hover,
+   og ser da ikoner uten ord — samme feilklasse som `regel/ingen-ikonknapp-uten-tekst-i-innhold`).
+   Der Spectrums mønster har en ekte gevinst (en glidende markør, en «Mer»-knapp for SJELDNERE
+   handlinger), tas kun DEN biten inn — de faste, navngitte knappene endrer seg aldri.
+5. **En bevegelse som bare kjører ved montering trenger en «Spill av igjen»** på `/design` for å
+   kunne vurderes uten et sideoppdatering — `app/design/lib/replay.tsx` (`<Replay>`, remonterer
+   barnet via `key`) er det delte mønsteret, ikke en ny variant per demo-fil.
+
+**Seks bevegelser tatt inn (25. sep 2026), med hva som endret seg:**
+`Button` (confirmed spiller `.check-pop`, valgfri `.ikon-tegnet` på et strek-ikon),
+`SaveIndicator` (`.tekst-bytte`), `Skeleton.Reveal` (ny underkomponent, OPT-IN — se dens egen
+toppkommentar for hvorfor den ikke erstatter `loading.tsx`), `Toast` (`.toast-stack-item` +
+`.toast-ring` + `oppdater(id, patch)`), varselbjella i toppbaren (`.bjelle-svai`, kun ved
+ØKNING), `CommandPalette` (`.cmdk-markor`), `ActionBar` (valgfri `overflow`-prop, av som
+default), `Modal`/`SidePanel` sitt mobile bunnark (`--ease-spring-bounce` + `useDragLukk`).
+`A6 Switch` og `A7 Accordion` ble VURDERT og holdt uendret/kun luft justert — Spectrums switch ga
+ingen gevinst over vår, og accordionen fikk kun mer luft (samme mekanikk som før 12. sep).
+
+## regel/registertabell-familie
+
+**Kilde:** Founder 25. sep 2026: «listene våre er ikke så like … Avtaleregister også,
+leverandører, styret, styremøte … ja egentlig de fleste» + Spectrum-lab runde 4
+(`/design/lab/spectrum/runde-4#lister`, rapport `arkiv/rapporter/SPECTRUM-LAB-2026-09-25-runde4-
+lister.md`). Del 3 av laben satte opp forslag A (ListRow utvidet) mot forslag B (Spectrum-
+inspirert); founder valgte **B** for REGISTRE (rader som representerer et OBJEKT i et register —
+en avtale, en leverandør, et styremedlem, en faktura, en seksjon, et dokument), ikke for
+OPPGAVELISTER.
+
+**Regel — to familier, ikke én:**
+1. **Register → `components/ui/DataTable`.** Avtaler, Leverandører, Styret, Fakturaer, Seksjoner
+   og Dokumenter er DataTable. Anatomien: navnekolonnen bærer en `Avatar` (farget initial) eller et
+   ikon i `IconTile`, ETT statusord som en `Badge` i egen kolonne (ALDRI i to kolonner samtidig —
+   det var nettopp konsistensmatrisens funn: status til venstre i tre lister, høyre i tre, begge
+   steder i tre), tall er alltid høyrestilt med `tabular-nums`, handlinger samles i en
+   `handlinger`-kolonne (ikonknapper eller `OverflowMenu`, `justering: 'hoyre'`). Søk og
+   fane-hurtigfilter (med live antall, `lib/dataTable.ts` sin `tellPerFane`) er standard i denne
+   familien, ikke et tillegg. Radutfolding (`radDetalj`, se DataTable-docen) dekker felt som ikke
+   får plass som egen kolonne — IKKE en erstatning for et fullt rediger-panel.
+2. **Oppgaveliste/gjøremål → `ListRow`, uendret.** Vedlikeholdsplan, Å gjøre, Styreplikter,
+   Styremøter og Aktivitet representerer en HANDLING eller en HENDELSE, ikke et register-objekt —
+   `ListRow` sine seks soner (status/avkrysning i `leading`, tittel, `secondary`-fakta,
+   `subtitle`-unntak, `value`, `trailing`) er allerede riktig for det formatet, og labens egne funn
+   for disse (L1/L2/L6/L9/L11) sa «behold», ikke «bytt».
+3. **`Firma`/navnekolonnen tåler ALDRI ren `1fr`** når andre kolonner har faste px-bredder —
+   `minmax(200px, 1fr)` (eller lignende) + en eksplisitt `minBredde` på `DataTable`. Uten dette
+   kollapser navnekolonnen til nær 0px på 375px fordi cellens `truncate`/`min-w-0`-innhold gir grid
+   sin `1fr`-track et min-content på praktisk talt null (funnet under Leverandør-migreringen 25.
+   sep 2026, målt: «Firma»-headeren og «Fagtype»-headeren landet på samme x-posisjon). Samme
+   prinsipp `Table.tsx` sin egen kommentar allerede advarer om for `max-content`/`min-content`.
+4. **Tom tilstand i registertabell-familien:** `EmptyState skygge="tabell" kolonner={[...]}` for
+   en genuint tom liste, og en EGEN gren for «ingen treff i søk/filter» som gjentar søkeordet
+   (`Ingen treff for «X»`) og tilbyr «Nullstill filtre» via `DataTable` sin `tomTilstand`-kontekst
+   (`nullstillFilter()`, `sokTekst`) — se `EmptyState`-docen og `regel/tomtilstander-laerer`.
+
+**Ikke enda gjort:** `ListRow`-familien (Del 3 forslag A-lånene til L9/L11 — fast radhøyde,
+glidende utfolding, hårstrek-kolonne) er et ANNET oppdrag (animasjons-/oppgaverad-agentene 25. sep
+2026), utenfor denne regelens filomfang.
+
+## regel/animasjon-etterlater-ingen-transform
+
+**Kilde:** Mobilsveipet 25. sep 2026, etter Spectrum-runde 4 (A2, inntoning av sideinnhold). `.innhold-inn`
+på `PageShell` brukte `animation-fill-mode: both`, så `transform: translateY(0)` ble liggende på hele
+sideinnholdet etter animasjonen. En transform gjør et element til «containing block» for
+`position: fixed`-etterkommere: bunnarket «Endre forutsetninger» på Vedlikeholdsplan ble plassert i
+forhold til sideinnholdet og havnet 400 px under skjermkanten — bare overskriften var synlig.
+
+**Regel:** En animasjon på en OMSLUTTENDE beholder (side, seksjon, kort med innhold som kan åpne
+dialoger/menyer) skal aldri etterlate `transform`, `translate`, `scale`, `filter` eller `will-change:
+transform` når den er ferdig: bruk `animation-fill-mode: backwards` (eller bare opacity). Gjelder ikke
+selve dialogen/panelet — der er transformen ønsket.
+
+**Sjekk:** åpne en dialog på siden på 375 px etter animasjonen; `getBoundingClientRect().bottom` ≤
+visningshøyden.
+
+## regel/enhetsvisning-foer-ferdig
+
+**Kilde:** Founder-spørsmål 26. sep 2026: «Er alle komponenter, typografi osv. også justert til
+desktop, pad og mobil? Hvor kan jeg se hvordan alle fremstilles på de ulike? Har vi det i docs?»
+Svaret var nei — `/design` viste hver komponent KUN i leserens egen skjermbredde. En smal ramme
+rundt en demo viser IKKE mobilvarianten: Tailwinds `sm`/`md`/`lg`-brytepunkter reagerer på
+VISNINGSFLATEN, ikke beholderen, så «komponenten ser fin ut i en trang docs-kolonne» beviser
+ingenting om 375 px i en ekte nettleser.
+
+**Regel:** En komponent (ny, eller en eksisterende med en vesentlig endring) er ikke ferdig før
+den er sett i Mobil-visningen («Vis alt som Desktop / Mobil») på sin egen
+`/design/components/<slug>`-side — en ekte 375 px `<iframe>` per eksempel via
+`app/ramme/[slug]?eksempel=N`, ikke en CSS-simulering. Den samlede /design/responsiv-siden ble
+fjernet 28. sep 2026 (founder: overflødig når hver komponentside har bryteren); brytepunktene står
+på Avstand-siden.
+
+**Sjekk:** `/design/components/<slug>` med «Vis alt som: Mobil» — hver eksempel-iframe lastet
+(ikke tom, ikke krympet), ingen sidescroll.
+
+## regel/stemmekart-s1-s7
+
+**Kilde:** Spectrum-lab runde 7 («Stemme», `app/design/lab/spectrum/runde-7`), sju forslag med ekte
+strenger fra koden, godkjent av founder 27. sep 2026. Ikke en audit av MANGLENDE prinsipper — teksten
+i Frivio fulgte allerede fire uttalte prinsipper (se `/design/voice`), men brøt dem i konkrete,
+navngitte steder.
+
+**De fire prinsippene (stemmekartet):**
+1. **Rolig og konkret** — ingen utropstegn, ingen dramatikk. Si hva som skjedde, med tall og navn.
+2. **Norsk hverdagsspråk** — et frivillig styre er ikke fagfolk. Forkortelser (`TG3`, `HMS-plikt`)
+   forklares første gang de brukes ET STEDS, ikke antatt kjent i alle visninger av samme fakta
+   (S5: beskrivelsen skrev ut «tilstandsgrad 3», tittelen på SAMME omvisningspost sa bare «TG3»).
+3. **Aldri «AI»** — Frivio «foreslår» eller «lager utkast», bestemmer aldri.
+4. **Sier hva som skjer videre** — særlig i feilmeldinger: prøve igjen, vente, kontakte noen — ikke
+   bare at noe gikk galt (`Kunne ikke bytte modus` alene bryter dette; `+ Prøv igjen om litt` retter det).
+
+**Konkrete rettelser (S1–S7), som mønster å gjenkjenne andre steder:**
+- **Tomtilstander i samme liste følger ÉN mal.** Et `Record<fane, string>` der én gren dropper
+  substantivet resten beholder (`Ingen med ukjent avsender.` vs. `Ingen betalte ennå.`) er et
+  konsistensbrudd selv om hver enkelt setning er korrekt norsk.
+- **Generisk feiltekst mangler objektet.** `Kunne ikke slette. Prøv igjen.` gjentatt likt på flere
+  kallsteder (dokument, tiltak, lån …) skal navngi TINGEN (`Kunne ikke slette dokumentet.`) og bruke
+  husets `«Prøv igjen om litt»`-konvensjon (`lib/feil.ts`), ikke bare `«Prøv igjen»`.
+- **Juridisk/formell tekst kan strammes uten å miste innhold.** Kanselli-formuleringer som gjentar
+  noe en tidligere setning alt sa (`sender med dette et formelt varsel om kravet` etter `Dette er et
+  inkassovarsel …`) fjernes; lovhenvisning, frist og klagerett i avsnittene ETTER røres ALDRI uten
+  eksplisitt founder-godkjenning.
+- **Fallback-verdier (default-tekst i en delt komponent) er ofte de mest generiske i systemet**
+  nettopp fordi de er ment å aldri vises — `ConfirmDialog` sin default-tittel `Er du sikker?` ga
+  ingen informasjon om HVA som skulle bekreftes; `Bekreft handlingen` er marginalt bedre, men BEDRE
+  er at hvert kallsted alltid setter sin egen konkrete tittel (håndhevet i praksis, ikke i typer).
+- **Vage substantiv i e-postemner** (`utvidet tilgang`) skal erstattes med det FAKTISKE, navngitte
+  konseptet i domenet (her: `full tilgang` — den eksakte rollebetegnelsen fra `lib/roles.ts`) når
+  ett finnes, fremfor en oppfunnet plassholder.
+
+**Eksempler (fullt sett):** `/design/voice` (seksjon «Før / etter»), `public/design.md`
+(Voice & Content → Stemmekartet).
+
+**Sjekk:** ved ny feiltekst/tomtekst/fallback-tittel — les den høyt mot de fire prinsippene over
+før commit. Gjentas samme tekstmønster flere steder (`grep` for den eksakte strengen), rett alle
+forekomstene i samme leveranse, ikke bare den ene som var i oppdraget.
+
+## regel/knapp-variant-valg
+
+**Kilde:** Spectrum-lab runde 7 (K1), founder-spørsmål 27. sep 2026: «har vi regler [for når hver
+Button-variant brukes]?» Svaret var nei i skrevet form — kun håndverk fra bølge 3 (2026-09-10) som
+satt i JSDoc-en, ikke som en navngitt, sjekkbar regel. Samtidig ble `warning`-varianten fjernet:
+0 treff i produktkoden (`grep -rn 'variant="warning"' app components`, bekreftet før fjerning).
+
+**Regel — én setning per variant, håndhevet i praksis via kodegjennomgang (ikke lint):**
+- `primary` — DEN ene viktigste handlingen på flaten, maks ÉN gang per flate. Nøytral monokrom, IKKE blå.
+- `secondary` — en tydelig sekundærhandling ved siden av `primary` (kantet flate, samme vekt som en knapp).
+- `tertiary` — en lavere-vekt handling ved siden av annen tekst eller inni et kort, uten egen kant/flate i hvile.
+- `error` — en destruktiv handling (sletting o.l.).
+- `accent` — ETT fylt CTA per flate, der blått ikke allerede bærer lenker/fokus i samme visning.
+- `soft` — en tonet NØYTRAL sekundærhandling ved siden av innhold (typisk «Kopier»).
+- `link` — en STANDALONE handlingslenke («5 betalte →»), ALDRI inline i løpende tekst (bruk
+  `.link`-CSS-klassen der). Knapp-VARIANTEN er NØYTRAL (`--color-text-primary`, alltid synlig
+  understrek) — aksentfargen er reservert `.link` (inline tekstlenker) og fokus/lenker generelt,
+  ikke standalone knapper (founder-runde 28. sep 2026, erstatter tidligere `--color-accent-text`).
+- Ingen `warning`-variant lenger: fantes en reell konsekvens-advarsel å style, bygg en ny, navngitt
+  variant DA — basert på et faktisk kallsted, ikke gjeninnfør denne spekulativt.
+
+**Sjekk:** ny bruk av `Button` — match variant mot regelen over. Finner du et kallsted som ikke
+passer noen linje, er det et signal om at enten variant er feil brukt der, eller at et NYTT,
+navngitt behov er avdekket (se «Mangler komponenten, variabelen eller klassen du trenger?» i
+AGENTS.md — bygg det i primitivet, vis det på `/design`). Fullt svar med eksempler:
+`/design/components/button` (whenToUse) og `public/design.md`.
+
+## regel/docs-uten-historikk
+
+**Kilde:** Founder-oppdrag 2026-09-28 («gjør /design lettere å fordøye … i overkant mye tekst
+… Vercels docs-side kan fint brukes som inspirasjon»). Målt før endringen: Button-siden 1059 ord
+prosa / 6560 px høy, ListRow 731 ord, Colors 711 ord — mot Vercel Geist sine ~280 ord for en
+sammenlignbar komponentside. Årsaken var ikke lengden på selve funksjonaliteten, men at hvert
+eksempel og hver «når brukes den»-linje bar sin fulle founder-historikk (dato, Spectrum-lab-runde,
+sitat) direkte i den rendrede prosaen.
+
+**Regel — komponentsider (`app/design/components/demos/*.tsx`, malen i
+`app/design/components/[slug]/ComponentDocPage.tsx`):**
+- **Historikk og begrunnelser står ALDRI på siden.** Founder-datoer, «bølge N», «Spectrum-lab»,
+  sitater og «hvorfor»-resonnement hører hjemme i EN av to steder: en `regel/<id>` her i
+  produktskjonn.md (når mønsteret er generelt/gjenbrukbart), eller en kodekommentar rett ved
+  doc-objektet/eksemplet (når det er spesifikt for akkurat den komponenten). Sjekk at
+  begrunnelsen faktisk FINNES et av de to stedene FØR du fjerner den fra siden — flytt den dit
+  hvis ikke.
+- **Prosa-budsjett ≤ 120 ord** per komponentside, talt av `scripts/docvakt.mjs` (kun
+  `description` + `whenToUse`/`bruk`/`ikkeBruk` + hvert eksempels `description` — ALDRI
+  `props[].description`, `title`, `code`, `rules`, `related`). Ratchet-baseline i
+  `scripts/docvakt-baseline.json`, samme prinsipp som `regel/ordbudsjett-60`.
+- **«Når brukes den» → «Bruk» / «Ikke bruk»**, 2–3 punkter hver (`ComponentDoc.bruk`/`.ikkeBruk`).
+  Gamle sider uten disse feltene viser fortsatt `whenToUse` som «Bruk» — malen tåler begge formater,
+  migrering skjer sak for sak.
+- **Eksempler er kort:** kort tittel, stor forhåndsvisning, høyst ÉN linje beskrivelse (utelat den
+  heller enn å skrive en lang), kode skjult bak «Vis kode». ÉN delt «Vis alt som»-bryter
+  (Desktop/Mobil) øverst i eksempel-seksjonen styrer ALLE eksemplene sammen — se
+  `regel/docs-eksempelkort-kode-i-bunn` for denne og for hvor kodesnutten hører hjemme.
+  En tidligere versjon (28. sep, samme dag) ga hvert eksempelkort sin EGEN Desktop/Mobil-bryter i
+  tillegg til den delte — footeren ble kortlivet: founder samme dag: «Det holder med "Vis alt som
+  Desktop/Mobil" i toppen. Trenger ikke per variant nedover.» Én bryter styrer nå alt. Den enda
+  tidligere separate «Enhetsvisning»-seksjonen nederst på hver side er også FJERNET. Den samlede
+  /design/responsiv-siden ble fjernet samme dag (brytepunktene står på Avstand).
+- **Props samles under «API»** (sammenfoldet, lukket som standard).
+- **Norsk visningsnavn** (`ComponentDoc.navn`, f.eks. «Knapp» for `Button`) som sidetittel og i
+  sidemenyen når det finnes; mangler det, faller siden og menyen tilbake til kodenavnet (`name`).
+
+**Fundamentsider** (`/colors`, `/typography`, …): samme retning, ingen egen vakt ennå — tette
+rutenett, tokennavn + kopier-knapp per rute/swatch, én kort bruksregel per gruppe i stedet for
+palettens revisjonshistorikk (som flyttes til en kodekommentar, se `app/design/colors/ColorsPage.tsx`).
+
+**Sjekk:** `node scripts/docvakt.mjs` (ingen fil over sin baseline); les en migrert side
+(`/design/components/button`) og en umigrert side ved siden av — den umigrerte skal fortsatt
+rendre uten feil i samme mal.
+
+**Språk på /design (founder 28. sep 2026):** komponentnavnene står på engelsk, likt eksportnavnet i koden (`Button`, `ListRow`) — i tittel, sidemeny og oversikt. Alt annet er norsk: beskrivelse, «Retningslinjer», eksempeloverskrifter, kategorier og fundamentsidene (Farger, Typografi …). En kort norsk oversettelse av komponentnavnet ble prøvd og forkastet samme dag: den tvang oversettelse mellom docs og kode, og ord som «Sprettoppboks» og «Hurtigmelding» ble kunstige.
+
+## regel/docs-forside-haarstrek-rutenett
+
+**Kilde:** Founder-korreksjon 2026-09-28, docs-pilot runde 2 — dømte forrige versjons
+«Mest brukt»-kortrutenett (separate `Card`-er med mellomrom) direkte mot
+[Vercel Geist](https://vercel.com/geist/introduction) sin forside. Skjerpet samme dag (runde 3,
+side om side med Geist): «Riktig tenkt, men fremstillingen er ikke bra nok. Vercel holder mye
+høyere kvalitet. Og skal ikke spesifikasjon og skill for andre prosjekt være knapper?» Diagnosen:
+rutenettet var en boks som svevde i en smal kolonne, illustrasjonene var små og ulike i størrelse
+og plassering, ni ruter ga et tomt felt, tittelen var for liten og undertekstene for lange.
+
+**Regel:** `/design` (`app/design/DesignHome.tsx`) er en portal, ikke en prosa-side:
+- **Full bredde.** Forsiden bruker HELE hovedkolonnen i `DocsShell` (lesekolonnen `max-w-4xl`
+  gjelder alle andre sider). Hårstrekene går helt ut til innholdsflatens kanter. Hero har sin
+  egen `border-b` som går helt ut.
+- **Hero:** `.type-docs-title` (heading-40 → heading-56 fra 768 px), ÉN setning ≤ 12 ord i
+  `copy-20` sekundær, deretter handlingene som KNAPPER — `Button variant="secondary"` med ikon
+  («Spesifikasjon», «Skill») + en kopierbar kommando (`CopyCommand`, bygget på `KopierKnapp`).
+  Aldri tekstlenker med pil.
+- **ÅTTE ruter**, 2 kolonner fra `md`, 1 under: Komponenter, Farger, Typografi, Ikoner,
+  Materialer, Avstand, Bevegelse, Stemme. Et oddetall gir et tomt felt nederst; Responsivt nås
+  fra sidemenyen.
+- **Skillelinjer:** hver rute `border-b`, venstre kolonne i tillegg `md:odd:border-r` — naboene
+  deler én strek, og ingen strek dobles mot sidemenyens kant eller vinduets høyrekant.
+- **Hver rute:** FAST illustrasjonsflate (`h-44`, lik i alle), så tittel `heading-16` + ÉN linje
+  ≤ 8 ord i `copy-16` sekundær, nederst til venstre, `p-6 md:p-8`. Illustrasjonen FYLLER rutens
+  innholdsbredde (samme venstre/høyre-linje som teksten) — en liten øy midt i en stor rute var
+  hovedforskjellen mot Geist. Illustrasjonene er bygget av EKTE tokens og primitiver, aldri
+  tegnet (`regel/ingen-tegnede-illustrasjoner`), `inert` + `aria-hidden` (hele ruten er ÉN
+  lenke; ekte `Button`/`PillTabs`/`Input` inni skal ikke i tab-rekkefølgen). En illustrasjon
+  som ikke får plass i en smal rute viser et UTVALG (Komponenter under `xl`), aldri fire
+  radbrutte rader som klippes.
+- **Hover** er systemets: `hover:bg-(color:--color-gray-alpha-100)` på hele ruten.
+- **Bevegelse** i en illustrasjon bruker bevegelsestokenene, startes aldri med
+  `prefers-reduced-motion`, og lar ingen transform stå igjen.
+
+**Scope:** `app/design/DesignHome.tsx` + forside-grenen i `app/design/DocsShell.tsx`. Gjelder ikke
+komponentdocs eller fundamentsidenes EGET innhold (se `regel/docs-seksjonshierarki`).
+
+**Sjekk:** headless skjermbilde i 1440/1280/375, lyst og mørkt, lagt side om side med
+<https://vercel.com/geist/introduction> i samme bredde — ruter like høye, illustrasjonene fyller
+bredden, ingen sidescroll på 375.
+
+## regel/docs-bygges-med-systemet
+
+**Kilde:** Founder 2026-09-28: «Bruker vi vårt eget designsystem på docs-siden?» Svaret var nei:
+`DocsShell` hadde tre rå `<button>` (gruppetitler, scrim) og en inline-stil, `DocExamples` sin
+«Vis kode»- og «Kopier»-knapp var rå `<button>` med egen `setTimeout`, `CopyCommand` likeså.
+Designvakten unntok hele `app/design/` fra knappe-regelen, så ingenting fanget det.
+
+**Regel:** `/design` bygges med designsystemet det dokumenterer. Knapper er `Button`/`IconButton`/
+`KopierKnapp` (gruppetittel = `Button variant="tertiary" size="sm"` med `w-full justify-start`,
+som er layout og lov), kopiering er `KopierKnapp`, en skuff lukkes med `useKlikkUtenfor` + sin
+egen `IconButton` (ingen rå knapp over hele scrimen). `style={{}}` bare med egendefinerte
+egenskaper (`'--x': verdi` + klasse som `w-(--x)`), aldri en ekte CSS-egenskap.
+
+**Håndheving:** `scripts/designvakt.mjs`, teller 6 — rå `<button` og `style={{…}}` med en ekte
+CSS-egenskap i `app/design/` UTENOM `components/demos/` (demoene kan med vilje vise rå elementer
+for å illustrere). Teller 5 (blandede knappestørrelser i en rad) er fortsatt unntatt for hele
+`app/design/` — dokumentasjonen viser størrelser side om side med vilje. Tre bevisste unntak står i
+baselinen med kommentar i koden: Colors sine fargeprøver (prøven SELV er kopierflaten — mangler
+primitiv, se coverage-gaps.md), Spacing sin `.icon-btn`-seksjon (dokumenterer systemklassen for
+rå radknapper) og Motion sin cmdk-demo (gjenskaper `CommandPalette` sine trefflinjer).
+
+**Scope:** `app/design/**` utenom `app/design/components/demos/`.
+
+## regel/docs-seksjonshierarki
+
+**Kilde:** Founder-korreksjon 2026-09-28, docs-pilot runde 2 — «seksjonstitler som "Tekst",
+"Aksent", "Knapp", "Tilstand" på Farger-siden drukner». Erstatter `regel/docs-seksjonstitler-
+er-overline` for alt SIDEINNHOLD (den regelen lever videre kun for sidemenyen).
+
+**Regel — hierarki på ALLE /design-sider (fundamentsider og komponentdocs):**
+1. Sidetittel — `Heading level={1} variant="heading-32"` (heading-40 tillatt for en portal-
+   forside, se `regel/docs-forside-haarstrek-rutenett`).
+2. Seksjon — `Heading level={2} variant="heading-20"` (600). Delt byggekloss: `DocsSectionTitle`
+   (`app/design/components/DocsSectionTitle.tsx`) — brukes av fundamentsidene OG av
+   `ComponentDocPage` sine egne seksjoner («Retningslinjer», «Eksempler», «API», «Regler»,
+   «Beslektede», som alt brukte `heading-20` — det var kun fundamentsidenes DELTE byggekloss som
+   fortsatt sto på `.type-overline`).
+3. Underseksjon — `Heading level={3} variant="heading-16"` (600). Delt byggekloss:
+   `DocsSubsectionTitle` (samme fil). For en NAVNGITT gruppe INNE i en seksjon — Farger sine
+   «Tekst»/«Aksent»/«Knapp»/«Tilstand»/«Skygge», Responsivt sine per-komponent-overskrifter.
+   IKKE for kort-interne bildetekster («Flatt»/«Elevert» på Materials) — de er innhold, ikke
+   navigerbar struktur, og blir for mange treff om ALT løftes et hakk.
+4. Brødtekst — `copy-14`, sekundærfarge, uendret.
+
+**Scope:** `app/design/**` sideinnhold — fundamentsidene (colors, typography, materials,
+spacing, motion, icons, voice) og komponentdocenes mal. Gjelder ikke sidemenyen
+(`DocsShell.tsx`, se `regel/docs-seksjonstitler-er-overline`).
+
+**Sjekk:** les en fundamentside og en komponentside ved siden av — samme to nivåer (heading-20 →
+heading-16) skal se identiske ut på begge, uavhengig av om siden bruker `DocsSectionTitle` direkte
+eller en rå `<Heading>`.
+
+## regel/docs-eksempelkort-kode-i-bunn
+
+**Kilde:** Founder-korreksjon 2026-09-28, docs-pilot runde 2 («bruk din anbefaling» for
+kode-knappen; samme dag, etter første forsøk: «Det holder med "Vis alt som Desktop/Mobil" i
+toppen. Trenger ikke per variant nedover»).
+
+**Regel:**
+- **Kun ÉN Desktop/Mobil-bryter**, delt for HELE eksempel-seksjonen (`DocExamples` sin egen
+  `PillTabs`, sticky `top-10` rett under sidehodet mens man ruller — samme offset-konvensjon som
+  «På denne siden»-navigasjonen). Et enkelt eksempelkort har ALDRI sin egen bryter — et forsøk på
+  nøyaktig det (per-kort bryter i TILLEGG til den delte) ble reversert samme dag.
+- **Kodesnutten er en BUNNRAD i selve eksempelkortet**, ikke en løs lenke under kortet: samme
+  ytterkant, en `border-t` skiller den fra forhåndsvisningen over. Åpnes med en ekte `<button>`
+  («Vis kode», `Kode`-ikon + `ChevronNed` som roterer 180° åpen/lukket) — aldri bare en lenke-
+  aktig tekst uten knappe-chrome. Når åpen: koden i samme kort (`border-t` igjen) + kopier-knapp.
+- **Mobilvisningen** (`DeviceFrame` sin `telefon`-variant): sentrert (`mx-auto`), tykkere/rundere
+  kant enn standard-rammen (leses som en telefon lagt oppå kortets flate), høyden målt fra
+  `#ramme-innhold` i `app/ramme/[slug]/RammeInnhold.tsx` — ALDRI `body.scrollHeight` (se
+  kodekommentaren i `DeviceFrame.tsx` for hvorfor: `min-h-screen` på siden gjorde `body` aldri
+  kortere enn viewporten, som ga en stor tom flate under et kort eksempel). Ingen egen
+  «Mobil · 375 px»-etikettrad per kort (`telefon` slår den av) — «375 px» vises i stedet diskret
+  ved siden av den delte bryteren når Mobil er valgt. «Åpne i eget vindu»-lenken er fjernet helt
+  fra `DeviceFrame` (malplassert på en dekorativ forhåndsvisning; `/ramme/[slug]` er fortsatt
+  nåbar direkte for den som trenger det).
+
+**Scope:** `app/design/lib/DocExamples.tsx` + `app/design/lib/DeviceFrame.tsx` +
+`app/ramme/[slug]/RammeInnhold.tsx`. Begge steder (`ComponentDocPage` og `RammeInnhold`/
+`AlleTreVisning`) bruker samme `DocExamples`, så de tegner eksemplene identisk.
+
+## regel/listrow-verdi-samme-linje
+
+**Kilde:** Founder-korreksjon 2026-09-28: `ListRow` (`components/ui/ListRow.tsx`) i smal
+beholder (`tett`, kun `title` + `value`, f.eks. Aktivitet-listens «Innlogging» / «nå») viste
+verdien på en EGEN linje 2, høyrejustert alene — leste som feiljustert, ikke som et bevisst
+to-linjers mønster.
+
+**Regel:** Når en rad KUN har `title` og `value` (ingen `secondary`/`meta`), står `value` på
+SAMME linje som tittelen — også under `@md` (smal beholder), akkurat som i bred beholder.
+Linje 2 (fakta/brikker/beløp i egen rullende rad) er fortsatt sikkerhetsnettet for når raden
+har `secondary` og/eller `meta` i tillegg — DA er value fortsatt best plassert der (samme
+prioritet som før: `meta` først, alltid synlig). Implementert i `ListRow` selv (én gren på
+`secondaryContent == null && meta == null`), så ALLE ~80 kallsteder arver fikset — ingen
+kallsted-endring. Lange titler skyver fortsatt ikke value ut: tittelgruppen er `min-w-0 flex-1`
+og wrapper (`line-clamp-2`), `value` er `shrink-0`.
+
+**Scope:** `components/ui/ListRow.tsx`. Ingen kallsteder endret.
+
+---
+
+## regel/tittel-aldri-mindre-enn-stottetekst
+
+**Kilde:** Founders designrevisjon 28. sep 2026. Founder, på flere komponenters sammensatte
+tittel + støttetekst: «tittelen er aldri mindre enn støtteteksten. I kompakte sammensatte
+komponenter (skjemavalg med beskrivelse, rader, forslagskort, steg, nyhetsbobler) er de like
+store — tittel skiller seg ut med vekt 500 og mørkeste farge, støtteteksten vekt 400 og
+sekundærfarge.» Da hovedagenten spurte «er ikke dette den samme klassen gjennomgående?»,
+viste et søk at det IKKE var det: `Checkbox`/`Radio` valgte `type-label-14-strong`/
+`type-copy-14` selv, `Switch` valgte `type-heading-14` (pikselidentisk med
+`type-label-14-strong`, men et annet klassenavn valgt uavhengig), og `AgentSteps` sin
+stegtittel sto i `type-label-13` (13px) mens feilteksten under sto i `type-copy-14`
+(14px) — fire komponenter, fire uavhengige klassevalg, samme feil oppstod flere steder
+samtidig av nøyaktig den grunnen.
+
+**Regel:** Et kompakt tittel/støttetekst-par bruker `TittelTekst`
+(`components/ui/TittelTekst.tsx`) — ALDRI et eget, lokalt valg av `.type-*`-par. Tittelen
+er alltid `type-label-14-strong` (standard, `storrelse="14"`) eller `type-label-13-strong`
+(tett, `storrelse="13"`) i `--color-text-primary`; støtteteksten er alltid samme PIKSELSTØRRELSE
+i vekt 400/`--color-text-secondary` (`type-copy-14` hhv. `type-label-13`) — aldri
+`type-copy-13`, som er en avviklet lesetetthet utenfor `Callout` sitt navngitte unntak
+(`regel/typografitrapp-2026-09-26`, R1). Der layouten ikke tillater selve wrapper-komponenten
+(tittelen må stå INLINE ved siden av noe annet, f.eks. en `Badge` — `Radio` sin `kort`-variant,
+`FeatureIntro`), hentes klassene i stedet fra den eksporterte `tittelTekstKlasser(storrelse)` —
+samme kilde, ikke et nytt, uavhengig klassevalg.
+
+**Unntak:** Seksjons-/kort-/modaltitler (`SectionHeader`, `Card`, `Modal`) kan fortsatt være
+STØRRE enn brødteksten under — det er en annen rolle (`regel/tre-vekter-400-leser-500-navngir-600-titler`),
+ikke et kompakt par. `Field`/`DescriptionList` sin nøkkel-over-verdi er også et annet
+mønster (dekket av `regel/nokkel-og-valgetikett-med-beskrivelse-er-500`), ikke migrert hit.
+
+**Scope:** `Checkbox`, `Radio` (begge varianter), `Switch`, `AgentSteps` (stegtittel +
+feiltekst — «Feilet» ble samtidig en `Badge` i stedet for en mono-tekst, for å skille en
+faktisk feilet-TILSTAND fra de nøytrale venter/kjører-etikettene), `ProposalCard`,
+`BygningsdelKort` (seksjonsnavnene «Historikk»/«Materialer og koder»/«FDV-dokumenter» gikk
+fra `label-12-strong`/tertiary — 12px, dempet, MINDRE enn tomtekst-linjen under dem — til
+`TittelTekst` storrelse 14, mørkest). `FeatureIntro` var allerede 14/14 (`heading-14`/
+`copy-14`, pikselidentisk med `TittelTekst` sin standard) — omdøpt til `label-14-strong` via
+`tittelTekstKlasser` for samme kilde, ingen visuell endring. `AddFormPanel`/`AgentPlan` har
+ikke sitt eget tittel/tekst-par (delegerer til `SectionHeader`+`ListRow` hhv. `Checkbox`) —
+ingen endring der utover det Checkbox/ListRow allerede dekker.
+
+## regel/verktoylinje-en-linje-krymper
+
+**Kilde:** Founders designrevisjon 28. sep 2026: «Mobilbrudd virker ikke bra nok, alt MÅ være på en linje» (Toolbar, FristVelger i toolbar, sidehodets byggvelger + primærknapp, paginering).
+
+**Regel:** Kontrollrader (Toolbar med `enLinje`, PageHeader-kontekst + handling, Pagination) holdes på ÉN linje også på 375 px — de krymper i stedet for å bryte: Dropdown-triggere trunkerer (`shrink` + full bredde på knappen), søk og filter komprimeres, paginering blir «‹ 3 / 12 ›» under 640 px. PageHeader pakker flere handlinger i én krympbar boks. Går innholdet ikke inn, er det et tegn på for mange kontroller i raden, ikke en grunn til å bryte linjen. Full-bleed lages aldri med `100vw` (gir sidescroll og overlapper sidemenyen) — mål bredden.
+
+**Krymp, aldri overlapp** (founder-revisjon 2, 28. sep 2026: «Bygg A-velgeren og primærknappen overlapper på mobil — det går ikke»). Første runde fikk kontrollene på én linje, men lot BÅDE kontekst og handling ha `min-w-0`: flex fordeler underskuddet proporsjonalt, så handlingsboksen ble 140 px rundt en 178 px knapp, og knappen malte oppå byggvelgeren (målt −30 px på 375, −54 px på 320). Bare det som kan TRUNKERE (et nedtrekk med «…») får krympe; en knapp står i en `min-w-min`-boks og krymper aldri under teksten sin. Blir det likevel for trangt, kortes knappeteksten («Ny hendelse», ikke «Registrer hendelse») eller kontrollen flyttes bak «…» (`regel/verktoylinje-overflow-bak-mer`). Verifiseres med `getBoundingClientRect`: rektanglene skjærer ikke hverandre og avstanden er ≥ gap-tokenet på 320/375/414 — et skjermbilde av «én linje» er ikke nok.
+
+## regel/verktoylinje-overflow-bak-mer
+
+**Kilde:** Founder-revisjon 2, 28. sep 2026: «Mobilvarianten er ikke god nok. Det som ikke får plass på én linje må evt. ligge bak f.eks. en "…"-knapp. I så fall bør iallefall søk ligge der, og sikkert også "Ny handling".» Målt før: Toolbar-eksempelet brøt til tre linjer (148 px) på 320–414 px; /gjoremal la «Ansvarlig» (36 px bred) oppå kildefilteret på 320 px.
+
+**Regel:** En Toolbar med søk eller handlinger bruker `sok`/`meny`, ikke children. Under 36rem (Toolbarens EGEN bredde, `@container`) står filtrene og `end` igjen på én linje, og søk + `meny` flytter bak én «…» (ToolbarMer: Popover, bunnark på mobil, `role="dialog"`, fokus i søket ved åpning, Escape tilbake til «…»). En prikk på «…» (`merAktiv`) viser at noe skjult er i bruk. Uten filtre blir søket stående i raden. I «…» hører søk, knapper, lenker og native `Select` hjemme — aldri et Popover-basert nedtrekk (nestet lag lukker det ytre), og aldri en ikonknapp uten tekst (den står navnløs i panelet). Eksempel: /gjoremal — frist og ansvarlig i raden, bygg/kilde/«Standard ansvarlig» bak «…».
+
+## regel/flex-krympet-kontroll-trenger-egen-overflow-hidden
+
+**Kilde:** DataTable/DocumentsPanel sin verktøylinje, 29. sep 2026 (`sok`/`meny`-migreringen for én-linje-kravet). Fakturaer sin verktøylinje (faner + `ekstraFilter`=PeriodeVelger + Kolonnevelger) ga et USYNLIG overlapp på 320 px — ikke en brutt linje, så skjermbildet så riktig ut inntil `getBoundingClientRect` avslørte at PeriodeVelger-knappen (138 px, urørt) malte seg 60 px inn i Kolonnevelger. Årsak: `min-w-0` på en flex-forelder gjør at forelderens EGEN boks kan krympe, men tvinger IKKE en INLINE etterkommer (en knapp, en Popover-trigger) til å bli fysisk smalere enn sitt eget innhold — uten `overflow: hidden` et sted i kjeden maler den seg rett over naboen i stedet for å klippes eller trunkere. Samme feil rammet PillTabs: den måler `wrap.parentElement.clientWidth` for å regne ut antall synlige faner, men forelderen var her DELT med et krympbart søsken (`ekstraFilter`), så PillTabs trodde den hadde hele radens bredde og viste én fane for mye.
+
+**Regel:** Enhver kontroll i en flex-krympende rad som IKKE selv er bygget for å krympe (en Popover-trigger, en knapp, PillTabs) pakkes i en EGEN `<div className="min-w-0 shrink overflow-hidden">` — dette (a) gir kontrollen sin EGEN, riktige forelder å måle bredde mot når den har intern JS-styrt overflow-logikk (PillTabs), og (b) klipper i stedet for å overlappe hvis den likevel er for bred. Klippingen er ikke pen (ingen ellipsis — det krever at knappens EGEN bredde faktisk endres, ikke bare at den klippes utenfra), men den er trygg. Verifiseres med `getBoundingClientRect` på synlige (ikke ancestor-klippede) kontroller — et rått `elementFromPoint`-sjekk kan gi falske treff på en boks som delvis males; se «seks feller» i AGENTS.md om å bekrefte at måleren faktisk fant noe.
+
+## regel/luft-folger-innholdet
+
+**Kilde:** Founder-revisjon 2, 28. sep 2026 (CollapsibleSection: «Den er ikke vertikalt alignet i midten»). `kort`-varianten målte 16 px over hodet og 28 px under når den var lukket, fordi hodet bar `mb-3`.
+
+**Regel:** Luften mellom et sammenleggbart hode og innholdet ligger på innholdet (et barn inni utfellingen), aldri som marg på hodet — ellers står den igjen når innholdet er lukket, og hodet ser skjevt ut i rammen sin.
+
+## regel/ikon-deler-linjeboks-med-tekst
+
+**Kilde:** Founder-revisjon 2, 28. sep 2026 (AgentSteps: «Ikonet og tekst er ikke alignet vertikalt»). Toppstilt ikon med `pt-0.5` mot en tittelrad som var 16 eller 20 px høy: 2 px for lavt / 1 px for høyt.
+
+**Regel:** Et statusikon ved siden av tekst sentreres i en boks med SAMME høyde som tekstens første linjeboks (samme `h-5`/`min-h-5` på begge), ikke dyttet på plass med padding. Mål senter-y mot senter-y (≤ 1 px).
+
+## regel/kolonneluft-i-primitivet
+
+**Kilde:** Founder-revisjon 2, 28. sep 2026 (Field: «Ser ikke ut som det er mer luft mellom kolonnene på desktop»). Første runde la `gap-x-6` på to kallsteder; /design-eksempelet og fire andre sto fortsatt på 16 px.
+
+**Regel:** Luft mellom kolonner av et gjentatt primitiv eies av primitivet (`FieldRad`: 32 px kolonner, 16 px rader), ikke av kallstedenes `gap-*`. En rettelse som bare treffer noen kallsteder er ikke levert — /design-eksempelet er det founder ser.
+
+## regel/avatar-en-initial-pa-16
+
+**Kilde:** Founder-revisjon 2, 28. sep 2026 (Avatar: «15px-varianten kutter teksten inni»). «KN» målte 15,7 px i en sirkel som bare er ~13,4 px bred ved versalhøyden.
+
+**Regel:** 16 px-avataren viser ÉN initial; to får plass fra 24 px. Innenfor-sirkelen måles mot kordebredden ved versalhøyden, ikke mot den kvadratiske boksen — boksen lyver for en rund flate.
+
+## regel/listerad-basis-bare-med-meta
+
+**Kilde:** Designrevisjonen 28. sep 2026 (InnfeltKort: «Forfalt og pågår må være på samme linje som teksten»).
+
+**Regel:** ListRow sin beskyttende `basis` (15rem) på tittelen gjelder bare rader med `meta`/`value`/`subtitle`. Enkle rader (tittel + trailing-pille) bruker `basis-0`, ellers bryter pillen til egen linje selv med god plass — flex-bryting regner med den hypotetiske basis-bredden, ikke krympet innhold.
+
+## regel/oppgaverad-hoyre-klase
+
+**Kilde:** Designrevisjonen 28. sep 2026 (oppgaveraden: «pillene bør samles … "tilbud bedt om" og ikonet bryter vertikal alignment … pris bør stå enten først eller sist»). Avvist ANDRE gang 29. sep: første forsøk flyttet prisen inn i `trailing` foran statuspillen, så raden leste `[Middels] [TG2] 350 000–420 000 kr [Foreslått] ›` — prisen splittet fortsatt pillene, TG-pillen var 24 px mot de andres 20 px, og spinner + tekst lå 1 px over pillens senter.
+
+**Regel:** I oppgaverader (TaskColumnsView, GjoremalRad) står ALLE pillene samlet i `meta` — prioritet/kilde, TG, status (og befaring) — så prisen/datoen SIST i `value` (høyrestilt, `tabular-nums`), så bare pilen i `trailing`: `[Middels] [TG2] [Foreslått] 350 000–420 000 kr ›`. Aldri et tall eller en tekst mellom pillene (fristen går i `secondary`, ansvarlig-avataren etter pillene). Alle piller i gruppa har `size="sm"` (20 px). En spinner i en pille går gjennom Badge sin egen `icon`-slot (direkte barn av pillens `items-center`), aldri et eget flex-lag inni pillens `truncate`-span. `Begrep` rundt en pille har `leading-none`, ellers ligger pillen 1 px lavere enn naboene.
+
+På smal beholder har ListRows linje 2 samme rekkefølge `[meta][secondary][value]` og BRYTER (`flex-wrap`) i stedet for å rulle: `value` får sin EGEN linje under, venstrestilt på samme kant som ikonet og pillene (founder, runde 4 29. sep 2026: «pris må være aligned left med ikon og pills»), pila i `trailing` følger prisens linje, og `secondary` trunkeres først. Målt 29. sep: før lå prisen bak rullekanten (høyrekant 384–426 px på 320–414 px skjerm); etter er den synlig (høyrekant < pilens venstrekant).
+
+**Verifiseres** med `getBoundingClientRect`: pillene er naboer i x-rekkefølge uten annet imellom, prisen er siste element før pila, alle pillehøyder like, pillenes senter-y spenner 0 px, ikon/tekst/pille senter-y ≤ 1 px — på 320/375/414/1280.
+
+**Runde 4** (founder, designrevisjon 29. sep 2026: «ikonet bryter vertikal alignment med tittelteksten», «altfor mye luft til venstre for ikonet», «pillene bør være venstrestilt med ikonet — ikke innrykket under tittelen»). To separate feil, begge i den SMALE formen (< `@md`, ikke desktop — desktop var godkjent og urørt):
+
+1. **`leading` var sentrert mot HELE den to-linjers radstabelen**, ikke mot tittelens egen linje: `ListRow`s smale form hadde `leading` som en felles `items-center`-rad med BÅDE tittelen (linje 1) OG meta/secondary/value (linje 2), så et 20px statusikon ble sentrert mot 40–44px stabelhøyde. Samtidig arvet linje 2 `leading`s bredde + mellomrom som innrykk, i stedet for å starte på ikonets venstrekant. Retting i `components/ui/ListRow.tsx`: `leading` står nå i EN rad sammen med KUN tittelen (duplisert i bred/smal-gren, samme mønster som selve tittelen — CSS skjuler den ene grenen); linje 2 er en søskenrad UTEN `leading` foran. Gjelder alle `ListRow` med `leading` på smal bredde (sjekket: ingen kallsted bruker en Avatar i `leading` med en tilsiktet innrykket subtitle — alle 20+ bruksstedene er ikon+tittel-mønsteret, så endringen er trygg globalt i primitivet).
+2. **En usynlig hover-avkrysning reserverte likevel plass**: `TaskColumnsView` sin «marker fullført»-sjekkboks i `leading` var `opacity-0` til hover/fokus, men fortsatt I LAYOUTEN — 16px boks + 8px mellomrom = 24px blank plass foran statusikonet, MÅLT som luften founder pekte på. Hover finnes ikke på touch, og et vanlig trykk på raden fokuserer ikke sjekkboksen (det åpner tiltaket) — avkrysningen var dermed praktisk talt utilgjengelig under `@md` uansett. Rettet i `components/tasks/TaskColumnsView.tsx` (og speilet i doc-eksempelet, `app/design/components/demos/OppgaveStatusBadge.tsx`): `hidden @md:inline` i stedet for kun `opacity-0` — fjernet fra layouten på smal bredde, uendret over `@md`. `GjoremalRad` har ingen slik sjekkboks (bruker `status` direkte) og var ikke rammet av denne delen.
+
+**Verifiseres:** ikonets senter-y = tittelens (linje 1) senter-y (≤ 2 px), venstre kant på synlig ikon = venstre kant på første pille (± 1 px), linjen med pris starter på samme venstrekant (prisen selv er fortsatt høyrestilt med `ml-auto`, se over) — på 320/375/1280, desktop pikselidentisk før/etter.
+
+**Runde 5 (founder, designrevisjon 29. sep 2026) — ERSTATTER den smale beskrivelsen over (avsnittet «På smal beholder …» og pila-følger-prisen-delen av `regel/listerad-pil-folger-siste-linje`), bred beholder uendret:** ListRow fikk en HEL ny mobil-anatomi (`regel/listrad-mobil-to-linjer`) i stedet for enda en punktretting av den forrige. Pillene sendes nå som DATA (`merkelapper`, `{ tekst, tone, varsel }`) i stedet for ferdige Badge-noder i `meta` — TG3 og «Forfalt» får `varsel: true`, prioritet/kilde og befaring ikke. Smal beholder velger selv den ENE `varsel`-pillen og folder resten til rolig tekst; `pil` (ny prop) erstatter en håndrullet chevron i `trailing` og vises IKKE lenger på smal bredde i det hele tatt — «pila følger prisens linje» er dermed ikke lenger et tema der, siden linje 2 nå er en fast rad uten wrapping/rulling. Migrert: `TaskColumnsView`/`GjoremalRad`. Verifiseres av `regel/listrad-mobil-to-linjer`.
+
+## regel/siffer-i-egne-bokser
+
+**Kilde:** Designrevisjonen 28. sep 2026 (OtpInput: «hvert siffer er egne bokser slik som er best practice»).
+
+**Regel:** Kodefelt viser én boks per siffer, men har ÉTT ekte `<input>` under (usynlig, dekker raden): da får vi lim-inn av hele koden, tilbaketast, `autoComplete="one-time-code"` og skjermleser gratis, og tester kan fylle feltet som ett felt. Aldri N separate inputs med egen fokuslogikk.
+
+## regel/flytende-flater-popover-padding
+
+**Kilde:** Designrevisjonen 28. sep 2026: «Popover er fin! den bør være referanse for de med for lite padding.»
+
+**Regel:** Flytende flater (Tooltip, Begrep, FloatingLayer, PeriodeVelger-tooltip) bruker de delte tokenene `--floating-pad-y`/`--floating-pad-x` — samme luft som Popover. Ingen egne paddingtall per komponent.
+
+## regel/lenkeknapp-noytral
+
+**Kilde:** Founder 28. sep 2026: link-knappen skal være «svart med understrek».
+
+**Regel:** `Button variant="link"` er nøytral (text-primary) med alltid synlig understrek; hover/fokus tykner streken. Lenker i løpende tekst (`.link`) er fortsatt aksentfarget. Aksentfargen betyr altså «lenke i tekst, fokus eller én viktigste handling» — ikke link-knappen.
+
+## regel/dokument-brevark
+
+**Kilde:** Founders designrevisjon 28. sep 2026 («bærer preg av standard Claude-design»): tre skisser (A «Brevark», B «Protokoll», C «Register») med samme GF-innkalling bygget side om side i `app/design/components/demos/dokument/` uten å røre primitivet, så founder kunne dømme uttrykket løsrevet fra komponenten. Founder valgte A.
+
+**Regel:** `components/ui/Dokument.tsx` bærer «Brevark»-uttrykket: et flatt papirark (tynn `--print-border`-kant på skjerm, fjernet ved utskrift — ikke rundet hjørne + skygge), et to-kolonners brevhode (avsender venstre, dato/ref/org.nr høyrestilt) over en sterk delelinje, tittel som egen linje under, et forslag til vedtak markert med en svart marglinje (`DokumentMerknad margstrek`) i stedet for en farget boks, og løpende brevtekst (`DokumentSeksjon stil="brev"`) uten linje under hver «Sak N · tittel»-overskrift. Alle endringer er bakoverkompatible tillegg (`adresse`, `mottakerLinje`, `margstrek`, `stil`, `visning="linjer"`) — ingen av de ni eksisterende kallstedene (faktura, purring, skattegrunnlag, andelseierbok, oppfølging/brev, byggrapport, GF-dokument, meglerpakke, dokument-siden) måtte endres for å arve utseendet. Nye dokumenter bygges med disse primitivene — aldri en egen brevoppskrift lokalt på siden.
+
+## regel/statcard-mobil-en-kolonne
+
+**Kilde:** Founders designrevisjon, avvist ANDRE gang 29. sep 2026: i to kolonner på 375 px brakk etikettene («Estimert / total», «Bør følges opp / nå», «Inntekter / 2026»), kortene fikk ulik høyde, og et oddetall ga et enslig halvt kort. Første forsøk (`fullBreddeMobil` på ett kort) løste bare ett eksempel. Målt før: 9 av 17 flater hadde funn på 320 px (dashbord, Å gjøre, Bygget, Vedlikeholdsplan og fem /design-eksempler).
+
+**Regel:** `StatCardRad` er ÉN kolonne under `sm` (640 px). To kolonner på mobil KUN med `kompaktMobil`, og bare for korte etiketter + korte tall uten `sub`/`sparkline`/`endring` (eksempel: skattesidens Levert/Sendt/Ikke sendt/Trenger e-post). Oddetall i `kompaktMobil`: det siste kortet spenner begge kolonnene. `fullBreddeMobil` er fjernet. Håndrullede grid rundt StatCard erstattes med `StatCardRad` (FeeOverviewPanel sitt `auto-fit`-grid ga 2 + 1 på 375 px).
+
+**Oppdatering (founder, designrevisjon runde 4, 29. sep 2026) — ERSTATTER kortets mobilform under (runde 3 sin «etikett og verdi på én linje» er borte):** under `sm` viser kortet nå VERDIEN FØRST (stor), deretter ikon+etikett, så sub/endring — snudd rent visuelt med `flex-col-reverse` (DOM-rekkefølgen, etikett før verdi, er uendret, som på desktop). Verdiens standardstørrelse er `type-heading-32` (var 24), og trappes ned til 24/20/16 langs en `@container`-kaskade på KORTETS egen bredde kombinert med verdiens lengde — aldri av tegnantall alene, og aldri en femte, mindre klasse enn 16. Absolutt krav: en verdi MED sifre bryter ALDRI linje, heller ikke et intervall med tankestrek («651 000–893 000 kr» — tidligere fikk denne bryte ved streken, det er nå forbudt). Kun en ren tekstverdi uten sifre (f.eks. «Krever oppfølging») kan fortsatt bryte, maks to linjer. Eksempel: `<StatCard label="Estimert totalkostnad" value="651 000–893 000 kr" />` i et `kolonner={4}`-rutenett som blir smalere enn ~9rem per kort, må ned til `kolonner={2}` — StatCard selv kan ikke trylle et 19-tegns tall inn på et kort smalere enn det en 16px tabular-nums-streng krever; se `/design/components/stat-card` sitt «Langt tall»-eksempel.
+
+**Verifiseres** på 320/375/768/1280, lyst tema: 0 verdier over 2 linjer, 0 verdier MED sifre over 1 linje, 0 overflyt (`scrollWidth`/`clientWidth`), ingen body-sidescroll. Målt 29. sep 2026 (runde 4): 236 `[data-stat-verdi]`-elementer på tvers av `/design/components/stat-card` og syv app-flater (dashbord, økonomi, felleskostnad, vedlikeholdsplan, bygget, gjøremål, skatt-innhenting) — 0 brudd. (Tidligere runde: ingen etikett over to linjer i kort som står to og to, ingen rad med ett kort under 70 % av radbredden, like høyder i samme rad — fortsatt sant, uendret av runde 4.)
+
+## regel/listerad-pil-folger-siste-linje
+
+**Kilde:** Mobilsveip runde 3b, 29. sep 2026 (oppgaveraden på 320 px): når `meta` selv bryter til en egen underlinje (flere piller enn plass, f.eks. TaskColumnsView «Høy TG3 Foreslått»), sentrerte ListRow sin ytre `items-center` `trailing`-pila mot HELE innholdshøyden (tittel + pillelinje + pris-linje) i stedet for mot linja pila faktisk hører til. Målt: pilas senter-y = radens midtpunkt, ikke prisens senter-y — pila landet visuelt ved siden av pillene, ikke prisen. Samme runde: 15rem-reservasjonen (`regel/listerad-basis-bare-med-meta`) tvang pila til å BRYTE HELT UT av raden på 320 px, fordi flex-bryting regner med hypotetisk (ikke krympet) bredde — 240 + gap-3 (12) + selve pila (16) = 268 px, over de ~248 px en 320 px-rad faktisk har.
+
+**Regel:** To uavhengige fikser, begge i ListRow.tsx: (1) `trailing`-wrapperen har `self-end`, IKKE bare arvet `items-center` fra ytre rad — den bunnstilles mot samme linje som `value` (alltid nederst i smal beholder), uavhengig av hvor mange linjer `meta` bryter til over. `leading` er UENDRET (`items-center` fra ytre rad). (2) Reservasjonen på tittelgruppen senkes fra 15rem til 11rem under `@max-[22.5rem]` (360 px containerbredde) — fortsatt nok til å beskytte `meta`/`value`/`subtitle`, men lite nok til at en ren pil (eller et par småknapper) blir stående på linja i stedet for å falle ned.
+
+**Verifiseres** med `getBoundingClientRect`: pilas `bottom` (eller `top`) matcher `value` sin, ikke `meta`-pillenes, på 320/375/414 — se `TaskColumnsView`/`GjoremalRad` på `/eiendom/vedlikehold` og `/gjoremal`.
+
+**Supersert av runde 5 (29. sep 2026, `regel/listrad-mobil-to-linjer`):** `self-end` er FJERNET fra `trailing` igjen — linje 2 er nå en fast, ikke-wrappende rad (ingen `meta` som selv bryter til en underlinje), så problemet denne regelen løste finnes ikke lenger. `trailing` bruker igjen ytre rads vanlige `items-center`, som nå riktig sentrerer et vilkårlig `trailing`-innhold mot HELE to-linjers-stabelen på smal bredde. `pil` (etterfølgeren til en chevron i `trailing`) vises i tillegg ikke i det hele tatt under `@md`.
+
+## regel/flex-shrink-trenger-w-full-pa-barnet
+
+**Kilde:** Mobilsveip runde 3b, 29. sep 2026 (ReportList: PeriodeVelger + «Last opp rapport» på 320 px). Tillegg til `regel/flex-krympet-kontroll-trenger-egen-overflow-hidden` — samme grunnfeil, men her var svaret IKKE overflow-hidden.
+
+**Regel:** Når kontrollen er en Popover-trigger bygget for å krympe (etiketten har allerede `min-w-0`/`truncate`, som PeriodeVelger), er `overflow-hidden` unødvendig og kutter brutalt. Fiksen er samme mønster som `FristVelger`/`ByggVelger` (se disses `[&_button]:w-full`-kommentar): gi wrapperen `shrink [&_button]:w-full` — flex-shrink krymper WRAPPER-boksen, og `w-full` tvinger selve `<button>` inni til å FAKTISK bli like smal (i stedet for å beholde sin egen innholdsbredde og male seg utenpå naboen, usynlig — samme symptom som `regel/flex-krympet-kontroll-trenger-egen-overflow-hidden`, målt her som 31 px overlapp inn i nabo-knappen «Last opp», ikke en brutt linje). Trunkeringen faller da pent inne i selve etiketten. Bruk `overflow-hidden` (uten `w-full`) kun for kontroller som IKKE selv støtter delvis krymping (PillTabs, Kolonnevelger).
+
+## regel/listrad-mobil-to-linjer
+
+**Kilde:** Designrevisjon runde 5, 29. sep 2026. Founder var ikke fornøyd med `ListRow` på mobil etter fire runder punktrettinger (`regel/oppgaverad-hoyre-klase` runde 3b/4, `regel/listerad-pil-folger-siste-linje`, `regel/listerad-basis-bare-med-meta`): tre linjer uten hierarki, pillene dominerte, en pil hang alene, en faktalinje ble kuttet midt i en frase. Løsningen er en HEL ny mobil-anatomi, ikke enda en punktretting — bred beholder (≥ `@md`) er urørt.
+
+**Regel:** Smal beholder (< `@md`) er NØYAKTIG to linjer, aldri tre, aldri rullende. Linje 1: `leading` + tittel over hele resten av bredden, ALLTID `truncate` (aldri `line-clamp-2` — en klippet tittel er mer lesbar enn en tittel som endrer radhøyde). Linje 2 (kun når det er noe å vise — raden uten noe her er fortsatt én linje) starter på IKONETS venstrekant, ingen innrykk: maks ÉN farget pille — den ENE `merkelapper` med `varsel: true` (TG3/Akutt/Forfalt-typen «krever handling») — så resten av merkelappene som ren tekst sammenføyd med « · » sammen med `secondary` (dempet, `type-label-13`, truncate, ALDRI wrap/rulling), så en valgfri `meta` (ikke-tekst, Avatar o.l.) rett før `value` (`valueSmal ?? value`, `tabular-nums`, vekt 500 via `.type-label-13-strong`). `pil` tegnes KUN på bred beholder — smal har ingen pil, hele raden er trykkflaten.
+
+`merkelapper: Merkelapp[]` (`{ tekst, tone?, ikon?, varsel?, spinner? }`) er DATA, ikke ferdig markup: ListRow kan dermed VELGE pille vs. tekst per bredde, noe den ikke klarer med en ferdig `<Badge>`-node i `meta`. Bred beholder tegner ALLE merkelapper som `Badge size="sm"` i `meta`-posisjonen (pikselidentisk med det kallesteder tidligere håndrullet selv). `valueSmal` løser et beslektet problem: et langt kronespenn («480 000–620 000 kr») har ikke plass på linje 2 — `formatCostSmal()` (lib/utils.ts) forkorter til «480–620 000 kr» når begge ender er en hel tusen under én million.
+
+Migrert i samme leveranse: `TaskColumnsView` (TaskRow), `GjoremalRad`. TG-pillen i `TaskColumnsView` beholder sin `Begrep id="tg"`-forklaring på bred beholder via `Merkelapp.wideNode` (en valgfri egen node som overstyrer den auto-genererte Badge-en KUN på bred beholder — smal beholder bruker fortsatt `tekst`/`tone`/`varsel` som data), så desktop er pikselidentisk.
+
+**Verifiseres** på 320/375 (headless, aldri Browser-panelet): hver rad med merkelapper/value er nøyaktig 2 linjer, tittel 1 linje, ikon.left = linje2.left (± 1 px), ikon senter-y = tittel senter-y (± 1 px), value høyrekant ≤ radens innholdskant, maks 1 synlig Badge per rad, ingen chevron synlig, ingen body-sidescroll. På 1280: bred beholder skjermbilde-lik før/etter (tittel/piller/pris/pil-rects uendret).
+
+### regel/native-select-trunkering
+
+**Kilde:** Founder-oppdrag 29. sep 2026 — på /hms (375 px) sto typefilteret som «Alle typer (11» uten «…». Første retting (`truncate` på `<select>`) så riktig ut i Chromium, men målt i WebKit (Safari/iPhone, der dette faktisk brukes) var teksten fortsatt klippet: WebKit ignorerer `text-overflow` på native `<select>`.
+
+**Regel:** Trunkering av en native `<select>` sin valgte tekst løses i `Select`-primitivet med et `aria-hidden`-lag som tegner teksten (`truncate`), mens selectens egen tekst er `text-transparent` etter montering. Laget har samme 16 px som selecten under md (iOS-zoom-regelen i globals.css). Kallsteder legger aldri egen trunkering på `<select>`.
+
+**Verifiseres** i BÅDE Chromium og WebKit (Playwright `webkit`), 320/375/1280 — en `text-overflow`-retting som bare er sett i Chromium er ikke verifisert.
+
+
+### regel/popover-panel-luft-pa-indre-element
+
+**Kilde:** Founder 29. sep 2026 — «FloatingLayer mangler mer padding rundt hele». Demoene satte `p-3` på et `.popover-panel`, men `.popover-panel` i globals.css ligger UTENFOR Tailwind-lagene og setter selv `padding: var(--space-1)` (4 px, for menyrader som har egen luft) — så `p-3` ble stille overstyrt, og teksten sto 4 px fra kanten.
+
+**Regel:** Et `.popover-panel` med løpende innhold (tekst, skjema) får luften på et INDRE element (`<div className="p-3">`, totalt 16 px), aldri som padding-klasse på panelet selv. Samme mønster som Popover-demoene.
+
+**Verifiseres** ved å måle avstanden fra panelkant til innhold i nettleseren (16 px), ikke ved å lese klassene.

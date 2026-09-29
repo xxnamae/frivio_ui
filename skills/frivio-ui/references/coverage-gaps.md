@@ -113,15 +113,37 @@ inkassovarsel, restanse og bankmatching adresserer fortsatt ÉN kontaktperson pe
 og founder avgjorde 2026-09-09: **nei, medeiere trenger ikke kopi** — én kontaktperson per seksjon
 forblir modellen. Ikke foreslå e-post per eierperiode igjen uten founder-initiativ.
 
-## Listene er ikke like — én listefamilie venter på founders valg (2026-09-25, åpen)
+## Listene er ikke like — én listefamilie (2026-09-25, lukket)
 
 **Kilde:** Founder 25. sep 2026: «listene våre er ikke så like. Ref vedlikeholdsplan og f.eks å
 gjøre. Avtaleregister også, leverandører, styret, styremøte … ja egentlig de fleste.» Målt i
 Spectrum-lab runde 4 (`/design/lab/spectrum/runde-4#lister`, gren `spectrum`): ni av elleve lister
 bruker `ListRow`, men radhøyden spriker fra 48 til 81 px på skjerm og 72 til 129 px på telefon;
 status står til venstre i tre lister, til høyre i tre, begge steder i tre og ingen steder i to;
-fem lister er klikkbare på hele raden, fem ikke. **Åpent:** founder velger forslag A (ListRow
-utvidet) eller B (Spectrum-inspirert) i Del 3 av laben. Deretter skal ÉN oppskrift (anatomi,
-radhøyde, statusplass, handlinger, klikkflate, mobil, tomtilstand) inn i `ListRow`/designsystemet
-og tas i bruk på alle elleve — og da blir denne linjen en `regel/` i produktskjonn.md. Inntil
-valget er tatt: ingen ny liste skal finne opp sin egen variant; bruk `ListRow` slik Å gjøre gjør.
+fem lister er klikkbare på hele raden, fem ikke.
+
+**Lukket for OPPGAVE-lister** (25. sep 2026, samme økt): founders dom per par (L1/L2/L9/L6/L11 +
+Del 3 forslag B) landet som `regel/oppgaverad-status` og `regel/innfelt-skall-for-lister`
+(produktskjonn.md) — statusspråk (`lib/oppgavestatus.ts`, `OppgaveStatusBadge`,
+`ListRowStatusIcon` sin `aktiv`) og innfelt skall (`InnfeltKort`, `ListRow` sin `tett`), tatt i
+bruk på Vedlikeholdsplan, Å gjøre, Styreplikter, Styremøter og Aktivitet.
+
+**Lukket for REGISTER-lister** (25. sep 2026, samme økt): Avtaleregister, Leverandører, Styret,
+Fakturaer, Seksjoner og Dokumenter (L3/L5/L7/L8/L10 i lab-rapporten) landet som `regel/
+registertabell-familie` (produktskjonn.md) — alle seks er nå `components/ui/DataTable`, med
+`Avatar`/ikon i navnekolonnen, `Badge` for status, `tabular-nums` for tall, og `radDetalj`
+(ny DataTable-prop, dekker Seksjoner sitt behov for felt uten egen kolonne). `EmptyState` fikk
+`kolonner` (L12: ekte kolonnenavn over skyggeradene) og `DataTable` sin `tomTilstand`-kontekst fikk
+`nullstillFilter()`/`sokTekst` (søk-uten-treff gjentar søkeordet og tilbyr nullstilling). Ingen ny
+liste i noen av de to sporene skal finne opp sin egen variant — se produktskjonn.md sine to regler.
+
+## Klikkbar fargeprøve som kopierer (2026-09-28, åpen)
+
+**Kilde:** Dogfooding-runden på `/design` (founder 28. sep 2026: «Bruker vi vårt eget designsystem
+på docs-siden?»). `app/design/colors/ColorsPage.tsx` sine fargeprøver er rå `<button>`-elementer
+der prøven SELV er kopierflaten (tokennavnet kopieres ved klikk, «Kopiert» vises i hex-linjen).
+Ingen primitiv dekker «en flate som kopierer ved klikk»: `KopierKnapp` er en knapp ved siden av
+innhold, ikke innholdet selv. Vurdert: ikke-klikkbar prøve + `KopierKnapp visning="ikon"` — en
+44 px trefflate per prøve dobler høyden på det tette 10-kolonners rutenettet. Står i
+designvaktens baseline (`regel/docs-bygges-med-systemet`). Avgjøres ved: to kallsteder til
+(f.eks. tokenlister i Typografi/Materialer) → bygg en `KopierFlate`-variant av `KopierKnapp`.
